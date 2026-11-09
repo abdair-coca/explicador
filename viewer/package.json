@@ -8,7 +8,8 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "dev:server": "vite",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.ts\""
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",

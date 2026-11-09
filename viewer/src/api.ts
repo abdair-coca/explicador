@@ -36,3 +36,20 @@ export function useScene(): { scene: ScenePayload | null; connection: Connection
 
   return { scene, connection };
 }
+
+/** POST /api/<name>; the bridge checks the token and that the request comes from this page. */
+export async function post<T>(name: 'click' | 'open', body: Record<string, string>): Promise<T> {
+  const response = await fetch(`/api/${name}`, {
+    method: 'POST',
+    headers: { 'x-token': token, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return (await response.json()) as T;
+}
+
+export type ClickReply =
+  | { status: 'opened'; topic: string }
+  | { status: 'sent'; topic: string; monitors: number }
+  | { status: 'no-monitor'; topic: string; message: string }
+  | { status: 'unknown' };

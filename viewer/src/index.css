@@ -85,6 +85,13 @@ body {
 .scene-node.active rect.body { stroke: var(--active); stroke-width: 2.5; filter: drop-shadow(0 0 6px color-mix(in oklch, var(--active) 45%, transparent)); }
 .scene-node.dimmed { opacity: 0.45; }
 .scene-node { transition: opacity 250ms; }
+.scene-node.clickable { cursor: pointer; outline: none; }
+.scene-node.clickable:hover rect.body, .scene-node.clickable:focus-visible rect.body { stroke: var(--primary); stroke-width: 2; }
+.scene-node rect.stack { fill: var(--node-fill); stroke: var(--border); stroke-width: 1.5; }
+.scene-node .hint { fill: var(--muted-foreground); font-size: 10px; }
+.scene-node .drill-mark { fill: var(--primary); font-size: 13px; font-weight: 700; }
+.scene-node.context { opacity: 0.55; }
+.scene-node.context rect.body { stroke-dasharray: 4 4; }
 
 .scene-edge path { fill: none; stroke: var(--edge); stroke-width: 1.5; transition: stroke 200ms, stroke-width 200ms, opacity 250ms; }
 .scene-edge.active path { stroke: var(--active); stroke-width: 2.5; }

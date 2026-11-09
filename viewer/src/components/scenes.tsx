@@ -1,35 +1,45 @@
 // <arch> and <flow> scenes: layout, reveal animation and step playback.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ArchBlock, FlowBlock, Ref } from '../../../server/src/scene.ts';
 import { stepDuration, usePlayback, useReducedMotion } from '../animation/playback';
+import { boxWithin, zoomIn, zoomOut, type Box } from '../animation/zoom';
 import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
+import { archLevel, withDrills, type ViewNode } from '../layout/levels';
 import { Diagram } from './Diagram';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
-function useLayout(block: ArchBlock | FlowBlock, edges: EdgeInput[]): Layout | Error | undefined {
+/** Asks to go deeper from a node: the App sends the click to the server. */
+export type DrillHandler = (blockId: string, nodeId: string, element: Element) => void;
+
+function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | undefined {
   const [layout, setLayout] = useState<Layout | Error>();
   useEffect(() => {
     let live = true;
     setLayout(undefined);
-    layoutGraph(block.nodes, edges).then(
+    layoutGraph(nodes, edges).then(
       (result) => live && setLayout(result),
       (error: unknown) => live && setLayout(error instanceof Error ? error : new Error(String(error))),
     );
     return () => {
       live = false;
     };
-  }, [block, edges]);
+  }, [nodes, edges]);
   return layout;
 }
 
-function SceneFrame(props: { kind: string; title: string; actions?: React.ReactNode; children: React.ReactNode }) {
+function SceneFrame(props: {
+  kind: string;
+  title: React.ReactNode;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-xl border border-border bg-card shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="flex items-baseline gap-2">
+        <div className="flex min-w-0 items-baseline gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{props.kind}</span>
-          <h2 className="text-base font-semibold">{props.title}</h2>
+          <h2 className="flex min-w-0 flex-wrap items-baseline gap-1 text-base font-semibold">{props.title}</h2>
         </div>
         <div className="flex items-center gap-1">{props.actions}</div>
       </header>
@@ -45,29 +55,99 @@ function LayoutState(props: { layout: Layout | Error | undefined }) {
   return <p className="p-6 text-sm text-muted-foreground">Laying out…</p>;
 }
 
-export function ArchScene({ block }: { block: ArchBlock }) {
-  const edges = useMemo(
-    () => block.edges.map((e, i) => ({ id: `e${i}`, from: e.from, to: e.to, ...(e.label ? { label: e.label } : {}) })),
-    [block],
-  );
-  const layout = useLayout(block, edges);
+type Zoom = { direction: 'in'; from: Box | undefined } | { direction: 'out'; focus: string } | undefined;
+
+export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill: DrillHandler }) {
+  // Open groups, outermost first; empty at the top level.
+  const [path, setPath] = useState<string[]>([]);
+  const [zoom, setZoom] = useState<Zoom>();
   const [replay, setReplay] = useState(0);
+  const open = path.at(-1);
+  const level = useMemo(() => archLevel(block, open), [block, open]);
+  const layout = useLayout(level.nodes, level.edges);
+  const stage = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const element = stage.current;
+    if (!element || !zoom || !layout || layout instanceof Error) return;
+    if (zoom.direction === 'in') zoomIn(element, zoom.from);
+    else {
+      const focus = element.querySelector(`[data-node-id="${CSS.escape(zoom.focus)}"]`);
+      zoomOut(element, focus ? boxWithin(focus, element) : undefined);
+    }
+    setZoom(undefined);
+  }, [layout, zoom]);
+
+  const clickNode = (id: string, element: Element): void => {
+    if (block.groups.some((g) => g.id === id)) {
+      setZoom({ direction: 'in', from: stage.current ? boxWithin(element, stage.current) : undefined });
+      setPath((p) => [...p, id]);
+      setReplay((r) => r + 1);
+      return;
+    }
+    onDrill(block.id, id, element);
+  };
+  const goUp = (depth: number): void => {
+    const focus = path[depth];
+    if (focus === undefined) return;
+    setZoom({ direction: 'out', focus });
+    setPath((p) => p.slice(0, depth));
+    setReplay((r) => r + 1);
+  };
+  const groupLabel = (id: string): string => block.groups.find((g) => g.id === id)?.label ?? id;
+
   return (
     <SceneFrame
       kind="Architecture"
-      title={block.title}
+      title={
+        path.length === 0 ? (
+          block.title
+        ) : (
+          <nav aria-label="Zoom levels" className="flex flex-wrap items-baseline gap-1">
+            <button type="button" className="text-primary hover:underline" onClick={() => goUp(0)}>
+              {block.title}
+            </button>
+            {path.map((id, i) => (
+              <span key={id} className="flex items-baseline gap-1">
+                <span className="text-muted-foreground">›</span>
+                {i === path.length - 1 ? (
+                  <span aria-current="location">{groupLabel(id)}</span>
+                ) : (
+                  <button type="button" className="text-primary hover:underline" onClick={() => goUp(i + 1)}>
+                    {groupLabel(id)}
+                  </button>
+                )}
+              </span>
+            ))}
+          </nav>
+        )
+      }
       actions={
-        <Button variant="ghost" size="sm" onClick={() => setReplay((r) => r + 1)} aria-label="Replay animation">
-          ↻ Replay
-        </Button>
+        <>
+          {path.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => goUp(path.length - 1)} aria-label="Zoom out">
+              ⤡ Zoom out
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => setReplay((r) => r + 1)} aria-label="Replay animation">
+            ↻ Replay
+          </Button>
+        </>
       }
     >
-      <div className="p-4">
-        {layout && !(layout instanceof Error) ? (
-          <Diagram layout={layout} revealKey={replay} ariaLabel={`Architecture diagram: ${block.title}`} />
-        ) : (
-          <LayoutState layout={layout} />
-        )}
+      <div className="overflow-hidden p-4">
+        <div ref={stage}>
+          {layout && !(layout instanceof Error) ? (
+            <Diagram
+              layout={layout}
+              revealKey={replay}
+              ariaLabel={`Architecture diagram: ${block.title}`}
+              onNodeClick={clickNode}
+            />
+          ) : (
+            <LayoutState layout={layout} />
+          )}
+        </div>
       </div>
     </SceneFrame>
   );
@@ -77,7 +157,7 @@ export function formatRef(ref: Ref): string {
   return `${ref.path}${ref.start ? `:${ref.start}${ref.end ? `-${ref.end}` : ''}` : ''}`;
 }
 
-export function FlowScene({ block }: { block: FlowBlock }) {
+export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill: DrillHandler }) {
   // One edge per ordered pair of participants that talk to each other.
   const edges = useMemo(() => {
     const seen = new Map<string, EdgeInput>();
@@ -88,7 +168,8 @@ export function FlowScene({ block }: { block: FlowBlock }) {
     }
     return [...seen.values()];
   }, [block]);
-  const layout = useLayout(block, edges);
+  const nodes = useMemo(() => withDrills(block.nodes, block.drills), [block]);
+  const layout = useLayout(nodes, edges);
   const reducedMotion = useReducedMotion();
   const durations = useMemo(() => block.steps.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
@@ -128,6 +209,7 @@ export function FlowScene({ block }: { block: FlowBlock }) {
             tokenKey={playback.index}
             reducedMotion={reducedMotion}
             ariaLabel={`Flow diagram: ${block.title}`}
+            onNodeClick={(id, element) => onDrill(block.id, id, element)}
           />
         ) : (
           <LayoutState layout={layout} />

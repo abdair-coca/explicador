@@ -6,9 +6,11 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <node id="user" label="User" kind="actor" />
   <node id="form" label="Login form (browser)" kind="ui" ref="src/ui/login-form.js" />
   <node id="routes" label="Auth routes" kind="service" ref="src/api/auth-routes.js" />
-  <node id="service" label="Auth service" kind="module" ref="src/auth/auth-service.js" />
-  <node id="password" label="Password check (scrypt)" kind="function" ref="src/auth/password.js" />
-  <node id="sessions" label="Session store" kind="store" ref="src/auth/sessions.js" />
+  <group id="auth" label="Auth core" kind="module">
+    <node id="service" label="Auth service" kind="module" ref="src/auth/auth-service.js" />
+    <node id="password" label="Password check (scrypt)" kind="function" ref="src/auth/password.js" />
+    <node id="sessions" label="Session store" kind="store" ref="src/auth/sessions.js" />
+  </group>
   <node id="users" label="Users table" kind="store" ref="src/db/users.js" />
   <edge from="user" to="form" label="types" />
   <edge from="form" to="routes" label="POST /api/login" />
@@ -16,6 +18,8 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <edge from="service" to="users" label="find by email" />
   <edge from="service" to="password" label="verify" />
   <edge from="service" to="sessions" label="create" />
+  <drill node="routes" topic="auth routes" />
+  <drill node="password" topic="password hashing" />
 </arch>
 
 <flow id="login-flow" title="Logging in, step by step">
@@ -46,6 +50,7 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <step from="routes" to="form" label="200 + sid cookie" ref="src/api/auth-routes.js:18-19">
     The route sets the session as an HttpOnly, SameSite=Strict cookie and the form moves on to the cart.
   </step>
+  <drill node="password" topic="password hashing" />
 </flow>
 
 Wrong email and wrong password get the same `401` message, so the API does not leak which accounts exist.

@@ -1,6 +1,6 @@
 // Scene layout with ELK (layered, left to right). Returns absolute coordinates for SVG.
 import ELK, { type ElkExtendedEdge, type ElkNode } from 'elkjs/lib/elk.bundled.js';
-import type { SceneNode } from '../../../server/src/scene.ts';
+import type { ViewNode } from './levels';
 
 export interface Point {
   x: number;
@@ -8,7 +8,7 @@ export interface Point {
 }
 
 export interface LaidNode {
-  node: SceneNode;
+  node: ViewNode;
   x: number;
   y: number;
   width: number;
@@ -55,11 +55,12 @@ export function wrapLabel(label: string): string[] {
   return [first, words.join(' ')];
 }
 
-export async function layoutGraph(nodes: SceneNode[], edges: EdgeInput[]): Promise<Layout> {
+export async function layoutGraph(nodes: ViewNode[], edges: EdgeInput[]): Promise<Layout> {
   const sized = nodes.map((node) => {
     const lines = wrapLabel(node.label);
     const longest = Math.max(...lines.map((line) => line.length), node.kind.length + 2);
-    return { node, lines, width: Math.max(130, Math.round(longest * CHAR_WIDTH + PADDING * 2)), height: 34 + lines.length * 17 };
+    const extra = node.role === 'group' ? 16 : 0;
+    return { node, lines, width: Math.max(130, Math.round(longest * CHAR_WIDTH + PADDING * 2)), height: 34 + lines.length * 17 + extra };
   });
   const graph: ElkNode = {
     id: 'root',

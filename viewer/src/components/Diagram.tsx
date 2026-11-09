@@ -17,6 +17,8 @@ export interface DiagramProps {
   tokenKey?: number;
   reducedMotion?: boolean;
   ariaLabel: string;
+  /** Called when a node, a group or a drill is clicked (or activated with the keyboard). */
+  onNodeClick?: (id: string, element: Element) => void;
 }
 
 export function Diagram(props: DiagramProps) {
@@ -65,6 +67,7 @@ export function Diagram(props: DiagramProps) {
             active={activeNodes?.has(node.node.id) ?? false}
             dimmed={focus && !activeNodes?.has(node.node.id)}
             pulse={props.pulseNode === node.node.id && !reducedMotion}
+            {...(props.onNodeClick && node.node.role !== 'context' ? { onClick: props.onNodeClick } : {})}
           />
         ))}
       </g>
@@ -99,31 +102,75 @@ function Edge(props: { edge: LaidEdge; delay: number; active: boolean; dimmed: b
   );
 }
 
-function Node(props: { laid: LaidNode; delay: number; active: boolean; dimmed: boolean; pulse: boolean }) {
-  const { laid } = props;
+function Node(props: {
+  laid: LaidNode;
+  delay: number;
+  active: boolean;
+  dimmed: boolean;
+  pulse: boolean;
+  onClick?: (id: string, element: Element) => void;
+}) {
+  const { laid, onClick } = props;
   const { node } = laid;
+  const role = node.role ?? 'node';
   const radius = node.kind === 'actor' ? laid.height / 2 : 8;
   const ref = node.ref
     ? `${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
     : undefined;
+  const action =
+    role === 'group' ? `Zoom into ${node.label}` : node.drill ? `Open ${node.drill}` : `Ask Claude to go deeper into ${node.label}`;
+  const activate = (element: Element): void => onClick?.(node.id, element);
   return (
     <g
       transform={`translate(${laid.x} ${laid.y})`}
-      className={cn('scene-node', `kind-${node.kind}`, node.kind, props.active && 'active', props.dimmed && 'dimmed')}
+      data-node-id={node.id}
+      className={cn(
+        'scene-node',
+        `kind-${node.kind}`,
+        node.kind,
+        role,
+        onClick && 'clickable',
+        props.active && 'active',
+        props.dimmed && 'dimmed',
+      )}
+      {...(onClick
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            'aria-label': action,
+            onClick: (event: React.MouseEvent<SVGGElement>) => activate(event.currentTarget),
+            onKeyDown: (event: React.KeyboardEvent<SVGGElement>) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              activate(event.currentTarget);
+            },
+          }
+        : {})}
     >
-      <title>{ref ? `${node.label} (${ref})` : node.label}</title>
+      <title>{[ref ? `${node.label} (${ref})` : node.label, onClick ? action : ''].filter(Boolean).join('\n')}</title>
       <g className="node-inner" style={{ animationDelay: `${props.delay}ms` }}>
         {props.pulse && <rect className="pulse" width={laid.width} height={laid.height} rx={radius} />}
+        {role === 'group' && <rect className="stack" x={5} y={5} width={laid.width} height={laid.height} rx={radius} />}
         <rect className="body" width={laid.width} height={laid.height} rx={radius} />
         {node.kind !== 'actor' && <rect className="accent" x={0} y={10} width={4} height={laid.height - 20} rx={2} />}
         <text className="kind-caption" x={laid.width / 2} y={18} textAnchor="middle">
-          {node.kind}
+          {role === 'group' ? `${node.kind} · group` : node.kind}
         </text>
         {laid.lines.map((line, i) => (
           <text key={i} className="label" x={laid.width / 2} y={37 + i * 17} textAnchor="middle">
             {line}
           </text>
         ))}
+        {role === 'group' && (
+          <text className="hint" x={laid.width / 2} y={laid.height - 9} textAnchor="middle">
+            {node.members} inside · zoom ⤢
+          </text>
+        )}
+        {node.drill && role === 'node' && (
+          <text className="drill-mark" x={laid.width - 10} y={17} textAnchor="end">
+            ↘
+          </text>
+        )}
       </g>
     </g>
   );
