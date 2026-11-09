@@ -4,7 +4,7 @@ Claude Code plugin that explains software systems with animated, interactive dia
 
 ## Status
 
-Phase 0: choosing how a click in the viewer reaches the running Claude Code session. See `spikes/interactivity/`.
+Phase 0 is done: clicks in the viewer reach Claude through a plugin monitor, with no launch flags (`docs/decisions/interactivity.md`). Phase 1 (MVP) is next; the plan lives in `.dev/PLAN.md`.
 
 ## Develop
 
