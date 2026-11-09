@@ -38,3 +38,4 @@
 - Parser: typecheck 0, lint 0, `npm test` 17/17 pass (valid, invalid, incomplete suites); `npm run build -w server` emits `server/dist/`.
 - Cache: typecheck 0, lint 0, `npm test` 26/26 pass (fresh, modified, deleted, restored, unrelated change, missing refs, corrupted entry).
 - Index: typecheck 0, lint 0, `npm test` 33/33 pass (import grep for JS/TS, Python, Go, Rust, Java, C, Ruby; relative resolution; ignore rules; incremental rebuild).
+- Findings: typecheck 0, lint 0, `npm test` 37/37 pass (create with header, keep hand-written content, skip duplicates, validation).
