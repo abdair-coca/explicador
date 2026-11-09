@@ -5,6 +5,7 @@ import {
   nodeKinds,
   type ArchBlock,
   type ArchEdge,
+  type Drill,
   type Block,
   type ExlError,
   type FlowBlock,
@@ -12,6 +13,7 @@ import {
   type NodeKind,
   type ParseResult,
   type Ref,
+  type SceneGroup,
   type SceneNode,
 } from './types.ts';
 
@@ -23,8 +25,10 @@ interface TagSpec {
 }
 
 export const catalog: Record<string, TagSpec> = {
-  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'edge'] },
-  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step'] },
+  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'group', 'edge', 'drill'] },
+  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill'] },
+  group: { attrs: { id: 'required', label: 'required', kind: 'optional' }, children: ['node', 'group'] },
+  drill: { attrs: { node: 'required', topic: 'required' } },
   node: { attrs: { id: 'required', label: 'required', kind: 'optional', ref: 'optional' } },
   edge: { attrs: { from: 'required', to: 'required', label: 'optional' } },
   step: { attrs: { from: 'required', to: 'optional', label: 'optional', ref: 'optional' }, text: true },
@@ -36,6 +40,7 @@ export const limits = {
   idLength: 40,
   labelLength: 80,
   titleLength: 120,
+  topicLength: 80,
   narrationLength: 600,
   nodes: 60,
   edges: 120,
@@ -147,41 +152,69 @@ function buildBlock(element: Element, ordinal: number, report: Report): ArchBloc
   const title = checkText(attrs.title ?? '', 'title', limits.titleLength, element, report);
 
   const nodes: SceneNode[] = [];
+  const groups: SceneGroup[] = [];
   const edges: ArchEdge[] = [];
   const steps: FlowStep[] = [];
-  const children: Element[] = [];
-  for (const child of element.children) {
-    if (child.kind === 'text') {
-      if (child.text.trim()) report(child.offset, `Text is not allowed directly inside <${element.name}>`);
-      continue;
-    }
-    if (!spec.children?.includes(child.name)) {
-      const allowed = (spec.children ?? []).map((name) => `<${name}>`).join(', ');
-      report(child.offset, `<${child.name}> is not allowed inside <${element.name}>; use ${allowed}`);
-      continue;
-    }
-    children.push(child);
-  }
+  const drills: Drill[] = [];
+  const children = childElements(element, spec, report);
 
   const nodeIds = new Set<string>();
-  for (const child of children.filter((c) => c.name === 'node')) {
-    const node = buildNode(child, report);
-    if (!node) continue;
-    if (nodeIds.has(node.id)) report(child.offset, `Duplicate node id "${node.id}"`);
-    nodeIds.add(node.id);
-    nodes.push(node);
-  }
-  const checkNodeRef = (value: string | undefined, attr: string, child: Element): void => {
-    if (value !== undefined && !nodeIds.has(value)) {
-      report(child.attrs.get(attr)?.offset ?? child.offset, `"${attr}" refers to unknown node "${value}"`);
+  const groupIds = new Set<string>();
+  const claim = (id: string, child: Element): boolean => {
+    if (!nodeIds.has(id) && !groupIds.has(id)) return true;
+    report(child.offset, `Duplicate node id "${id}"`);
+    return false;
+  };
+  const collect = (members: Element[], parent: string | undefined): void => {
+    for (const child of members) {
+      if (child.name === 'node') {
+        const node = buildNode(child, report);
+        if (!node || !claim(node.id, child)) continue;
+        nodeIds.add(node.id);
+        nodes.push(parent ? { ...node, group: parent } : node);
+      } else if (child.name === 'group') {
+        const group = buildGroup(child, report);
+        const inner = childElements(child, catalog.group ?? { attrs: {} }, report);
+        if (!group || !claim(group.id, child)) continue;
+        groupIds.add(group.id);
+        groups.push(parent ? { ...group, parent } : group);
+        if (!inner.some((c) => c.name === 'node' || c.name === 'group')) {
+          report(child.offset, '<group> needs at least one <node>');
+        }
+        collect(inner, group.id);
+      }
     }
   };
-  for (const child of children.filter((c) => c.name !== 'node')) {
+  collect(children, undefined);
+
+  const checkNodeRef = (value: string | undefined, attr: string, child: Element, allowGroups: boolean): void => {
+    if (value === undefined || nodeIds.has(value) || (allowGroups && groupIds.has(value))) return;
+    report(child.attrs.get(attr)?.offset ?? child.offset, `"${attr}" refers to unknown node "${value}"`);
+  };
+  for (const child of children.filter((c) => c.name !== 'node' && c.name !== 'group')) {
     const childSpec = catalog[child.name];
     if (!childSpec) continue;
     const a = readAttrs(child, childSpec, report);
-    checkNodeRef(a.from, 'from', child);
-    checkNodeRef(a.to, 'to', child);
+    if (child.name === 'drill') {
+      if (!child.selfClosing) report(child.offset, '<drill> must be self-closing: <drill node="a" topic="..." />');
+      const offset = child.attrs.get('node')?.offset ?? child.offset;
+      if (a.node !== undefined && !nodeIds.has(a.node)) {
+        report(
+          offset,
+          groupIds.has(a.node)
+            ? `"node" must name a <node>: "${a.node}" is a <group>, which zooms in by itself`
+            : `"node" refers to unknown node "${a.node}"`,
+        );
+      } else if (a.node !== undefined && drills.some((d) => d.node === a.node)) {
+        report(offset, `Node "${a.node}" already has a <drill>`);
+      }
+      const topic = checkText(a.topic ?? '', 'topic', limits.topicLength, child, report);
+      if (topic && !/[\p{L}\p{N}]/u.test(topic)) report(child.offset, '"topic" needs letters or digits');
+      if (a.node !== undefined && a.topic !== undefined) drills.push({ node: a.node, topic });
+      continue;
+    }
+    checkNodeRef(a.from, 'from', child, child.name === 'edge');
+    checkNodeRef(a.to, 'to', child, child.name === 'edge');
     const label = a.label === undefined ? undefined : checkText(a.label, 'label', limits.labelLength, child, report);
     if (child.name === 'edge') {
       if (!child.selfClosing) report(child.offset, '<edge> must be self-closing: <edge from="a" to="b" />');
@@ -211,14 +244,52 @@ function buildBlock(element: Element, ordinal: number, report: Report): ArchBloc
   }
 
   if (nodes.length === 0) report(element.offset, `<${element.name}> needs at least one <node>`);
-  if (nodes.length > limits.nodes) report(element.offset, `<${element.name}> has more than ${limits.nodes} nodes`);
+  if (nodes.length + groups.length > limits.nodes) {
+    report(element.offset, `<${element.name}> has more than ${limits.nodes} nodes and groups`);
+  }
   if (element.name === 'arch') {
     if (edges.length > limits.edges) report(element.offset, `<arch> has more than ${limits.edges} edges`);
-    return { type: 'arch', id, title, nodes, edges };
+    return { type: 'arch', id, title, nodes, groups, edges, drills };
   }
   if (steps.length === 0) report(element.offset, '<flow> needs at least one <step>');
   if (steps.length > limits.steps) report(element.offset, `<flow> has more than ${limits.steps} steps`);
-  return { type: 'flow', id, title, nodes, steps };
+  return { type: 'flow', id, title, nodes, steps, drills };
+}
+
+/** Child elements a tag allows; stray text and other tags are reported. */
+function childElements(element: Element, spec: TagSpec, report: Report): Element[] {
+  const children: Element[] = [];
+  for (const child of element.children) {
+    if (child.kind === 'text') {
+      if (child.text.trim()) report(child.offset, `Text is not allowed directly inside <${element.name}>`);
+      continue;
+    }
+    if (!spec.children?.includes(child.name)) {
+      const allowed = (spec.children ?? []).map((name) => `<${name}>`).join(', ');
+      report(child.offset, `<${child.name}> is not allowed inside <${element.name}>; use ${allowed}`);
+      continue;
+    }
+    children.push(child);
+  }
+  return children;
+}
+
+function buildGroup(element: Element, report: Report): SceneGroup | undefined {
+  const spec = catalog.group;
+  if (!spec) return undefined;
+  const a = readAttrs(element, spec, report);
+  if (element.selfClosing) report(element.offset, '<group> must contain <node> elements');
+  if (a.id === undefined || a.label === undefined) return undefined;
+  checkId(a.id, element, report);
+  const label = checkText(a.label, 'label', limits.labelLength, element, report);
+  return { id: a.id, label, kind: parseKind(a.kind, element, report) };
+}
+
+function parseKind(value: string | undefined, element: Element, report: Report): NodeKind {
+  if (value === undefined) return 'module';
+  if ((nodeKinds as readonly string[]).includes(value)) return value as NodeKind;
+  report(element.attrs.get('kind')?.offset ?? element.offset, `Unknown kind "${value}"; use ${nodeKinds.join(', ')}`);
+  return 'module';
 }
 
 function buildNode(element: Element, report: Report): SceneNode | undefined {
@@ -229,11 +300,7 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   if (a.id === undefined || a.label === undefined) return undefined;
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
-  let kind: NodeKind = 'module';
-  if (a.kind !== undefined) {
-    if ((nodeKinds as readonly string[]).includes(a.kind)) kind = a.kind as NodeKind;
-    else report(element.attrs.get('kind')?.offset ?? element.offset, `Unknown kind "${a.kind}"; use ${nodeKinds.join(', ')}`);
-  }
+  const kind = parseKind(a.kind, element, report);
   const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
   return { id: a.id, label, kind, ...(ref ? { ref } : {}) };
 }

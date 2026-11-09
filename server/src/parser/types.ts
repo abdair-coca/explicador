@@ -15,6 +15,23 @@ export interface SceneNode {
   label: string;
   kind: NodeKind;
   ref?: Ref;
+  /** Id of the enclosing <group>, if any. */
+  group?: string;
+}
+
+/** A box of nodes inside <arch>; the viewer shows it collapsed and zooms into it on click. */
+export interface SceneGroup {
+  id: string;
+  label: string;
+  kind: NodeKind;
+  /** Id of the enclosing <group>, if any. */
+  parent?: string;
+}
+
+/** A node that leads to a deeper scene, explained under `topic`. */
+export interface Drill {
+  node: string;
+  topic: string;
 }
 
 export interface ArchEdge {
@@ -42,7 +59,10 @@ export interface ArchBlock {
   id: string;
   title: string;
   nodes: SceneNode[];
+  groups: SceneGroup[];
+  /** Endpoints may be nodes or groups. */
   edges: ArchEdge[];
+  drills: Drill[];
 }
 
 export interface FlowBlock {
@@ -51,6 +71,7 @@ export interface FlowBlock {
   title: string;
   nodes: SceneNode[];
   steps: FlowStep[];
+  drills: Drill[];
 }
 
 export type Block = MarkdownBlock | ArchBlock | FlowBlock;

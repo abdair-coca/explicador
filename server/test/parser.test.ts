@@ -86,7 +86,7 @@ describe('parseExl: invalid documents', () => {
   it('rejects unknown tags at the top level and inside blocks', () => {
     assert.match(errorsOf('<script>alert(1)</script>')[0] ?? '', /^1:1 Unknown tag <script>/);
     const inside = errorsOf('<arch title="A">\n  <node id="a" label="A" />\n  <div />\n</arch>');
-    assert.deepEqual(inside, ['3:3 <div> is not allowed inside <arch>; use <node>, <edge>']);
+    assert.deepEqual(inside, ['3:3 <div> is not allowed inside <arch>; use <node>, <group>, <edge>, <drill>']);
   });
 
   it('rejects child tags outside a block', () => {
@@ -173,5 +173,80 @@ describe('parseExl: incomplete documents', () => {
   it('reports a literal "<" in narration', () => {
     const errors = errorsOf('<flow title="F">\n<node id="a" label="A" />\n<step from="a">a < b</step>\n</flow>');
     assert.match(errors[0] ?? '', /^3:18 Expected a tag name after "<"/);
+  });
+});
+
+describe('parseExl: groups and drills', () => {
+  const doc = [
+    '<arch id="a" title="Shop">',
+    '  <node id="form" label="Login form" kind="ui" />',
+    '  <group id="auth" label="Auth" kind="service">',
+    '    <node id="routes" label="Auth routes" ref="src/api/auth-routes.js" />',
+    '    <group id="core" label="Core">',
+    '      <node id="service" label="Auth service" />',
+    '    </group>',
+    '  </group>',
+    '  <edge from="form" to="routes" />',
+    '  <edge from="routes" to="core" label="calls" />',
+    '  <drill node="routes" topic="auth routes" />',
+    '</arch>',
+    '<flow title="F">',
+    '  <node id="x" label="X" />',
+    '  <step from="x">Does it.</step>',
+    '  <drill node="x" topic="x internals" />',
+    '</flow>',
+  ].join('\n');
+
+  it('nests nodes in groups and keeps drills', () => {
+    const result = parseExl(doc);
+    assert.ok(result.ok, result.ok ? '' : formatErrors(result.errors));
+    const arch = result.scene.blocks[0] as ArchBlock;
+    assert.deepEqual(arch.groups, [
+      { id: 'auth', label: 'Auth', kind: 'service' },
+      { id: 'core', label: 'Core', kind: 'module', parent: 'auth' },
+    ]);
+    assert.deepEqual(
+      arch.nodes.map((n) => [n.id, n.group]),
+      [
+        ['form', undefined],
+        ['routes', 'auth'],
+        ['service', 'core'],
+      ],
+    );
+    assert.deepEqual(arch.edges[1], { from: 'routes', to: 'core', label: 'calls' });
+    assert.deepEqual(arch.drills, [{ node: 'routes', topic: 'auth routes' }]);
+    assert.deepEqual((result.scene.blocks[1] as FlowBlock).drills, [{ node: 'x', topic: 'x internals' }]);
+    assert.deepEqual(result.refs, ['src/api/auth-routes.js']);
+  });
+
+  it('rejects bad groups and drills', () => {
+    const errors = errorsOf(
+      [
+        '<arch title="A">',
+        '  <node id="a" label="A" />',
+        '  <group id="g" label="G"></group>',
+        '  <group id="a" label="Dup"><node id="b" label="B" /></group>',
+        '  <drill node="g" topic="t" />',
+        '  <drill node="ghost" topic="t" />',
+        '  <drill node="a" topic="?" />',
+        '  <drill node="a" topic="again" />',
+        '</arch>',
+      ].join('\n'),
+    );
+    assert.deepEqual(errors, [
+      '3:3 <group> needs at least one <node>',
+      '4:3 Duplicate node id "a"',
+      '5:10 "node" must name a <node>: "g" is a <group>, which zooms in by itself',
+      '6:10 "node" refers to unknown node "ghost"',
+      '7:3 "topic" needs letters or digits',
+      '8:10 Node "a" already has a <drill>',
+    ]);
+  });
+
+  it('allows groups only in <arch> and steps only between nodes', () => {
+    assert.match(
+      errorsOf('<flow title="F"><node id="a" label="A" /><group id="g" label="G"><node id="b" label="B" /></group><step from="a">x</step></flow>')[0] ?? '',
+      /<group> is not allowed inside <flow>/,
+    );
   });
 });
