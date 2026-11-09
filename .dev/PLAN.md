@@ -68,7 +68,8 @@ explicador/
   - Comparison criteria: delivered when Claude is idle and when busy; visible in the terminal; latency; tokens per click; startup friction; robustness (timeouts, two open sessions, restarts); security.
   - (a) and (c) need an interactive session: guided manual test by the user, about 10 minutes.
   - Criterion: `docs/decisions/interactivity.md` with the measured table and a recommendation; the user approves it (checkpoint). The spike's typecheck passes.
-- [ ] **F1. MVP.** EXL parser + validation, `ensure_index`, cache with invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, development mode, `/explicador:explain`, skill, `docs/EXL.md`, sample project in `examples/`.
+- [x] **F1. MVP.** Done 2026-11-09 in an unattended cloud session; decisions taken there are listed under "Decisions pending user review".
+  - Original scope: EXL parser + validation, `ensure_index`, cache with invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, development mode, `/explicador:explain`, skill, `docs/EXL.md`, sample project in `examples/`.
   - Criterion: in the sample project, `/explicador:explain login` produces an animated scene; repeating it unchanged serves it from cache without reading code; editing a referenced file marks it stale. Parser tests (valid, invalid, incomplete) and cache-invalidation tests pass; lint passes.
 - [ ] **F2. Interactivity and zoom.** `<group>`, `<drill>`, zoom transitions, breadcrumbs, and click delivery through the plugin monitor chosen in F0 (per-session runtime file in `.explicador/`, click messages built from scene data). Remove `spikes/interactivity/` once this works.
   - Criterion: defined when F2 starts, from the F0 decision.
@@ -76,6 +77,28 @@ explicador/
   - Criterion: defined when F3 starts.
 - [ ] **F4. More views.** `<data>` and `<state>`.
   - Criterion: defined when F4 starts.
+
+## Decisions pending user review
+
+Taken during the unattended F1 session (2026-11-09) as the most conservative option consistent with this plan. Each can be reverted.
+
+1. **Commits and pushes per part.** The session instructions asked for one commit per finished part (parser, cache, index, findings, viewer + server, plugin + skill, close) pushed to `claude/phase-1-mvp-implementation-aua4cb`, overriding "one commit per phase, no push" for this phase. No attribution lines, per `AGENTS.md`.
+2. **EXL catalog for F1.** `<arch title id?>` with `<node>`/`<edge>`; `<flow title id?>` with `<node>`/`<step from to? label? ref?>narration</step>`. A step without `to` is an action inside `from`. Node `kind` is a closed set (`actor, ui, service, module, function, store, external`). Narration is required on every step; `title` is required on blocks. Limits: 60 nodes, 120 edges, 100 steps per block. Spec in `docs/EXL.md`.
+3. **Tags only at line start.** Scene tags are recognized at the start of a line outside code fences; any other tag there (including HTML) is an error, while inline `<x>` in prose stays Markdown and is rendered without raw HTML.
+4. **Refs must exist.** `render_scene` refuses a scene whose refs point to missing files or outside the project, so the cache never tracks a hallucinated path. `add_finding` applies the same rule. Paths use forward slashes (Windows backslashes are rejected with a message).
+5. **Cache key.** Topics are slugged (`Login flow` → `login-flow`, accents removed); the agent is told to reuse short stable topics. Hashes are SHA-256 of raw bytes, so a pure line-ending change marks a scene stale.
+6. **Tools.** Four MCP tools: `ensure_index`, `show_scene` (fresh → shown + EXL returned, stale → shown with a warning + changed files + EXL, missing), `render_scene` (validate, cache, show), `add_finding`. `ensure_index` returns the tree and import graph inline (up to ~24k characters) besides writing them to `.explicador/index/`.
+7. **Index rules.** Skips dot-folders, common dependency/build folders (`node_modules`, `vendor`, `dist`, `build`, `out`, `target`, `obj`, `coverage`, `__pycache__`, `venv`, …) and simple names/`*.ext` lines from the root `.gitignore`; up to 5000 files; grep only files under 512 KB with a known extension. Relative imports are resolved to project files.
+8. **Findings format.** `## YYYY-MM-DD · <topic>: <title>`, optional `Refs:` line, body; a header is added when the file is new; an identical finding is skipped. Findings are written in English (plan language rule); scene text follows the user's language.
+9. **"Development mode"** was read as: run from a checkout with `claude --plugin-dir .` against built files (`npm run build`), `npm run dev -w server|viewer` watch builds, `npm run preview -- <file.exl.md>` to serve an EXL file with live reload and no Claude, and Vite dev server proxying `/api` via `EXPLICADOR_SERVER`. The root `dev` script was dropped because npm runs workspace scripts one after another.
+10. **Viewer details.** shadcn/ui components were hand-written in shadcn style (`Button`, `Badge`) instead of using the shadcn CLI. The viewer opens a tab only when no tab is connected; later scenes update the open tab over Server-Sent Events. The bridge serves a CSP and `Referrer-Policy: no-referrer`. `EXPLICADOR_NO_BROWSER=1` disables opening tabs. Flow playback autoplays unless the user prefers reduced motion.
+11. **Tests without new dependencies.** `npm test` uses `node --test` on the TypeScript sources (type stripping), including an end-to-end stdio test; no Vitest. The viewer has no unit tests yet (checked with a Playwright screenshot during the session).
+12. **Node version.** The cloud session had Node 22.23; everything ran there (type stripping is on by default since 22.18). README now says 22.18+ (24+ recommended) instead of 24+.
+
+Open points:
+- The root `.mcp.json` is the plugin's MCP config; opening Claude Code in this repo without `--plugin-dir` also offers it as a project server, where `${CLAUDE_PLUGIN_ROOT}` is not set and it fails to start. Decline it, or move plugin MCP config into `plugin.json` later.
+- Installing from a marketplace is not supported yet: `server/dist`, `viewer/dist` and `node_modules` are not committed, so an installed copy would need a build or dependency step (e.g. a SessionStart hook into `${CLAUDE_PLUGIN_DATA}`). `claude plugin validate .` warns that the README has no install line.
+- Plugin docs were not re-fetched in this session: the plan records them as verified on 2026-11-09, the same day.
 
 ## Commit rules
 - One commit per finished phase with `my-commit` (author abdair-coca, no `Co-Authored-By`), no push.
@@ -87,7 +110,7 @@ explicador/
 | Phase | Status |
 |---|---|
 | F0 | done (2026-11-09) |
-| F1 | pending |
+| F1 | done (2026-11-09), decisions pending user review |
 | F2 | pending |
 | F3 | pending |
 | F4 | pending |
