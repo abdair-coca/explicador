@@ -5,11 +5,15 @@
   "description": "Claude Code plugin that explains software systems with animated, interactive diagrams.",
   "type": "module",
   "workspaces": [
+    "server",
     "spikes/interactivity"
   ],
   "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "test": "npm test --workspaces --if-present"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

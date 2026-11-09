@@ -1,0 +1,317 @@
+// EXL parser: Markdown with a closed catalog of JSX-like scene tags.
+// Tags are recognized only at the start of a line outside code fences; everything else is Markdown.
+import { readElement, ExlSyntaxError, type Element } from './reader.ts';
+import {
+  nodeKinds,
+  type ArchBlock,
+  type ArchEdge,
+  type Block,
+  type ExlError,
+  type FlowBlock,
+  type FlowStep,
+  type NodeKind,
+  type ParseResult,
+  type Ref,
+  type SceneNode,
+} from './types.ts';
+
+interface TagSpec {
+  attrs: Record<string, 'required' | 'optional'>;
+  children?: readonly string[];
+  /** Whether the tag holds text (narration) instead of being self-closing. */
+  text?: boolean;
+}
+
+export const catalog: Record<string, TagSpec> = {
+  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'edge'] },
+  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step'] },
+  node: { attrs: { id: 'required', label: 'required', kind: 'optional', ref: 'optional' } },
+  edge: { attrs: { from: 'required', to: 'required', label: 'optional' } },
+  step: { attrs: { from: 'required', to: 'optional', label: 'optional', ref: 'optional' }, text: true },
+};
+
+const topLevelTags = ['arch', 'flow'];
+
+export const limits = {
+  idLength: 40,
+  labelLength: 80,
+  titleLength: 120,
+  narrationLength: 600,
+  nodes: 60,
+  edges: 120,
+  steps: 100,
+} as const;
+
+const ID = new RegExp(`^[A-Za-z][A-Za-z0-9_-]{0,${limits.idLength - 1}}$`);
+const REF = /^([^:\s]+?)(?::(\d+)(?:-(\d+))?)?$/;
+// A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
+const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+
+class Locator {
+  private readonly lineStarts: number[] = [0];
+
+  constructor(src: string) {
+    for (let i = 0; i < src.length; i += 1) if (src[i] === '\n') this.lineStarts.push(i + 1);
+  }
+
+  error(offset: number, message: string): ExlError {
+    let low = 0;
+    let high = this.lineStarts.length - 1;
+    while (low < high) {
+      const mid = Math.ceil((low + high) / 2);
+      if ((this.lineStarts[mid] ?? 0) <= offset) low = mid;
+      else high = mid - 1;
+    }
+    return { line: low + 1, column: offset - (this.lineStarts[low] ?? 0) + 1, message };
+  }
+}
+
+export function parseExl(source: string): ParseResult {
+  const src = source.replace(/\r\n?/g, '\n');
+  const at = new Locator(src);
+  const errors: ExlError[] = [];
+  const blocks: Block[] = [];
+  let markdownStart = 0;
+  let pos = 0;
+  let fence: string | undefined;
+
+  const flushMarkdown = (end: number): void => {
+    const text = src.slice(markdownStart, end).trim();
+    if (text) blocks.push({ type: 'markdown', text });
+  };
+
+  while (pos < src.length) {
+    const newline = src.indexOf('\n', pos);
+    const lineEnd = newline === -1 ? src.length : newline;
+    const line = src.slice(pos, lineEnd);
+    const fenceMatch = FENCE.exec(line)?.[1];
+    const tag = fence || fenceMatch ? undefined : LINE_TAG.exec(line);
+
+    if (fence) {
+      if (fenceMatch && fenceMatch[0] === fence[0] && fenceMatch.length >= fence.length) fence = undefined;
+    } else if (fenceMatch) {
+      fence = fenceMatch;
+    } else if (tag) {
+      const [, indent = '', closing, name = ''] = tag;
+      const tagStart = pos + indent.length;
+      if (closing) {
+        errors.push(at.error(tagStart, `Unexpected closing tag </${name}>`));
+        return { ok: false, errors };
+      }
+      if (!topLevelTags.includes(name)) {
+        const message = catalog[name]
+          ? `<${name}> must be inside <arch> or <flow>`
+          : `Unknown tag <${name}>. EXL top-level tags: ${topLevelTags.join(', ')}`;
+        errors.push(at.error(tagStart, message));
+        return { ok: false, errors };
+      }
+      flushMarkdown(pos);
+      let element: Element;
+      let end: number;
+      try {
+        [element, end] = readElement(src, tagStart);
+      } catch (error) {
+        if (!(error instanceof ExlSyntaxError)) throw error;
+        errors.push(at.error(error.offset, error.message));
+        return { ok: false, errors };
+      }
+      const block = buildBlock(element, blocks.length + 1, (offset, message) => errors.push(at.error(offset, message)));
+      if (block) blocks.push(block);
+      markdownStart = end;
+      pos = end;
+      continue;
+    }
+    pos = lineEnd + 1;
+  }
+  flushMarkdown(src.length);
+
+  checkBlockIds(blocks, errors);
+  if (!blocks.some((block) => block.type !== 'markdown') && errors.length === 0) {
+    errors.push({ line: 1, column: 1, message: 'A scene needs at least one <arch> or <flow>' });
+  }
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, scene: { blocks }, refs: collectRefs(blocks) };
+}
+
+type Report = (offset: number, message: string) => void;
+
+function buildBlock(element: Element, ordinal: number, report: Report): ArchBlock | FlowBlock | undefined {
+  const spec = catalog[element.name];
+  if (!spec) return undefined;
+  const attrs = readAttrs(element, spec, report);
+  if (element.selfClosing) report(element.offset, `<${element.name}> must have children`);
+
+  const id = attrs.id ?? `${element.name}-${ordinal}`;
+  if (attrs.id !== undefined) checkId(attrs.id, element, report);
+  const title = checkText(attrs.title ?? '', 'title', limits.titleLength, element, report);
+
+  const nodes: SceneNode[] = [];
+  const edges: ArchEdge[] = [];
+  const steps: FlowStep[] = [];
+  const children: Element[] = [];
+  for (const child of element.children) {
+    if (child.kind === 'text') {
+      if (child.text.trim()) report(child.offset, `Text is not allowed directly inside <${element.name}>`);
+      continue;
+    }
+    if (!spec.children?.includes(child.name)) {
+      const allowed = (spec.children ?? []).map((name) => `<${name}>`).join(', ');
+      report(child.offset, `<${child.name}> is not allowed inside <${element.name}>; use ${allowed}`);
+      continue;
+    }
+    children.push(child);
+  }
+
+  const nodeIds = new Set<string>();
+  for (const child of children.filter((c) => c.name === 'node')) {
+    const node = buildNode(child, report);
+    if (!node) continue;
+    if (nodeIds.has(node.id)) report(child.offset, `Duplicate node id "${node.id}"`);
+    nodeIds.add(node.id);
+    nodes.push(node);
+  }
+  const checkNodeRef = (value: string | undefined, attr: string, child: Element): void => {
+    if (value !== undefined && !nodeIds.has(value)) {
+      report(child.attrs.get(attr)?.offset ?? child.offset, `"${attr}" refers to unknown node "${value}"`);
+    }
+  };
+  for (const child of children.filter((c) => c.name !== 'node')) {
+    const childSpec = catalog[child.name];
+    if (!childSpec) continue;
+    const a = readAttrs(child, childSpec, report);
+    checkNodeRef(a.from, 'from', child);
+    checkNodeRef(a.to, 'to', child);
+    const label = a.label === undefined ? undefined : checkText(a.label, 'label', limits.labelLength, child, report);
+    if (child.name === 'edge') {
+      if (!child.selfClosing) report(child.offset, '<edge> must be self-closing: <edge from="a" to="b" />');
+      edges.push({ from: a.from ?? '', to: a.to ?? '', ...(label ? { label } : {}) });
+    } else {
+      const narration = child.children
+        .map((c) => {
+          if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <step>`);
+          return c.kind === 'text' ? c.text : '';
+        })
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!narration) report(child.offset, '<step> needs narration text: <step from="a" to="b">What happens.</step>');
+      else if (narration.length > limits.narrationLength) {
+        report(child.offset, `Step narration is longer than ${limits.narrationLength} characters`);
+      }
+      const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
+      steps.push({
+        from: a.from ?? '',
+        ...(a.to ? { to: a.to } : {}),
+        ...(label ? { label } : {}),
+        ...(ref ? { ref } : {}),
+        narration,
+      });
+    }
+  }
+
+  if (nodes.length === 0) report(element.offset, `<${element.name}> needs at least one <node>`);
+  if (nodes.length > limits.nodes) report(element.offset, `<${element.name}> has more than ${limits.nodes} nodes`);
+  if (element.name === 'arch') {
+    if (edges.length > limits.edges) report(element.offset, `<arch> has more than ${limits.edges} edges`);
+    return { type: 'arch', id, title, nodes, edges };
+  }
+  if (steps.length === 0) report(element.offset, '<flow> needs at least one <step>');
+  if (steps.length > limits.steps) report(element.offset, `<flow> has more than ${limits.steps} steps`);
+  return { type: 'flow', id, title, nodes, steps };
+}
+
+function buildNode(element: Element, report: Report): SceneNode | undefined {
+  const spec = catalog.node;
+  if (!spec) return undefined;
+  const a = readAttrs(element, spec, report);
+  if (!element.selfClosing) report(element.offset, '<node> must be self-closing: <node id="a" label="A" />');
+  if (a.id === undefined || a.label === undefined) return undefined;
+  checkId(a.id, element, report);
+  const label = checkText(a.label, 'label', limits.labelLength, element, report);
+  let kind: NodeKind = 'module';
+  if (a.kind !== undefined) {
+    if ((nodeKinds as readonly string[]).includes(a.kind)) kind = a.kind as NodeKind;
+    else report(element.attrs.get('kind')?.offset ?? element.offset, `Unknown kind "${a.kind}"; use ${nodeKinds.join(', ')}`);
+  }
+  const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
+  return { id: a.id, label, kind, ...(ref ? { ref } : {}) };
+}
+
+function readAttrs(element: Element, spec: TagSpec, report: Report): Record<string, string | undefined> {
+  const values: Record<string, string | undefined> = {};
+  for (const [name, attr] of element.attrs) {
+    if (!(name in spec.attrs)) {
+      const allowed = Object.keys(spec.attrs).join(', ');
+      report(attr.offset, `Unknown attribute "${name}" on <${element.name}>; allowed: ${allowed}`);
+      continue;
+    }
+    values[name] = attr.value;
+  }
+  for (const [name, need] of Object.entries(spec.attrs)) {
+    if (need === 'required' && values[name] === undefined) {
+      report(element.offset, `<${element.name}> is missing the "${name}" attribute`);
+    }
+  }
+  return values;
+}
+
+function checkId(id: string, element: Element, report: Report): void {
+  if (!ID.test(id)) {
+    report(
+      element.attrs.get('id')?.offset ?? element.offset,
+      `Invalid id "${id}": start with a letter, then letters, digits, "-" or "_" (max ${limits.idLength})`,
+    );
+  }
+}
+
+function checkText(value: string, attr: string, max: number, element: Element, report: Report): string {
+  const offset = element.attrs.get(attr)?.offset ?? element.offset;
+  const text = value.trim();
+  if (/[\r\n]/.test(text)) report(offset, `"${attr}" must be a single line`);
+  else if (!text) report(offset, `"${attr}" must not be empty`);
+  else if (text.length > max) report(offset, `"${attr}" is longer than ${max} characters`);
+  return text;
+}
+
+export function parseRefString(value: string): Ref | string {
+  const m = REF.exec(value.trim());
+  if (!m?.[1]) return 'expected "path", "path:line" or "path:start-end"';
+  const path = m[1].replace(/^\.\//, '');
+  if (path.includes('\\')) return 'use forward slashes in paths';
+  if (path.startsWith('/') || /^[A-Za-z]:/.test(path)) return 'use a path relative to the project root';
+  if (path.split('/').some((part) => part === '..' || part === '')) return 'the path must stay inside the project';
+  const start = m[2] === undefined ? undefined : Number(m[2]);
+  const end = m[3] === undefined ? undefined : Number(m[3]);
+  if (start !== undefined && start < 1) return 'line numbers start at 1';
+  if (start !== undefined && end !== undefined && end < start) return 'the end line is before the start line';
+  return { path, ...(start !== undefined ? { start } : {}), ...(end !== undefined ? { end } : {}) };
+}
+
+function parseRef(value: string, element: Element, report: Report): Ref | undefined {
+  const ref = parseRefString(value);
+  if (typeof ref === 'string') {
+    report(element.attrs.get('ref')?.offset ?? element.offset, `Invalid ref "${value}": ${ref}`);
+    return undefined;
+  }
+  return ref;
+}
+
+function checkBlockIds(blocks: Block[], errors: ExlError[]): void {
+  const seen = new Set<string>();
+  for (const block of blocks) {
+    if (block.type === 'markdown') continue;
+    if (seen.has(block.id)) errors.push({ line: 1, column: 1, message: `Duplicate scene id "${block.id}"` });
+    seen.add(block.id);
+  }
+}
+
+function collectRefs(blocks: Block[]): string[] {
+  const paths = new Set<string>();
+  for (const block of blocks) {
+    if (block.type === 'markdown') continue;
+    for (const node of block.nodes) if (node.ref) paths.add(node.ref.path);
+    if (block.type === 'flow') for (const step of block.steps) if (step.ref) paths.add(step.ref.path);
+  }
+  return [...paths].sort();
+}
