@@ -1,6 +1,7 @@
 // SVG rendering of a laid-out scene. Highlighting and the moving token are driven by props.
 import { useId } from 'react';
 import type { Layout, LaidEdge, LaidNode } from '../layout/elk';
+import type { ViewNode } from '../layout/levels';
 import { cn } from '@/lib/utils';
 
 export interface DiagramProps {
@@ -19,6 +20,8 @@ export interface DiagramProps {
   ariaLabel: string;
   /** Called when a node, a group or a drill is clicked (or activated with the keyboard). */
   onNodeClick?: (id: string, element: Element) => void;
+  /** Which nodes take clicks; by default every node that is not context. */
+  isClickable?: (node: ViewNode) => boolean;
 }
 
 export function Diagram(props: DiagramProps) {
@@ -67,7 +70,9 @@ export function Diagram(props: DiagramProps) {
             active={activeNodes?.has(node.node.id) ?? false}
             dimmed={focus && !activeNodes?.has(node.node.id)}
             pulse={props.pulseNode === node.node.id && !reducedMotion}
-            {...(props.onNodeClick && node.node.role !== 'context' ? { onClick: props.onNodeClick } : {})}
+            {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
+              ? { onClick: props.onNodeClick }
+              : {})}
           />
         ))}
       </g>

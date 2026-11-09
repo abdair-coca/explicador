@@ -142,3 +142,8 @@ body {
 .prose-exl pre { background: var(--muted); border-radius: 8px; padding: 0.8em 1em; overflow-x: auto; }
 .prose-exl pre code { background: none; padding: 0; }
 .prose-exl blockquote { border-left: 3px solid var(--border); padding-left: 1em; color: var(--muted-foreground); }
+
+/* Presentation slides: larger prose. */
+.prose-slide { font-size: 1.35rem; }
+.prose-slide h1 { font-size: 2.4rem; }
+.prose-slide h2 { font-size: 1.8rem; }

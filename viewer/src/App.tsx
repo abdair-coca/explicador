@@ -6,6 +6,7 @@ import { post, useScene, type ClickReply, type Connection } from './api';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
+import { Presenter } from './presentation/Presenter';
 import { cn } from '@/lib/utils';
 
 const connectionText: Record<Connection, string> = {
@@ -23,6 +24,7 @@ export function App() {
   const { scene, connection } = useScene();
   const [notice, setNotice] = useState<Notice>();
   const [transition, setTransition] = useState<Transition>();
+  const [presenting, setPresenting] = useState(false);
   const main = useRef<HTMLElement>(null);
   const shown = useRef<number | undefined>(undefined);
 
@@ -111,7 +113,12 @@ export function App() {
               </Badge>
             </nav>
           )}
-          <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+          {scene && (
+            <Button variant="outline" size="sm" className="ml-auto" onClick={() => setPresenting(true)}>
+              ▶ Present
+            </Button>
+          )}
+          <span className={cn('flex items-center gap-2 text-xs text-muted-foreground', !scene && 'ml-auto')}>
             <span
               className={cn(
                 'h-2 w-2 rounded-full',
@@ -144,6 +151,7 @@ export function App() {
       <main ref={main} className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         {scene ? <Scene scene={scene} onDrill={drill} /> : <Empty />}
       </main>
+      {scene && presenting && <Presenter key={scene.version} scene={scene} onExit={() => setPresenting(false)} />}
     </div>
   );
 }

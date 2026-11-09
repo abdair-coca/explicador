@@ -57,7 +57,7 @@ function LayoutState(props: { layout: Layout | Error | undefined }) {
 
 type Zoom = { direction: 'in'; from: Box | undefined } | { direction: 'out'; focus: string } | undefined;
 
-export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill: DrillHandler }) {
+export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: DrillHandler | undefined }) {
   // Open groups, outermost first; empty at the top level.
   const [path, setPath] = useState<string[]>([]);
   const [zoom, setZoom] = useState<Zoom>();
@@ -85,7 +85,7 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill: Drill
       setReplay((r) => r + 1);
       return;
     }
-    onDrill(block.id, id, element);
+    onDrill?.(block.id, id, element);
   };
   const goUp = (depth: number): void => {
     const focus = path[depth];
@@ -143,6 +143,7 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill: Drill
               revealKey={replay}
               ariaLabel={`Architecture diagram: ${block.title}`}
               onNodeClick={clickNode}
+              isClickable={(node) => node.role === 'group' || onDrill !== undefined}
             />
           ) : (
             <LayoutState layout={layout} />
@@ -157,28 +158,56 @@ export function formatRef(ref: Ref): string {
   return `${ref.path}${ref.start ? `:${ref.start}${ref.end ? `-${ref.end}` : ''}` : ''}`;
 }
 
-export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill: DrillHandler }) {
-  // One edge per ordered pair of participants that talk to each other.
-  const edges = useMemo(() => {
-    const seen = new Map<string, EdgeInput>();
-    for (const step of block.steps) {
-      if (!step.to || step.to === step.from) continue;
-      const id = `${step.from}->${step.to}`;
-      if (!seen.has(id)) seen.set(id, { id, from: step.from, to: step.to });
-    }
-    return [...seen.values()];
-  }, [block]);
+/** Flow edges: one per ordered pair of participants that talk to each other. */
+function flowEdges(block: FlowBlock): EdgeInput[] {
+  const seen = new Map<string, EdgeInput>();
+  for (const step of block.steps) {
+    if (!step.to || step.to === step.from) continue;
+    const id = `${step.from}->${step.to}`;
+    if (!seen.has(id)) seen.set(id, { id, from: step.from, to: step.to });
+  }
+  return [...seen.values()];
+}
+
+/** The diagram of a flow with one step highlighted; used inline and in presentation mode. */
+export function FlowDiagram(props: { block: FlowBlock; index: number; onDrill?: DrillHandler | undefined }) {
+  const { block, index, onDrill } = props;
+  const edges = useMemo(() => flowEdges(block), [block]);
   const nodes = useMemo(() => withDrills(block.nodes, block.drills), [block]);
   const layout = useLayout(nodes, edges);
+  const reducedMotion = useReducedMotion();
+  const step = block.steps[index];
+  const activeNodes = useMemo(() => new Set(step ? [step.from, step.to ?? step.from] : []), [step]);
+  const activeEdge = step?.to && step.to !== step.from ? `${step.from}->${step.to}` : undefined;
+  if (!layout || layout instanceof Error) return <LayoutState layout={layout} />;
+  return (
+    <Diagram
+      layout={layout}
+      activeNodes={activeNodes}
+      {...(activeEdge ? { activeEdge } : {})}
+      {...(step?.label ? { activeLabel: step.label } : {})}
+      {...(step && !activeEdge ? { pulseNode: step.from } : {})}
+      tokenKey={index}
+      reducedMotion={reducedMotion}
+      ariaLabel={`Flow diagram: ${block.title}`}
+      {...(onDrill ? { onNodeClick: (id: string, element: Element) => onDrill(block.id, id, element) } : {})}
+    />
+  );
+}
+
+export function stepRoute(block: FlowBlock, index: number): string {
+  const step = block.steps[index];
+  if (!step) return '';
+  const label = (id: string): string => block.nodes.find((n) => n.id === id)?.label ?? id;
+  return `${label(step.from)}${step.to && step.to !== step.from ? ` → ${label(step.to)}` : ''}${step.label ? ` · ${step.label}` : ''}`;
+}
+
+export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill?: DrillHandler | undefined }) {
   const reducedMotion = useReducedMotion();
   const durations = useMemo(() => block.steps.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
   const step = block.steps[playback.index];
   const total = block.steps.length;
-
-  const activeNodes = useMemo(() => new Set(step ? [step.from, step.to ?? step.from] : []), [step]);
-  const activeEdge = step?.to && step.to !== step.from ? `${step.from}->${step.to}` : undefined;
-  const nodeLabel = (id: string | undefined): string => block.nodes.find((n) => n.id === id)?.label ?? id ?? '';
 
   return (
     <SceneFrame
@@ -199,21 +228,7 @@ export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill: Drill
       }
     >
       <div className="p-4">
-        {layout && !(layout instanceof Error) ? (
-          <Diagram
-            layout={layout}
-            activeNodes={activeNodes}
-            {...(activeEdge ? { activeEdge } : {})}
-            {...(step?.label ? { activeLabel: step.label } : {})}
-            {...(step && !activeEdge ? { pulseNode: step.from } : {})}
-            tokenKey={playback.index}
-            reducedMotion={reducedMotion}
-            ariaLabel={`Flow diagram: ${block.title}`}
-            onNodeClick={(id, element) => onDrill(block.id, id, element)}
-          />
-        ) : (
-          <LayoutState layout={layout} />
-        )}
+        <FlowDiagram block={block} index={playback.index} onDrill={onDrill} />
       </div>
       {step && (
         <div className="border-t border-border px-4 py-3" aria-live="polite">
@@ -221,11 +236,7 @@ export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill: Drill
             <span className="font-semibold text-active">
               Step {playback.index + 1} of {total}
             </span>
-            <span>
-              {nodeLabel(step.from)}
-              {step.to && step.to !== step.from ? ` → ${nodeLabel(step.to)}` : ''}
-              {step.label ? ` · ${step.label}` : ''}
-            </span>
+            <span>{stepRoute(block, playback.index)}</span>
             {step.ref && <code className="rounded bg-muted px-1.5 py-0.5">{formatRef(step.ref)}</code>}
           </div>
           <p className="text-[15px] leading-relaxed">{step.narration}</p>
