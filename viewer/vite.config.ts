@@ -10,6 +10,12 @@ const server = process.env.EXPLICADOR_SERVER;
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  build: { outDir: 'dist', emptyOutDir: true, chunkSizeWarningLimit: 2500 },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 2500,
+    // The font goes inside the CSS so exported scenes stay one file that loads nothing.
+    assetsInlineLimit: (file) => (file.endsWith('.woff2') ? true : undefined),
+  },
   server: server ? { proxy: { '/api': { target: server, changeOrigin: true } } } : {},
 });

@@ -1,11 +1,13 @@
-// <arch> and <flow> scenes: layout, reveal animation and step playback.
+// <arch> and <flow> scenes: layout, reveal animation and step playback; shared scene chrome.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ArchBlock, FlowBlock, Ref } from '../../../server/src/scene.ts';
-import { stepDuration, usePlayback, useReducedMotion } from '../animation/playback';
+import { stepDuration, usePlayback, useReducedMotion, type Playback } from '../animation/playback';
 import { boxWithin, zoomIn, zoomOut, type Box } from '../animation/zoom';
 import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
 import { archLevel, withDrills, type ViewNode } from '../layout/levels';
 import { Diagram } from './Diagram';
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +30,7 @@ export function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error
   return layout;
 }
 
+/** A Titi information card holding one scene block. */
 export function SceneFrame(props: {
   kind: string;
   title: React.ReactNode;
@@ -35,13 +38,13 @@ export function SceneFrame(props: {
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{props.kind}</span>
-          <h2 className="flex min-w-0 flex-wrap items-baseline gap-1 text-base font-semibold">{props.title}</h2>
+    <section className="rounded-2xl border border-border-soft bg-card shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-3.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <Badge>{props.kind}</Badge>
+          <h2 className="flex min-w-0 flex-wrap items-baseline gap-1 text-lg font-extrabold tracking-tight">{props.title}</h2>
         </div>
-        <div className="flex items-center gap-1">{props.actions}</div>
+        <div className="flex items-center gap-2">{props.actions}</div>
       </header>
       {props.children}
     </section>
@@ -50,9 +53,82 @@ export function SceneFrame(props: {
 
 export function LayoutState(props: { layout: Layout | Error | undefined }) {
   if (props.layout instanceof Error) {
-    return <p className="p-6 text-sm text-red-600">Layout failed: {props.layout.message}</p>;
+    return <p className="p-6 text-sm font-bold text-red-600">Layout failed: {props.layout.message}</p>;
   }
-  return <p className="p-6 text-sm text-muted-foreground">Laying out…</p>;
+  return <div className="m-4 h-56 animate-pulse rounded-xl bg-muted" aria-label="Laying out" />;
+}
+
+export function ReplayButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button variant="ghost" size="sm" onClick={onClick} aria-label="Replay animation">
+      <ReplayIcon size={16} />
+      Replay
+    </Button>
+  );
+}
+
+/** Previous, play or pause, next. */
+export function StepControls({ playback }: { playback: Playback }) {
+  return (
+    <>
+      <Button size="icon-sm" onClick={playback.prev} disabled={playback.index === 0} aria-label="Previous step">
+        <PrevIcon size={16} />
+      </Button>
+      <Button variant="primary" size="sm" onClick={playback.toggle} aria-label={playback.playing ? 'Pause' : 'Play'}>
+        {playback.playing ? <PauseIcon size={16} /> : playback.atEnd ? <ReplayIcon size={16} /> : <PlayIcon size={16} />}
+        {playback.playing ? 'Pause' : playback.atEnd ? 'Replay' : 'Play'}
+      </Button>
+      <Button size="icon-sm" onClick={playback.next} disabled={playback.atEnd} aria-label="Next step">
+        <NextIcon size={16} />
+      </Button>
+    </>
+  );
+}
+
+/** The current step: where it goes, its code ref and its narration. */
+export function StepNarration(props: { index: number; total: number; route: string; refText?: string | undefined; narration: string }) {
+  return (
+    <div className="border-t border-border-soft px-5 py-4" aria-live="polite">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <Badge variant="step">
+          Step {props.index + 1} of {props.total}
+        </Badge>
+        <span className="text-sm font-bold text-muted-foreground">{props.route}</span>
+        {props.refText && (
+          <code className="rounded-lg bg-subtle px-2 py-0.5 font-mono text-xs font-semibold text-foreground">{props.refText}</code>
+        )}
+      </div>
+      <p key={props.index} className="animate-fade-up max-w-3xl text-lg font-semibold leading-relaxed">
+        {props.narration}
+      </p>
+    </div>
+  );
+}
+
+/** One segment per step; done steps fill yellow, the current one is darker. */
+export function StepProgress(props: { index: number; labels: string[]; onPick: (index: number) => void }) {
+  return (
+    <ol className="flex gap-1.5 border-t border-border-soft px-5 py-2" aria-label="Steps">
+      {props.labels.map((label, i) => (
+        <li key={i} className="flex-1">
+          <button
+            type="button"
+            onClick={() => props.onPick(i)}
+            className="group flex h-7 w-full items-center"
+            aria-label={`Step ${i + 1}: ${label}`}
+            aria-current={i === props.index ? 'step' : undefined}
+          >
+            <span
+              className={cn(
+                'h-2.5 w-full rounded-full transition-colors duration-300 group-hover:bg-primary-hover',
+                i < props.index ? 'bg-primary' : i === props.index ? 'bg-primary-dark' : 'bg-muted',
+              )}
+            />
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 type Zoom = { direction: 'in'; from: Box | undefined } | { direction: 'out'; focus: string } | undefined;
@@ -104,7 +180,7 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: Dril
           block.title
         ) : (
           <nav aria-label="Zoom levels" className="flex flex-wrap items-baseline gap-1">
-            <button type="button" className="text-primary hover:underline" onClick={() => goUp(0)}>
+            <button type="button" className="font-extrabold text-link hover:underline active:scale-[0.96]" onClick={() => goUp(0)}>
               {block.title}
             </button>
             {path.map((id, i) => (
@@ -113,7 +189,7 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: Dril
                 {i === path.length - 1 ? (
                   <span aria-current="location">{groupLabel(id)}</span>
                 ) : (
-                  <button type="button" className="text-primary hover:underline" onClick={() => goUp(i + 1)}>
+                  <button type="button" className="font-extrabold text-link hover:underline active:scale-[0.96]" onClick={() => goUp(i + 1)}>
                     {groupLabel(id)}
                   </button>
                 )}
@@ -125,13 +201,12 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: Dril
       actions={
         <>
           {path.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => goUp(path.length - 1)} aria-label="Zoom out">
-              ⤡ Zoom out
+            <Button size="sm" onClick={() => goUp(path.length - 1)} aria-label="Zoom out">
+              <ZoomOutIcon size={16} />
+              Zoom out
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setReplay((r) => r + 1)} aria-label="Replay animation">
-            ↻ Replay
-          </Button>
+          <ReplayButton onClick={() => setReplay((r) => r + 1)} />
         </>
       }
     >
@@ -158,13 +233,15 @@ export function formatRef(ref: Ref): string {
   return `${ref.path}${ref.start ? `:${ref.start}${ref.end ? `-${ref.end}` : ''}` : ''}`;
 }
 
-/** Flow edges: one per ordered pair of participants that talk to each other. */
+/** Flow edges: one per ordered pair of participants that talk, with room for the longest step label. */
 function flowEdges(block: FlowBlock): EdgeInput[] {
   const seen = new Map<string, EdgeInput>();
   for (const step of block.steps) {
     if (!step.to || step.to === step.from) continue;
     const id = `${step.from}->${step.to}`;
-    if (!seen.has(id)) seen.set(id, { id, from: step.from, to: step.to });
+    const edge = seen.get(id) ?? { id, from: step.from, to: step.to };
+    if (step.label && step.label.length > (edge.reserve?.length ?? 0)) edge.reserve = step.label;
+    seen.set(id, edge);
   }
   return [...seen.values()];
 }
@@ -207,57 +284,26 @@ export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill?: Dril
   const durations = useMemo(() => block.steps.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
   const step = block.steps[playback.index];
-  const total = block.steps.length;
 
   return (
-    <SceneFrame
-      kind="Flow"
-      title={block.title}
-      actions={
-        <>
-          <Button variant="ghost" size="icon" onClick={playback.prev} disabled={playback.index === 0} aria-label="Previous step">
-            ⏮
-          </Button>
-          <Button variant="outline" size="sm" onClick={playback.toggle} aria-label={playback.playing ? 'Pause' : 'Play'}>
-            {playback.playing ? '⏸ Pause' : playback.atEnd ? '↻ Replay' : '▶ Play'}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={playback.next} disabled={playback.atEnd} aria-label="Next step">
-            ⏭
-          </Button>
-        </>
-      }
-    >
+    <SceneFrame kind="Flow" title={block.title} actions={<StepControls playback={playback} />}>
       <div className="p-4">
         <FlowDiagram block={block} index={playback.index} onDrill={onDrill} />
       </div>
       {step && (
-        <div className="border-t border-border px-4 py-3" aria-live="polite">
-          <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-active">
-              Step {playback.index + 1} of {total}
-            </span>
-            <span>{stepRoute(block, playback.index)}</span>
-            {step.ref && <code className="rounded bg-muted px-1.5 py-0.5">{formatRef(step.ref)}</code>}
-          </div>
-          <p className="text-[15px] leading-relaxed">{step.narration}</p>
-        </div>
+        <StepNarration
+          index={playback.index}
+          total={block.steps.length}
+          route={stepRoute(block, playback.index)}
+          refText={step.ref ? formatRef(step.ref) : undefined}
+          narration={step.narration}
+        />
       )}
-      <ol className="flex gap-1 border-t border-border px-4 py-3" aria-label="Steps">
-        {block.steps.map((s, i) => (
-          <li key={i} className="flex-1">
-            <button
-              type="button"
-              onClick={() => playback.goTo(i)}
-              className={cn(
-                'h-1.5 w-full rounded-full transition-colors',
-                i === playback.index ? 'bg-active' : i < playback.index ? 'bg-primary/50' : 'bg-muted',
-              )}
-              aria-label={`Step ${i + 1}: ${s.label ?? s.narration.slice(0, 60)}`}
-              aria-current={i === playback.index ? 'step' : undefined}
-            />
-          </li>
-        ))}
-      </ol>
+      <StepProgress
+        index={playback.index}
+        labels={block.steps.map((s) => s.label ?? s.narration.slice(0, 60))}
+        onPick={playback.goTo}
+      />
     </SceneFrame>
   );
 }

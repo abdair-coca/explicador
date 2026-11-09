@@ -75,7 +75,16 @@ export function archLevel(block: ArchBlock, groupId?: string): Level {
   const nodes: ViewNode[] = [
     ...block.groups
       .filter((g) => g.parent === groupId)
-      .map((g): ViewNode => ({ id: g.id, label: g.label, kind: g.kind, role: 'group', members: countMembers(g.id) })),
+      .map(
+        (g): ViewNode => ({
+          id: g.id,
+          label: g.label,
+          ...(g.desc ? { desc: g.desc } : {}),
+          kind: g.kind,
+          role: 'group',
+          members: countMembers(g.id),
+        }),
+      ),
     ...withDrills(block.nodes, block.drills)
       .filter((n) => n.group === groupId)
       .map((n): ViewNode => ({ ...n, role: 'node' })),
@@ -129,6 +138,7 @@ export function dataView(block: DataBlock): Level {
       return {
         id: e.id,
         label: e.label,
+        ...(e.desc ? { desc: e.desc } : {}),
         kind: 'store',
         shape: 'entity',
         fields: e.fields,
@@ -159,6 +169,7 @@ export function stateView(block: StateBlock): Level {
     return {
       id: s.id,
       label: s.label,
+      ...(s.desc ? { desc: s.desc } : {}),
       kind: 'module',
       shape: 'state',
       ...(s.role === 'final' ? { final: true } : {}),

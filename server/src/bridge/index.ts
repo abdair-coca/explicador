@@ -39,7 +39,7 @@ const contentTypes: Record<string, string> = {
 };
 const securityHeaders = {
   'content-security-policy':
-    "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
   'x-content-type-options': 'nosniff',
   // The token travels in the page URL; never leak it through Referer.
   'referrer-policy': 'no-referrer',

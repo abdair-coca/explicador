@@ -1,123 +1,176 @@
 @import 'tailwindcss';
 
-:root {
-  --background: oklch(0.985 0.002 260);
-  --foreground: oklch(0.22 0.02 260);
-  --card: oklch(1 0 0);
-  --muted: oklch(0.955 0.006 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --border: oklch(0.9 0.01 260);
-  --primary: oklch(0.5 0.17 265);
-  --primary-foreground: oklch(0.98 0 0);
-  --ring: oklch(0.6 0.15 265);
-  --warning: oklch(0.93 0.08 85);
-  --warning-foreground: oklch(0.4 0.09 70);
-  --success: oklch(0.93 0.06 155);
-  --success-foreground: oklch(0.38 0.09 155);
-  --edge: oklch(0.7 0.02 260);
-  --active: oklch(0.62 0.2 30);
-  --node-fill: oklch(1 0 0);
+/* Nunito (OFL, assets/fonts/OFL.txt), inlined by the build so the viewer and exports load nothing. */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('./assets/fonts/nunito-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.17 0.01 260);
-    --foreground: oklch(0.93 0.01 260);
-    --card: oklch(0.21 0.012 260);
-    --muted: oklch(0.25 0.012 260);
-    --muted-foreground: oklch(0.7 0.02 260);
-    --border: oklch(0.32 0.015 260);
-    --primary: oklch(0.7 0.14 265);
-    --primary-foreground: oklch(0.17 0.01 260);
-    --ring: oklch(0.7 0.14 265);
-    --warning: oklch(0.35 0.07 75);
-    --warning-foreground: oklch(0.92 0.08 85);
-    --success: oklch(0.33 0.06 155);
-    --success-foreground: oklch(0.9 0.07 155);
-    --edge: oklch(0.55 0.02 260);
-    --active: oklch(0.72 0.17 35);
-    --node-fill: oklch(0.23 0.012 260);
-  }
+/* Titi design system (SocialNeo's design.md): warm cream, yellow for action, flat, light only. */
+:root {
+  color-scheme: light;
+  --background: #fffbf0;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --subtle: #f9f5e7;
+  --border: #e5e7eb;
+  --border-soft: #f3f4f6;
+  --primary: #ffd93d;
+  --primary-hover: #ffc107;
+  --primary-light: #fff3b0;
+  --primary-dark: #e6b800;
+  --primary-foreground: #1a1a2e;
+  --link: #2563eb;
+  --info: #3b82f6;
+  --warning: #fef3c7;
+  --warning-border: #fcd34d;
+  --warning-foreground: #92400e;
+  --success: #15803d;
+  --stale: #b45309;
+  --edge: #9ca3af;
+  --edge-label: #374151;
+  --node-fill: #ffffff;
+
+  /* Motion (SocialNeo's motion.md): snappy, slight bounce, 400 ms at most for entrances. */
+  --dur-fast: 150ms;
+  --dur-base: 300ms;
+  --dur-slow: 400ms;
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 @theme inline {
+  --font-sans: 'Nunito', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, 'SF Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
   --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
   --color-primary-foreground: var(--primary-foreground);
-  --color-ring: var(--ring);
+  --color-link: var(--link);
+  --color-info: var(--info);
   --color-warning: var(--warning);
+  --color-warning-border: var(--warning-border);
   --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-active: var(--active);
+  --color-stale: var(--stale);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Node kinds: one hue each, used for the accent bar and the kind caption. */
-.kind-actor { --kind: oklch(0.6 0.15 300); }
-.kind-ui { --kind: oklch(0.6 0.15 240); }
-.kind-service { --kind: oklch(0.58 0.15 265); }
-.kind-module { --kind: oklch(0.6 0.04 260); }
-.kind-function { --kind: oklch(0.62 0.13 190); }
-.kind-store { --kind: oklch(0.62 0.14 145); }
-.kind-external { --kind: oklch(0.65 0.13 70); }
-
-.scene-node rect.body {
-  fill: var(--node-fill);
-  stroke: var(--border);
-  stroke-width: 1.5;
-  transition: stroke 200ms, stroke-width 200ms, filter 200ms;
+::selection {
+  background: var(--primary);
+  color: var(--foreground);
 }
-.scene-node.external rect.body { stroke-dasharray: 5 4; }
-.scene-node rect.accent { fill: var(--kind); }
-.scene-node .kind-caption { fill: var(--kind); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-.scene-node .label { fill: var(--foreground); font-size: 13px; font-weight: 500; }
-.scene-node.active rect.body { stroke: var(--active); stroke-width: 2.5; filter: drop-shadow(0 0 6px color-mix(in oklch, var(--active) 45%, transparent)); }
-.scene-node.dimmed { opacity: 0.45; }
-.scene-node { transition: opacity 250ms; }
-.scene-node.clickable { cursor: pointer; outline: none; }
-.scene-node.clickable:hover rect.body, .scene-node.clickable:focus-visible rect.body { stroke: var(--primary); stroke-width: 2; }
-.scene-node rect.stack { fill: var(--node-fill); stroke: var(--border); stroke-width: 1.5; }
-.scene-node .hint { fill: var(--muted-foreground); font-size: 10px; }
-.scene-node .drill-mark { fill: var(--primary); font-size: 13px; font-weight: 700; }
-.scene-node.context { opacity: 0.55; }
-.scene-node.context rect.body { stroke-dasharray: 4 4; }
 
-.scene-edge path { fill: none; stroke: var(--edge); stroke-width: 1.5; transition: stroke 200ms, stroke-width 200ms, opacity 250ms; }
-.scene-edge.active path { stroke: var(--active); stroke-width: 2.5; }
-.scene-edge.dimmed path { opacity: 0.35; }
-.scene-edge .edge-label { fill: var(--muted-foreground); font-size: 11px; }
-.scene-edge.active .edge-label { fill: var(--active); font-weight: 600; }
-.scene-edge .edge-label-bg { fill: var(--background); }
+:focus-visible {
+  outline: 3px solid var(--primary-dark);
+  outline-offset: 2px;
+}
 
-.token { fill: var(--active); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 5px; border: 2px solid var(--background); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-hover); }
+
+/* Node kinds: one Titi role color each, solid behind a white icon. */
+.kind-actor { --kind: #a855f7; }
+.kind-ui { --kind: #3b82f6; }
+.kind-service { --kind: #0f3460; }
+.kind-module { --kind: #6b7280; }
+.kind-function { --kind: #16a34a; }
+.kind-store { --kind: #d97706; }
+.kind-external { --kind: #ff6b35; }
+
+/* Boxes are Titi tiles: white, thick border, hard bottom shadow; they lift on hover and sink on press. */
+.scene-node { outline: none; transition: opacity var(--dur-base) ease; }
+.scene-node .node-inner,
+.scene-node .node-pop,
+.scene-node .face { transform-box: fill-box; transform-origin: center; }
+.scene-node .shadow { fill: var(--border); }
+.scene-node .body { fill: var(--node-fill); stroke: var(--border); stroke-width: 2; transition: stroke var(--dur-fast), fill var(--dur-fast); }
+.scene-node .face { transition: transform var(--dur-base) var(--ease-pop); }
+.scene-node .chip { fill: var(--kind); }
+.scene-node .chip-icon { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.scene-node .caption { fill: var(--muted-foreground); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; }
+.scene-node .label { fill: var(--foreground); font-size: 15px; font-weight: 800; }
+.scene-node .desc { fill: #4b5563; font-size: 13px; font-weight: 600; }
+.scene-node .hint { fill: var(--link); font-size: 12px; font-weight: 800; }
+.scene-node .drill-mark { fill: var(--link); font-size: 15px; font-weight: 900; }
+.scene-node rect.stack { fill: var(--node-fill); stroke: var(--border); stroke-width: 2; }
+
+.scene-node.clickable { cursor: pointer; }
+.scene-node.clickable:hover .face,
+.scene-node.clickable:focus-visible .face { transform: translateY(-3px); }
+.scene-node.clickable:hover .body,
+.scene-node.clickable:focus-visible .body { stroke: var(--primary); }
+.scene-node.clickable:focus-visible .body { stroke: var(--primary-dark); stroke-width: 3; }
+.scene-node.clickable:active .face { transform: translateY(4px); transition-duration: var(--dur-fast); }
+
+.scene-node.active .body { fill: var(--primary-light); stroke: var(--primary-dark); }
+.scene-node.active .shadow { fill: var(--primary-dark); }
+.scene-node.active .node-pop { animation: node-pop var(--dur-base) var(--ease-pop); }
+.scene-node.dimmed { opacity: 0.5; }
+.scene-node.context { opacity: 0.6; }
+.scene-node.context .body { stroke-dasharray: 5 5; }
 
 /* <data> entities and <state> machines. */
-.scene-node.start { opacity: 1; }
 .scene-node .start-dot { fill: var(--foreground); }
-.scene-node rect.final-ring { fill: none; stroke: var(--edge); stroke-width: 1.5; }
-.scene-node rect.entity-header { fill: color-mix(in oklch, var(--kind) 16%, var(--node-fill)); }
-.scene-node .entity-title { font-weight: 650; }
-.scene-node .field-name { fill: var(--foreground); font-size: 12px; }
-.scene-node .field-type { fill: var(--muted-foreground); font-size: 11px; font-family: ui-monospace, monospace; }
-.scene-node .field-key { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; fill: var(--primary); }
-.scene-node .field-key.key-fk { fill: oklch(0.62 0.13 190); }
-.scene-node .field-key.key-unique { fill: var(--muted-foreground); }
+.scene-node .final-ring { fill: none; stroke: var(--edge); stroke-width: 2; }
+.scene-node .entity-header { fill: color-mix(in oklab, var(--kind) 14%, white); }
+.scene-node .field-name { fill: var(--foreground); font-size: 13px; font-weight: 700; }
+.scene-node .field-type { fill: var(--muted-foreground); font-size: 12px; font-family: var(--font-mono); }
+.scene-node .key-badge { fill: var(--primary); }
+.scene-node .key-badge.key-fk { fill: #3b82f6; }
+.scene-node .key-badge.key-unique { fill: var(--muted); }
+.scene-node .key-text { fill: var(--foreground); font-size: 10px; font-weight: 900; letter-spacing: 0.04em; }
+.scene-node .key-text.key-fk { fill: #fff; }
 
-/* Reveal: nodes rise in by layer, then edges draw. */
-@keyframes node-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+/* Edges: gray lines; the active one is drawn dark over a yellow marker. Labels sit on pills above everything. */
+.scene-edge { transition: opacity var(--dur-base) ease; }
+.scene-edge .line { fill: none; stroke: var(--edge); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke var(--dur-fast); }
+.scene-edge .halo { fill: none; stroke: var(--primary); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity var(--dur-base); }
+.scene-edge.active .halo { opacity: 0.85; }
+.scene-edge.active .line { stroke: var(--foreground); stroke-width: 2.5; }
+.scene-edge.dimmed { opacity: 0.35; }
+.edge-label-bg { fill: #fff; stroke: var(--border); stroke-width: 1.5; }
+.edge-label { fill: var(--edge-label); font-size: 13px; font-weight: 800; }
+.edge-label-group.active .edge-label-bg { fill: var(--primary); stroke: var(--primary-dark); }
+.edge-label-group.active .edge-label { fill: var(--foreground); }
+.edge-label-group.dimmed { opacity: 0.45; }
+.token { fill: var(--primary); stroke: var(--foreground); stroke-width: 2; }
+.pulse { fill: none; stroke: var(--primary-dark); stroke-width: 3; animation: pulse-ring 900ms ease-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* Entrances: boxes pop in one after another, then edges draw, then labels appear. */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: none; }
+}
+@keyframes node-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
 @keyframes edge-draw {
   from { stroke-dashoffset: var(--len); }
@@ -127,35 +180,50 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes pulse-ring {
-  0% { opacity: 0.8; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.18); }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
-.reveal .node-inner { animation: node-in 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-box: fill-box; transform-origin: center; }
-.reveal .scene-edge path { stroke-dasharray: var(--len); animation: edge-draw 600ms ease-out both; }
-.reveal .scene-edge .edge-label-group { animation: fade-in 300ms ease-out both; }
-.pulse { fill: none; stroke: var(--active); stroke-width: 2; animation: pulse-ring 900ms ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pulse-ring {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+.reveal .node-inner { animation: pop-in var(--dur-base) var(--ease-pop) both; }
+.reveal .scene-edge .line { stroke-dasharray: var(--len); animation: edge-draw var(--dur-slow) var(--ease-out) both; }
+.reveal .edge-label-group { animation: fade-in var(--dur-base) ease-out both; }
+.animate-pop-in { animation: pop-in var(--dur-base) var(--ease-pop) both; }
+.animate-fade-up { animation: fade-up var(--dur-base) var(--ease-out) both; }
 
+/* Reduced motion turns every animation and transition off; elements show in their final state. */
 @media (prefers-reduced-motion: reduce) {
-  .reveal .node-inner, .reveal .scene-edge path, .reveal .scene-edge .edge-label-group, .pulse { animation: none; }
-  .reveal .scene-edge path { stroke-dasharray: none; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal .scene-edge .line { stroke-dasharray: none; }
 }
 
 /* Markdown prose between scenes. */
-.prose-exl { line-height: 1.65; }
-.prose-exl > * + * { margin-top: 0.75em; }
-.prose-exl h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
-.prose-exl h2 { font-size: 1.2rem; font-weight: 650; margin-top: 1.25em; }
-.prose-exl h3 { font-size: 1.05rem; font-weight: 600; margin-top: 1em; }
+.prose-exl { line-height: 1.7; color: #374151; font-size: 1.0625rem; }
+.prose-exl > * + * { margin-top: 0.8em; }
+.prose-exl h1 { font-size: 2.25rem; font-weight: 900; line-height: 1.15; letter-spacing: -0.015em; color: var(--foreground); }
+.prose-exl h2 { font-size: 1.5rem; font-weight: 800; line-height: 1.25; margin-top: 1.3em; color: var(--foreground); }
+.prose-exl h3 { font-size: 1.2rem; font-weight: 800; margin-top: 1.1em; color: var(--foreground); }
+.prose-exl strong { font-weight: 800; color: var(--foreground); }
 .prose-exl ul { list-style: disc; padding-left: 1.4em; }
 .prose-exl ol { list-style: decimal; padding-left: 1.4em; }
-.prose-exl a { color: var(--primary); text-decoration: underline; }
-.prose-exl code { background: var(--muted); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.88em; }
-.prose-exl pre { background: var(--muted); border-radius: 8px; padding: 0.8em 1em; overflow-x: auto; }
+.prose-exl li::marker { color: var(--primary-dark); }
+.prose-exl a { color: var(--link); font-weight: 700; text-decoration: underline; }
+.prose-exl code { background: var(--subtle); border-radius: 6px; padding: 0.1em 0.4em; font-size: 0.86em; font-weight: 600; font-family: var(--font-mono); color: var(--foreground); }
+.prose-exl pre { background: var(--subtle); border: 1px solid var(--border); border-radius: 12px; padding: 0.9em 1.1em; overflow-x: auto; }
 .prose-exl pre code { background: none; padding: 0; }
-.prose-exl blockquote { border-left: 3px solid var(--border); padding-left: 1em; color: var(--muted-foreground); }
+.prose-exl blockquote { border-left: 4px solid var(--primary); padding-left: 1em; color: var(--muted-foreground); }
 
 /* Presentation slides: larger prose. */
-.prose-slide { font-size: 1.35rem; }
-.prose-slide h1 { font-size: 2.4rem; }
-.prose-slide h2 { font-size: 1.8rem; }
+.prose-slide { font-size: 1.45rem; }
+.prose-slide h1 { font-size: 2.8rem; }
+.prose-slide h2 { font-size: 2rem; }

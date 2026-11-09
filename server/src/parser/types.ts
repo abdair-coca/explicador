@@ -13,6 +13,8 @@ export interface Ref {
 export interface SceneNode {
   id: string;
   label: string;
+  /** One line on what the part does, shown inside the box. */
+  desc?: string;
   kind: NodeKind;
   ref?: Ref;
   /** Id of the enclosing <group>, if any. */
@@ -23,6 +25,7 @@ export interface SceneNode {
 export interface SceneGroup {
   id: string;
   label: string;
+  desc?: string;
   kind: NodeKind;
   /** Id of the enclosing <group>, if any. */
   parent?: string;
@@ -86,6 +89,7 @@ export interface Field {
 export interface Entity {
   id: string;
   label: string;
+  desc?: string;
   fields: Field[];
   ref?: Ref;
 }
@@ -115,6 +119,7 @@ export const statusRoles = ['initial', 'final'] as const;
 export interface Status {
   id: string;
   label: string;
+  desc?: string;
   role: 'initial' | 'final' | 'normal';
   ref?: Ref;
 }

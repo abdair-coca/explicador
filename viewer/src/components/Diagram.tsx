@@ -1,8 +1,26 @@
-// SVG rendering of a laid-out scene. Highlighting and the moving token are driven by props.
+// SVG rendering of a laid-out scene in the Titi style. Highlighting and the moving token are driven by props.
 import { useId } from 'react';
-import { ENTITY_HEADER, ENTITY_ROW, type Layout, type LaidEdge, type LaidNode } from '../layout/elk';
+import { staggerStep } from '../animation/reveal';
+import {
+  BOX,
+  EDGE_LABEL,
+  ENTITY,
+  STATE,
+  caption,
+  edgeLabelWidth,
+  entityHeader,
+  type LaidEdge,
+  type LaidNode,
+  type Layout,
+  type Point,
+} from '../layout/elk';
 import type { ViewNode } from '../layout/levels';
+import { kindIcon } from './icons';
 import { cn } from '@/lib/utils';
+
+/** The diagram never shrinks below this scale to fit; it scrolls sideways instead, so text stays legible. */
+const MIN_SCALE = 0.85;
+const MAX_SCALE = 1.15;
 
 export interface DiagramProps {
   layout: Layout;
@@ -30,88 +48,106 @@ export function Diagram(props: DiagramProps) {
   const { layout, revealKey = 0, activeNodes, activeEdge, reducedMotion } = props;
   const markerId = useId().replace(/:/g, '');
   const focus = activeNodes !== undefined && activeNodes.size > 0;
-  // Reveal order: by layer (x), then top to bottom.
+  // Reveal order: by layer (x), then top to bottom; boxes first, then edges, then labels.
   const order = [...layout.nodes].sort((a, b) => a.x - b.x || a.y - b.y).map((n) => n.node.id);
-  const nodeDelay = (id: string): number => order.indexOf(id) * 110;
-  const edgeDelay = order.length * 110 + 100;
+  const step = staggerStep(order.length);
+  const nodeDelay = (id: string): number => order.indexOf(id) * step;
+  const edgeDelay = Math.max(0, order.length - 1) * step + 150;
+  const labelDelay = edgeDelay + 250;
   const active = layout.edges.find((e) => e.id === activeEdge);
+  const overlay = active && props.activeLabel ? props.activeLabel : undefined;
+  const marker = (edge: LaidEdge): string | undefined =>
+    props.arrows === false ? undefined : `url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`;
 
   return (
-    <svg
-      viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
-      className="mx-auto block h-auto max-h-[68vh] w-full"
-      style={{ maxWidth: Math.max(layout.width, 320) * 1.25 }}
-      role="img"
-      aria-label={props.ariaLabel}
-    >
-      <defs>
-        <marker id={`${markerId}-arrow`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0 0 L10 5 L0 10 z" fill="var(--edge)" />
-        </marker>
-        <marker id={`${markerId}-arrow-active`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0 0 L10 5 L0 10 z" fill="var(--active)" />
-        </marker>
-      </defs>
-      <g key={revealKey} className="reveal">
-        {layout.edges.map((edge) => (
-          <Edge
-            key={edge.id}
-            edge={edge}
-            delay={edgeDelay}
-            active={edge.id === activeEdge}
-            dimmed={focus && edge.id !== activeEdge}
-            label={edge.id === activeEdge ? (props.activeLabel ?? edge.label) : edge.label}
-            marker={props.arrows === false ? undefined : `url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`}
-          />
-        ))}
-        {layout.nodes.map((node) => (
-          <Node
-            key={node.node.id}
-            laid={node}
-            delay={nodeDelay(node.node.id)}
-            active={activeNodes?.has(node.node.id) ?? false}
-            dimmed={focus && !activeNodes?.has(node.node.id)}
-            pulse={props.pulseNode === node.node.id && !reducedMotion}
-            {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
-              ? { onClick: props.onNodeClick }
-              : {})}
-          />
-        ))}
-      </g>
-      {active && !reducedMotion && (
-        <circle key={props.tokenKey} r="6" className="token">
-          <animateMotion dur="0.9s" fill="freeze" path={active.path} calcMode="spline" keyTimes="0;1" keySplines="0.4 0 0.2 1" />
-        </circle>
-      )}
-    </svg>
+    <div className="overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
+        className="mx-auto block h-auto"
+        style={{ width: '100%', minWidth: layout.width * MIN_SCALE, maxWidth: Math.max(layout.width, 320) * MAX_SCALE }}
+        role="group"
+        aria-label={props.ariaLabel}
+      >
+        <defs>
+          <marker id={`${markerId}-arrow`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--edge)" />
+          </marker>
+          <marker id={`${markerId}-arrow-active`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--foreground)" />
+          </marker>
+        </defs>
+        <g key={revealKey} className="reveal">
+          {layout.edges.map((edge) => (
+            <g
+              key={edge.id}
+              className={cn('scene-edge', edge.id === activeEdge && 'active', focus && edge.id !== activeEdge && 'dimmed')}
+            >
+              <path className="halo" d={edge.path} />
+              <path
+                className="line"
+                d={edge.path}
+                markerEnd={marker(edge)}
+                style={{ ['--len' as string]: edge.length.toFixed(1), animationDelay: `${edgeDelay}ms` }}
+              />
+            </g>
+          ))}
+          {layout.nodes.map((node) => (
+            <Node
+              key={node.node.id}
+              laid={node}
+              delay={nodeDelay(node.node.id)}
+              active={activeNodes?.has(node.node.id) ?? false}
+              dimmed={focus && !activeNodes?.has(node.node.id)}
+              pulse={props.pulseNode === node.node.id && !reducedMotion}
+              {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
+                ? { onClick: props.onNodeClick }
+                : {})}
+            />
+          ))}
+          {layout.edges.map((edge) =>
+            edge.label && !(edge.id === activeEdge && overlay) ? (
+              <EdgeLabel
+                key={edge.id}
+                at={edge.labelAt ?? edge.mid}
+                label={edge.label}
+                active={edge.id === activeEdge}
+                dimmed={focus && edge.id !== activeEdge}
+                delay={labelDelay}
+              />
+            ) : null,
+          )}
+        </g>
+        {active && overlay && (
+          // Keyed by step so the label pops in again whenever the step changes.
+          <EdgeLabel key={`${active.id}-${props.tokenKey ?? 0}`} at={active.labelAt ?? active.mid} label={overlay} active pop />
+        )}
+        {active && !reducedMotion && (
+          <circle key={props.tokenKey} r="7" className="token">
+            <animateMotion dur="0.7s" fill="freeze" path={active.path} calcMode="spline" keyTimes="0;1" keySplines="0.33 1 0.68 1" />
+          </circle>
+        )}
+      </svg>
+    </div>
   );
 }
 
-function Edge(props: {
-  edge: LaidEdge;
-  delay: number;
-  active: boolean;
-  dimmed: boolean;
-  label?: string | undefined;
-  marker: string | undefined;
-}) {
-  const { edge, label } = props;
-  const width = label ? label.length * 6.4 + 10 : 0;
+function EdgeLabel(props: { at: Point; label: string; active: boolean; dimmed?: boolean; delay?: number; pop?: boolean }) {
+  const { at, label } = props;
+  const width = edgeLabelWidth(label);
+  const height = EDGE_LABEL.height;
   return (
-    <g className={cn('scene-edge', props.active && 'active', props.dimmed && 'dimmed')}>
-      <path
-        d={edge.path}
-        markerEnd={props.marker}
-        style={{ ['--len' as string]: edge.length.toFixed(1), animationDelay: `${props.delay}ms` }}
-      />
-      {label && (
-        <g className="edge-label-group" style={{ animationDelay: `${props.delay + 300}ms` }}>
-          <rect className="edge-label-bg" x={edge.mid.x - width / 2} y={edge.mid.y - 9} width={width} height={18} rx={4} />
-          <text className="edge-label" x={edge.mid.x} y={edge.mid.y + 4} textAnchor="middle">
-            {label}
-          </text>
-        </g>
-      )}
+    <g
+      className={cn('edge-label-group', props.active && 'active', props.dimmed && 'dimmed', props.pop && 'animate-pop-in')}
+      style={{
+        ...(props.delay !== undefined ? { animationDelay: `${props.delay}ms` } : {}),
+        transformBox: 'fill-box',
+        transformOrigin: 'center',
+      }}
+    >
+      <rect className="edge-label-bg" x={at.x - width / 2} y={at.y - height / 2} width={width} height={height} rx={height / 2} />
+      <text className="edge-label" x={at.x} y={at.y + 4.5} textAnchor="middle">
+        {label}
+      </text>
     </g>
   );
 }
@@ -127,13 +163,13 @@ function Node(props: {
   const { laid, onClick } = props;
   const { node } = laid;
   const role = node.role ?? 'node';
-  const radius = node.shape === 'state' ? laid.height / 2 : node.kind === 'actor' ? laid.height / 2 : 8;
   const ref = node.ref
     ? `${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
     : undefined;
   const action =
     role === 'group' ? `Zoom into ${node.label}` : node.drill ? `Open ${node.drill}` : `Ask Claude to go deeper into ${node.label}`;
   const activate = (element: Element): void => onClick?.(node.id, element);
+  const radius = node.shape === 'state' ? Math.min(laid.height / 2, 24) : node.kind === 'actor' && !node.shape ? 22 : 16;
   return (
     <g
       transform={`translate(${laid.x} ${laid.y})`}
@@ -141,7 +177,6 @@ function Node(props: {
       className={cn(
         'scene-node',
         `kind-${node.kind}`,
-        node.kind,
         role,
         node.shape,
         onClick && 'clickable',
@@ -152,7 +187,7 @@ function Node(props: {
         ? {
             role: 'button',
             tabIndex: 0,
-            'aria-label': action,
+            'aria-label': node.desc ? `${action}. ${node.desc}` : action,
             onClick: (event: React.MouseEvent<SVGGElement>) => activate(event.currentTarget),
             onKeyDown: (event: React.KeyboardEvent<SVGGElement>) => {
               if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -162,47 +197,83 @@ function Node(props: {
           }
         : {})}
     >
-      <title>{[ref ? `${node.label} (${ref})` : node.label, onClick ? action : ''].filter(Boolean).join('\n')}</title>
+      <title>{[node.label, node.desc, ref, onClick ? action : ''].filter(Boolean).join('\n')}</title>
       <g className="node-inner" style={{ animationDelay: `${props.delay}ms` }}>
-        {props.pulse && <rect className="pulse" width={laid.width} height={laid.height} rx={radius} />}
-        {node.shape === 'start' ? (
-          <circle className="start-dot" cx={laid.width / 2} cy={laid.height / 2} r={8} />
-        ) : node.shape === 'entity' ? (
-          <EntityBody laid={laid} />
-        ) : node.shape === 'state' ? (
-          <StateBody laid={laid} />
-        ) : (
-          <BoxBody laid={laid} radius={radius} />
-        )}
-        {node.drill && role === 'node' && (
-          <text className="drill-mark" x={laid.width - 10} y={17} textAnchor="end">
-            ↘
-          </text>
-        )}
+        <g className="node-pop">
+          {node.shape === 'start' ? (
+            <circle className="start-dot" cx={laid.width / 2} cy={laid.height / 2} r={8} />
+          ) : (
+            <>
+              {role === 'group' && (
+                <>
+                  <rect className="shadow" x={BOX.stack} y={BOX.stack + BOX.shadow} width={laid.width} height={laid.height} rx={radius} />
+                  <rect className="stack" x={BOX.stack} y={BOX.stack} width={laid.width} height={laid.height} rx={radius} />
+                </>
+              )}
+              {role !== 'context' && <rect className="shadow" y={BOX.shadow} width={laid.width} height={laid.height} rx={radius} />}
+              <g className="face">
+                {props.pulse && <rect className="pulse" width={laid.width} height={laid.height} rx={radius} />}
+                <rect className="body" width={laid.width} height={laid.height} rx={radius} />
+                {node.shape === 'entity' ? (
+                  <EntityBody laid={laid} />
+                ) : node.shape === 'state' ? (
+                  <StateBody laid={laid} />
+                ) : (
+                  <BoxBody laid={laid} />
+                )}
+              </g>
+            </>
+          )}
+        </g>
       </g>
     </g>
   );
 }
 
-function BoxBody({ laid, radius }: { laid: LaidNode; radius: number }) {
-  const { node } = laid;
-  const role = node.role ?? 'node';
+function Chip({ x, y, icon }: { x: number; y: number; icon: string[] }) {
+  const r = BOX.chip / 2;
   return (
     <>
-      {role === 'group' && <rect className="stack" x={5} y={5} width={laid.width} height={laid.height} rx={radius} />}
-      <rect className="body" width={laid.width} height={laid.height} rx={radius} />
-      {node.kind !== 'actor' && <rect className="accent" x={0} y={10} width={4} height={laid.height - 20} rx={2} />}
-      <text className="kind-caption" x={laid.width / 2} y={18} textAnchor="middle">
-        {role === 'group' ? `${node.kind} · group` : node.kind}
+      <circle className="chip" cx={x + r} cy={y + r} r={r} />
+      <g className="chip-icon" transform={`translate(${x + 5} ${y + 5}) scale(${16 / 24})`}>
+        {icon.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+    </>
+  );
+}
+
+function BoxBody({ laid }: { laid: LaidNode }) {
+  const { node } = laid;
+  const role = node.role ?? 'node';
+  const labelTop = BOX.padY + BOX.chip + BOX.gap;
+  const descTop = labelTop + laid.lines.length * BOX.labelLine + BOX.descGap;
+  const middle = BOX.padY + BOX.chip / 2;
+  return (
+    <>
+      <Chip x={BOX.padX} y={BOX.padY} icon={kindIcon[node.kind]} />
+      <text className="caption" x={BOX.padX + BOX.chip + 8} y={middle + 4.5}>
+        {caption(node)}
       </text>
+      {node.drill && role === 'node' && (
+        <text className="drill-mark" x={laid.width - BOX.padX} y={middle + 5.5} textAnchor="end">
+          ↘
+        </text>
+      )}
       {laid.lines.map((line, i) => (
-        <text key={i} className="label" x={laid.width / 2} y={37 + i * 17} textAnchor="middle">
+        <text key={i} className="label" x={BOX.padX} y={labelTop + 15 + i * BOX.labelLine}>
+          {line}
+        </text>
+      ))}
+      {laid.descLines.map((line, i) => (
+        <text key={i} className="desc" x={BOX.padX} y={descTop + 13.5 + i * BOX.descLine}>
           {line}
         </text>
       ))}
       {role === 'group' && (
-        <text className="hint" x={laid.width / 2} y={laid.height - 9} textAnchor="middle">
-          {node.members} inside · zoom ⤢
+        <text className="hint" x={BOX.padX} y={laid.height - BOX.padY}>
+          {node.members} inside · zoom in
         </text>
       )}
     </>
@@ -213,28 +284,43 @@ const keyBadge: Record<string, string> = { pk: 'PK', fk: 'FK', unique: 'UQ' };
 
 function EntityBody({ laid }: { laid: LaidNode }) {
   const fields = laid.node.fields ?? [];
+  const header = entityHeader(laid.descLines.length);
+  const w = laid.width;
   return (
     <>
-      <rect className="body" width={laid.width} height={laid.height} rx={8} />
-      <rect className="entity-header" width={laid.width} height={ENTITY_HEADER} rx={8} />
-      <rect className="entity-header" y={ENTITY_HEADER - 8} width={laid.width} height={8} />
-      <text className="label entity-title" x={14} y={22}>
+      <path className="entity-header" d={`M1 17a16 16 0 0 1 16-16h${w - 34}a16 16 0 0 1 16 16v${header - 17}H1Z`} />
+      <line x1={0} x2={w} y1={header} y2={header} stroke="var(--border)" strokeWidth={2} />
+      <Chip x={BOX.padX} y={9} icon={kindIcon.entity} />
+      <text className="label" x={BOX.padX + BOX.chip + 10} y={27}>
         {laid.node.label}
       </text>
+      {laid.node.drill && (
+        <text className="drill-mark" x={w - BOX.padX} y={27} textAnchor="end">
+          ↘
+        </text>
+      )}
+      {laid.descLines.map((line, i) => (
+        <text key={i} className="desc" x={BOX.padX} y={53 + i * BOX.descLine}>
+          {line}
+        </text>
+      ))}
       {fields.map((field, i) => {
-        const y = ENTITY_HEADER + 15 + i * ENTITY_ROW;
+        const top = header + 4 + i * ENTITY.row;
         return (
           <g key={field.name}>
             {field.key && (
-              <text className={`field-key key-${field.key}`} x={14} y={y}>
-                {keyBadge[field.key]}
-              </text>
+              <>
+                <rect className={`key-badge key-${field.key}`} x={BOX.padX} y={top + 5} width={26} height={15} rx={7.5} />
+                <text className={`key-text key-${field.key}`} x={BOX.padX + 13} y={top + 16} textAnchor="middle">
+                  {keyBadge[field.key]}
+                </text>
+              </>
             )}
-            <text className="field-name" x={field.key ? 40 : 14} y={y}>
+            <text className="field-name" x={BOX.padX + (field.key ? 34 : 0)} y={top + 17}>
               {field.name}
             </text>
             {field.type && (
-              <text className="field-type" x={laid.width - 12} y={y} textAnchor="end">
+              <text className="field-type" x={w - BOX.padX} y={top + 17} textAnchor="end">
                 {field.type}
               </text>
             )}
@@ -246,18 +332,30 @@ function EntityBody({ laid }: { laid: LaidNode }) {
 }
 
 function StateBody({ laid }: { laid: LaidNode }) {
-  const radius = laid.height / 2;
+  const radius = Math.min(laid.height / 2, 24);
+  const text = laid.lines.length * BOX.labelLine + (laid.descLines.length > 0 ? BOX.descGap + laid.descLines.length * BOX.descLine : 0);
+  const top = (laid.height - text) / 2;
+  const descTop = top + laid.lines.length * BOX.labelLine + BOX.descGap;
   return (
     <>
-      <rect className="body" width={laid.width} height={laid.height} rx={radius} />
       {laid.node.final && (
-        <rect className="final-ring" x={4} y={4} width={laid.width - 8} height={laid.height - 8} rx={radius - 4} />
+        <rect className="final-ring" x={5} y={5} width={laid.width - 10} height={laid.height - 10} rx={radius - 5} />
       )}
       {laid.lines.map((line, i) => (
-        <text key={i} className="label" x={laid.width / 2} y={laid.height / 2 + 5 - ((laid.lines.length - 1) * 17) / 2 + i * 17} textAnchor="middle">
+        <text key={i} className="label" x={laid.width / 2} y={top + 15 + i * BOX.labelLine} textAnchor="middle">
           {line}
         </text>
       ))}
+      {laid.descLines.map((line, i) => (
+        <text key={i} className="desc" x={laid.width / 2} y={descTop + 13.5 + i * BOX.descLine} textAnchor="middle">
+          {line}
+        </text>
+      ))}
+      {laid.node.drill && (
+        <text className="drill-mark" x={laid.width - STATE.padX + 8} y={laid.height / 2 + 5} textAnchor="end">
+          ↘
+        </text>
+      )}
     </>
   );
 }

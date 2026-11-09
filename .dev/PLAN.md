@@ -80,6 +80,48 @@ explicador/
   - Decisions (user, 2026-11-09): `<data>` is a data model (entities with typed fields and PK/FK/unique keys, relations with cardinality `1-1`/`1-n`/`n-1`/`n-n`); `<state>` is a state machine (`<status>` with one initial and optional finals, `<transition>` on events) with an optional narrated `<walk>` played like a flow; entities and states take refs and drills and are clickable; both views work in presentation and export.
   - Criterion: parser tests (valid, invalid, incomplete), slides, click targets, render/cache/invalidation end to end, typecheck and lint; Playwright on sample scenes (walk, presentation, export); plus a ~5 minute review by the user. **User review: pending.**
 
+### F5–F8: better explanations and the Titi look (approved by the user on 2026-11-09)
+
+After trying the plugin on a real project (SocialNeo), the user asked to refine the explanations and the look, to ask questions about a specific box, and to see the important code.
+
+Decisions (user, 2026-11-09):
+- **Look:** the viewer adopts SocialNeo's "Titi" design system as is (`frontend/design.md`, `motion.md` in that project): cream background, yellow primary, Nunito, flat (no gradients or blur), clickable tiles with `border-2` and a hard bottom shadow that flattens on press, playful entrances with a slight bounce (≤400 ms). No handwriting, no mascot. Animations use CSS and the Web Animations API only (no GSAP). The style is validated in the real viewer, not in more mockups. Mockups: https://claude.ai/artifact/HAtwBi8Y4BurAHqNcBUJZ9 (option C chosen, then "pure Titi").
+- **Boxes:** a short description inside each box and a longer one in a side panel.
+- **Click:** clicking a box opens a side panel with its description, key code, a question input and a "Go deeper" button (what a click does today). This changes product decision 6 once the plan is approved.
+- **Answers:** Claude decides: a short answer in the panel, plus a deeper scene when the question deserves one.
+- **Key code:** Claude picks the lines with a tag; the server copies them from the file, so code cannot be invented and the cache tracks it.
+
+Problems seen in the SocialNeo scenes (`rag`, `reranker-de-cloudflare`, `estudiante`): steps start at nodes never reached (`ctx → tutor`), returns are not shown (search → embeddings/Postgres/reranker never come back), calls and returns look the same (`tutor → panel`), middleware is drawn as a call from the route; edge labels are 11 px grey and shrink further when the SVG scales down.
+
+Defaults (approved with the plan):
+- Phase order F5 → F8 below; each ends at a user checkpoint.
+- Light theme only (Titi has no dark mode). Nunito variable (OFL) is vendored in the viewer, because the CSP blocks Google Fonts, and inlined in exports.
+- A small built-in highlighter (comments, strings, numbers, common keywords) instead of highlight.js: no new dependency and it works for any language.
+- Flow continuity is a validation error, not a warning.
+- Questions and answers are saved with their scene and dropped when that scene is re-rendered.
+
+- [x] **F5. Titi look and legible boxes.** Done 2026-11-09 except the user's review. Taken during the phase: edge labels are laid out by ELK (each gets its own room, flow edges reserve room for their longest step label); diagrams never shrink below 85 % and layouts wider than about 1400 px wrap into rows (ELK `MULTI_EDGE`; `SINGLE_EDGE` crashed ELK); the content column widened to `max-w-7xl`; the bridge CSP allows `data:` fonts.
+  - Viewer: Titi tokens (cream `#FFFBF0`, white surfaces, text `#1A1A2E`, yellow `#FFD93D`/`#FFC107`/`#FFF3B0`/`#E6B800`, role colors), Nunito, tiles for clickable boxes (white, rounded, `border-2` gray, hard shadow, hover lift with yellow border, press sink), node kinds as solid role chips with stroke SVG icons, edge labels ≥13 px bold on a white pill (the active one yellow), Titi buttons and inputs, yellow focus ring.
+  - Motion: tokens 150/300/400 ms and the Titi bounce `cubic-bezier(0.34, 1.56, 0.64, 1)`; boxes pop in staggered, then edges draw; the active boxes pop on each step; zoom ≤400 ms; progress fills in ~700 ms; everything off with reduced motion.
+  - EXL: optional `desc` (one line, ≤80 characters) on `<node>`, `<group>`, `<entity>` and `<status>`, shown inside the box; the skill asks for it.
+  - Criterion: parser tests for `desc`, viewer tests updated, typecheck, lint and tests pass; the user reviews the SocialNeo scenes in preview mode.
+- [ ] **F6. Flows that make sense.**
+  - EXL: `kind` on `<step>` and `<edge>`: `call` (default, solid), `return` (dashed), `async` (dotted, for queues and events).
+  - Continuity: a step may start only at a node already in play (the first step's `from`, or any earlier `from`/`to`); otherwise the parser reports which step jumps and from where.
+  - Viewer: the narration says where the step comes from and what follows.
+  - Skill: show returns when the data that comes back matters, edge and step labels name what travels, middleware appears as steps before the handler, every step says why.
+  - Criterion: parser tests (kinds, continuity valid and invalid), viewer drawing, the SocialNeo scenes re-rendered; user review.
+- [ ] **F7. Detail panel and key code.**
+  - Clicking a node, entity or state opens a side panel without asking Claude: kind, label, ref, short and long description, key code, and "Go deeper" (cached drill or ask Claude, as today). Groups keep zooming in.
+  - EXL: optional body text in `<node>`, `<entity>` and `<status>` as the long description; `<code ref="path:start-end" node="id">why it matters</code>`, up to about 30 lines; the server reads the lines and hashes the file like any ref.
+  - Exports show the panel read-only (no "Go deeper", no questions). `AGENTS.md` decision 6 is updated.
+  - Criterion: parser and server tests (body, `<code>`, snippet reading, invalidation), panel behavior, export; user review.
+- [ ] **F8. Questions about a box.**
+  - The panel input posts to `/api/ask` (token and Origin checks; one line, ≤500 characters); the monitor prints one line with the box and the question; Claude answers with a new MCP tool `answer_question` (topic, node, Markdown answer, optional code refs read by the server) and may also render a deeper scene.
+  - Viewer: a waiting indicator, the answer pops in, and a link to the scene Claude drew, if any (no automatic jump).
+  - Questions and answers are saved with the scene and shown again when it reopens; not available in exports.
+  - Criterion: end-to-end test (ask → monitor line → `answer_question` → viewer update), persistence; user review.
+
 ## Decisions pending user review
 
 Taken during the unattended F1 session (2026-11-09) as the most conservative option consistent with this plan. Each can be reverted.
@@ -135,3 +177,7 @@ Open points:
 | F2 | done (2026-11-09); user gave the go-ahead to continue |
 | F3 | done (2026-11-09); user gave the go-ahead to continue |
 | F4 | done (2026-11-09), user review pending |
+| F5 | done (2026-11-09), user review pending |
+| F6 | planned (approved 2026-11-09) |
+| F7 | planned (approved 2026-11-09) |
+| F8 | planned (approved 2026-11-09) |

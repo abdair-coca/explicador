@@ -1,5 +1,6 @@
 // Zoom transitions between levels: the new view grows out of the clicked box (zoom in),
 // or the parent view shrinks back onto the box the user came from (zoom out).
+import { motion, reducedMotion as reduced } from './reveal';
 
 /** A rectangle as fractions (0..1) of its container. */
 export interface Box {
@@ -9,8 +10,9 @@ export interface Box {
   h: number;
 }
 
-const DURATION = 480;
-const EASING = 'cubic-bezier(0.2, 0.7, 0.2, 1)';
+// Whole-view moves get a milder bounce than single elements (motion.md: page transitions use back.out(1.2)).
+const DURATION = motion.slow;
+const EASING = 'cubic-bezier(0.34, 1.25, 0.64, 1)';
 
 export function boxWithin(element: Element, container: Element): Box | undefined {
   const outer = container.getBoundingClientRect();
@@ -22,10 +24,6 @@ export function boxWithin(element: Element, container: Element): Box | undefined
     w: inner.width / outer.width,
     h: inner.height / outer.height,
   };
-}
-
-function reduced(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /** Transform that maps the whole element onto `box` (uniform scale, centered on the box). */

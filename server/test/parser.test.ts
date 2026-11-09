@@ -388,3 +388,46 @@ describe('parseExl: <state>', () => {
     ]);
   });
 });
+
+describe('parseExl: descriptions', () => {
+  it('keeps a one-line desc on nodes, groups, entities and states', () => {
+    const result = parseExl(
+      [
+        '<arch title="A">',
+        '  <group id="core" label="Core" desc="Business rules">',
+        '    <node id="svc" label="Service" desc="  Checks the password  " />',
+        '  </group>',
+        '  <node id="ui" label="Form" />',
+        '</arch>',
+        '<data title="D"><entity id="user" label="User" desc="One per account"><field name="id" key="pk" /></entity></data>',
+        '<state title="S"><status id="new" label="New" desc="Just signed up" role="initial" /></state>',
+      ].join('\n'),
+    );
+    assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+    if (!result.ok) return;
+    const [arch, data, state] = result.scene.blocks;
+    assert.equal(arch?.type, 'arch');
+    if (arch?.type !== 'arch' || data?.type !== 'data' || state?.type !== 'state') return;
+    assert.deepEqual(arch.groups[0], { id: 'core', label: 'Core', desc: 'Business rules', kind: 'module' });
+    assert.equal(arch.nodes[0]?.desc, 'Checks the password');
+    assert.equal('desc' in (arch.nodes[1] ?? {}), false, 'no desc when absent');
+    assert.equal(data.entities[0]?.desc, 'One per account');
+    assert.equal(state.states[0]?.desc, 'Just signed up');
+  });
+
+  it('rejects an empty, multi-line or too long desc', () => {
+    assert.deepEqual(
+      errorsOf(
+        [
+          '<arch title="A">',
+          '  <node id="a" label="A" desc="" />',
+          `  <node id="b" label="B" desc="${'x'.repeat(81)}" />`,
+          '  <node id="c" label="C" desc="one',
+          'two" />',
+          '</arch>',
+        ].join('\n'),
+      ),
+      ['2:26 "desc" must not be empty', '3:26 "desc" is longer than 80 characters', '4:26 "desc" must be a single line'],
+    );
+  });
+});

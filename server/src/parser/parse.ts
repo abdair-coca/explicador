@@ -37,18 +37,18 @@ interface TagSpec {
 export const catalog: Record<string, TagSpec> = {
   arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'group', 'edge', 'drill'] },
   flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill'] },
-  group: { attrs: { id: 'required', label: 'required', kind: 'optional' }, children: ['node', 'group'] },
+  group: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional' }, children: ['node', 'group'] },
   drill: { attrs: { node: 'required', topic: 'required' } },
   data: { attrs: { id: 'optional', title: 'required' }, children: ['entity', 'relation', 'drill'] },
-  entity: { attrs: { id: 'required', label: 'required', ref: 'optional' }, children: ['field'] },
+  entity: { attrs: { id: 'required', label: 'required', desc: 'optional', ref: 'optional' }, children: ['field'] },
   field: { attrs: { name: 'required', type: 'optional', key: 'optional' } },
   relation: { attrs: { from: 'required', to: 'required', card: 'required', label: 'optional' } },
   state: { attrs: { id: 'optional', title: 'required' }, children: ['status', 'transition', 'walk', 'drill'] },
-  status: { attrs: { id: 'required', label: 'required', role: 'optional', ref: 'optional' } },
+  status: { attrs: { id: 'required', label: 'required', desc: 'optional', role: 'optional', ref: 'optional' } },
   transition: { attrs: { from: 'required', to: 'required', event: 'required', ref: 'optional' } },
   walk: { attrs: {}, children: ['go'] },
   go: { attrs: { event: 'required' }, text: true },
-  node: { attrs: { id: 'required', label: 'required', kind: 'optional', ref: 'optional' } },
+  node: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional', ref: 'optional' } },
   edge: { attrs: { from: 'required', to: 'required', label: 'optional' } },
   step: { attrs: { from: 'required', to: 'optional', label: 'optional', ref: 'optional' }, text: true },
 };
@@ -58,6 +58,7 @@ const topLevelTags = ['arch', 'flow', 'data', 'state'];
 export const limits = {
   idLength: 40,
   labelLength: 80,
+  descLength: 80,
   titleLength: 120,
   topicLength: 80,
   fieldLength: 60,
@@ -308,7 +309,14 @@ function buildGroup(element: Element, report: Report): SceneGroup | undefined {
   if (a.id === undefined || a.label === undefined) return undefined;
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
-  return { id: a.id, label, kind: parseKind(a.kind, element, report) };
+  return { id: a.id, label, ...readDesc(a.desc, element, report), kind: parseKind(a.kind, element, report) };
+}
+
+/** The optional one-line `desc`, as a spreadable object. */
+function readDesc(value: string | undefined, element: Element, report: Report): { desc?: string } {
+  if (value === undefined) return {};
+  const desc = checkText(value, 'desc', limits.descLength, element, report);
+  return desc ? { desc } : {};
 }
 
 function parseKind(value: string | undefined, element: Element, report: Report): NodeKind {
@@ -326,9 +334,10 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   if (a.id === undefined || a.label === undefined) return undefined;
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
+  const desc = readDesc(a.desc, element, report);
   const kind = parseKind(a.kind, element, report);
   const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
-  return { id: a.id, label, kind, ...(ref ? { ref } : {}) };
+  return { id: a.id, label, ...desc, kind, ...(ref ? { ref } : {}) };
 }
 
 function readAttrs(element: Element, spec: TagSpec, report: Report): Record<string, string | undefined> {
@@ -487,7 +496,13 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
     }
     if (fields.length > limits.fields) report(child.offset, `<entity> has more than ${limits.fields} fields`);
     const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
-    entities.push({ id: a.id, label: checkText(a.label, 'label', limits.labelLength, child, report), fields, ...(ref ? { ref } : {}) });
+    entities.push({
+      id: a.id,
+      label: checkText(a.label, 'label', limits.labelLength, child, report),
+      ...readDesc(a.desc, child, report),
+      fields,
+      ...(ref ? { ref } : {}),
+    });
   }
 
   for (const child of children.filter((c) => c.name !== 'entity')) {
@@ -542,7 +557,13 @@ function buildState(element: Element, ordinal: number, report: Report): StateBlo
       report(child.offset, 'Only one <status> can have role="initial"');
     }
     const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
-    states.push({ id: a.id, label: checkText(a.label, 'label', limits.labelLength, child, report), role, ...(ref ? { ref } : {}) });
+    states.push({
+      id: a.id,
+      label: checkText(a.label, 'label', limits.labelLength, child, report),
+      ...readDesc(a.desc, child, report),
+      role,
+      ...(ref ? { ref } : {}),
+    });
   }
 
   for (const child of children.filter((c) => c.name === 'transition')) {

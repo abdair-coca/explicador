@@ -8,7 +8,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 1 (MVP, done): EXL parser, project index, scene cache with hash invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, the `/explicador:explain` skill and a sample project.
 - Phase 2 (interactivity and zoom, done): `<group>` zooms in locally, clicking a node asks Claude to go deeper (or opens a cached `<drill>`), breadcrumbs zoom back out.
 - Phase 3 (presentation, done): full-screen slides with manual advance and large narration, and export of a scene as one HTML file that works offline.
-- Phase 4 (more views, done pending the user's review): `<data>` data models (entities, fields, relations with cardinality) and `<state>` machines with an optional narrated walk. Plan: `.dev/PLAN.md`.
+- Phase 4 (more views, done pending the user's review): `<data>` data models (entities, fields, relations with cardinality) and `<state>` machines with an optional narrated walk.
+- Phase 5 (Titi look, done pending the user's review): the viewer follows SocialNeo's Titi design system (cream and yellow, Nunito, tiles with a hard shadow, playful entrances), edge labels get their own room and stay legible, long chains wrap into rows, and boxes show a one-line `desc`. Next: flows that make sense (F6), a detail panel with key code (F7) and questions about a box (F8). Plan: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 

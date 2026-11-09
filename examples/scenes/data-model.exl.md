@@ -3,13 +3,13 @@
 Everything lives in memory: users in a fixed list, sessions and carts in `Map`s keyed by id.
 
 <data id="shop-data" title="Shop data model">
-  <entity id="user" label="User" ref="src/db/users.js">
+  <entity id="user" label="User" desc="A fixed list; no sign-up" ref="src/db/users.js">
     <field name="id" type="int" key="pk" />
     <field name="name" type="string" />
     <field name="email" type="string" key="unique" />
     <field name="passwordHash" type="scrypt$salt$hash" />
   </entity>
-  <entity id="session" label="Session" ref="src/auth/sessions.js">
+  <entity id="session" label="Session" desc="Lives one hour in memory" ref="src/auth/sessions.js">
     <field name="id" type="hex (48)" key="pk" />
     <field name="userId" type="int" key="fk" />
     <field name="expiresAt" type="ms epoch" />

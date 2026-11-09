@@ -1,19 +1,22 @@
-// shadcn/ui badge, trimmed to the variants the viewer uses.
+// Titi badges: a solid role color with white text (design.md §2), uppercase and bold.
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
-const badgeVariants = cva('inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium', {
-  variants: {
-    variant: {
-      default: 'border-transparent bg-primary text-primary-foreground',
-      outline: 'border-border text-muted-foreground',
-      warning: 'border-transparent bg-warning text-warning-foreground',
-      success: 'border-transparent bg-success text-success-foreground',
+const badgeVariants = cva(
+  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wide',
+  {
+    variants: {
+      variant: {
+        dark: 'bg-foreground text-white',
+        success: 'bg-success text-white',
+        stale: 'bg-stale text-white',
+        step: 'bg-primary text-primary-foreground',
+      },
     },
+    defaultVariants: { variant: 'dark' },
   },
-  defaultVariants: { variant: 'default' },
-});
+);
 
 export function Badge({ className, variant, ...props }: ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
   return <span className={cn(badgeVariants({ variant }), className)} {...props} />;

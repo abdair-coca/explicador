@@ -32,12 +32,12 @@ Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of
 One short paragraph of context.
 
 <arch id="overview" title="Login: the parts involved">
-  <node id="form" label="Login form" kind="ui" ref="src/ui/login-form.js" />
-  <node id="api" label="Auth routes" kind="service" ref="src/api/auth-routes.js:6-20" />
-  <node id="users" label="Users table" kind="store" ref="src/db/users.js" />
-  <group id="auth" label="Auth core">
-    <node id="service" label="Auth service" ref="src/auth/auth-service.js" />
-    <node id="password" label="Password check" kind="function" ref="src/auth/password.js" />
+  <node id="form" label="Login form" desc="Posts the credentials as JSON" kind="ui" ref="src/ui/login-form.js" />
+  <node id="api" label="Auth routes" desc="Validate input, set the cookie" kind="service" ref="src/api/auth-routes.js:6-20" />
+  <node id="users" label="Users table" desc="Users and password hashes" kind="store" ref="src/db/users.js" />
+  <group id="auth" label="Auth core" desc="Checks passwords, opens sessions">
+    <node id="service" label="Auth service" desc="Runs the login checks" ref="src/auth/auth-service.js" />
+    <node id="password" label="Password check" desc="scrypt, constant time" kind="function" ref="src/auth/password.js" />
   </group>
   <edge from="form" to="api" label="POST /api/login" />
   <edge from="api" to="service" label="login()" />
@@ -61,7 +61,8 @@ One short paragraph of context.
 - `<data title>`: the data model, for "what is stored and how it relates": `<entity id label ref>` with `<field name type? key?>` rows (`key` = `pk`, `fk`, `unique`) and `<relation from to card label?>` (`card` = `1-1`, `1-n`, `n-1`, `n-n`).
 - `<state title>`: a lifecycle, for "what states can X be in": `<status id label role? ref?>` (exactly one `role="initial"`, optional `role="final"`), `<transition from to event ref?>`, and optionally one `<walk>` of `<go event="...">narration</go>` steps that follow transitions from the initial state, like a `<flow>`.
 - `<flow title>`: an ordered story: `<node>`s and `<step from to? label? ref?>narration</step>`. A step without `to` is an action inside `from`. Use it for "what happens when".
-- `<node id label kind? ref?>`; `kind` is one of `actor`, `ui`, `service`, `module`, `function`, `store`, `external` (default `module`).
+- `<node id label desc? kind? ref?>`; `kind` is one of `actor`, `ui`, `service`, `module`, `function`, `store`, `external` (default `module`).
+- `desc` (on `<node>`, `<group>`, `<entity>`, `<status>`): one line, at most 80 characters, saying what the part does, shown inside the box. Give one to every box; start with a verb or name the responsibility ("Validates the session", "Ranks the 15 candidates"), never repeat the label.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 

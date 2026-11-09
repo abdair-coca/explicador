@@ -3,10 +3,10 @@
 A visitor is anonymous until a login succeeds. The session then lives for one hour, ends on logout, or disappears when the server restarts.
 
 <state id="session-lifecycle" title="A visitor's session">
-  <status id="anon" label="Anonymous" role="initial" ref="src/api/require-session.js" />
-  <status id="active" label="Logged in" ref="src/auth/sessions.js:7-11" />
-  <status id="expired" label="Expired" ref="src/auth/sessions.js:13-21" />
-  <status id="lost" label="Lost (restart)" role="final" />
+  <status id="anon" label="Anonymous" desc="No valid cookie" role="initial" ref="src/api/require-session.js" />
+  <status id="active" label="Logged in" desc="Cookie maps to a session" ref="src/auth/sessions.js:7-11" />
+  <status id="expired" label="Expired" desc="Past its TTL, not yet removed" ref="src/auth/sessions.js:13-21" />
+  <status id="lost" label="Lost (restart)" desc="The map is gone" role="final" />
   <transition from="anon" to="anon" event="wrong password" ref="src/auth/auth-service.js:6-11" />
   <transition from="anon" to="active" event="login ok" ref="src/auth/auth-service.js:12-13" />
   <transition from="active" to="anon" event="logout" ref="src/api/auth-routes.js:22-27" />

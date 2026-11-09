@@ -1,12 +1,14 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { ScenePayload } from '../../server/src/scene.ts';
+import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { exportUrl, post, staticScene, useScene, type ClickReply, type Connection } from './api';
+import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
 import { DataScene, StateScene } from './components/views';
 import { Badge } from './components/ui/badge';
-import { Button } from './components/ui/button';
+import { Button, buttonVariants } from './components/ui/button';
 import { Presenter } from './presentation/Presenter';
 import { cn } from '@/lib/utils';
 
@@ -31,18 +33,21 @@ export function App() {
   const main = useRef<HTMLElement>(null);
   const shown = useRef<number | undefined>(undefined);
 
-  // When a new scene arrives, animate it if it answers the user's last click or breadcrumb.
+  // When a new scene arrives, zoom if it answers the user's last click or breadcrumb; otherwise its blocks pop in.
   useLayoutEffect(() => {
     if (!scene || scene.version === shown.current) return;
     shown.current = scene.version;
     const element = main.current;
-    if (element && transition?.direction === 'in' && scene.trail.at(-1)?.key === transition.fromKey) {
+    if (!element) return;
+    if (transition?.direction === 'in' && scene.trail.at(-1)?.key === transition.fromKey) {
       zoomIn(element, transition.box);
       setTransition(undefined);
       setNotice(undefined);
-    } else if (element && transition?.direction === 'out' && scene.key === transition.toKey) {
+    } else if (transition?.direction === 'out' && scene.key === transition.toKey) {
       zoomOut(element, undefined);
       setTransition(undefined);
+    } else {
+      staggerIn(element.children);
     }
   }, [scene, transition]);
 
@@ -62,7 +67,7 @@ export function App() {
             text: (
               <>
                 Claude Code is not listening for clicks from this tab (the Explicador monitor is not running). Ask in Claude
-                Code: <code>/explicador:explain {reply.topic}</code>
+                Code: <code className="rounded bg-white/70 px-1.5 py-0.5 font-mono">/explicador:explain {reply.topic}</code>
               </>
             ),
           });
@@ -94,54 +99,61 @@ export function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-2 gap-y-1 px-6 py-3">
-          <span className="font-semibold tracking-tight">Explicador</span>
+      <header className="sticky top-0 z-10 border-b border-border-soft bg-card">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-6 py-3">
+          <span className="flex items-center gap-2 text-lg font-black tracking-tight">
+            <span className="h-3.5 w-3.5 rounded-full bg-primary shadow-[0_2px_0_var(--primary-dark)]" aria-hidden="true" />
+            Explicador
+          </span>
           {scene && (
-            <nav aria-label="Scenes" className="flex flex-wrap items-center gap-x-2">
+            <nav aria-label="Scenes" className="flex flex-wrap items-center gap-x-2 text-sm">
               {scene.trail.map((entry) => (
                 <span key={entry.key} className="flex items-center gap-2">
                   <span className="text-muted-foreground">/</span>
                   {offline ? (
-                    <span>{entry.topic}</span>
+                    <span className="font-bold">{entry.topic}</span>
                   ) : (
-                    <button type="button" className="text-primary hover:underline" onClick={() => back(entry.key)}>
+                    <button
+                      type="button"
+                      className="font-bold text-link transition-transform hover:underline active:scale-[0.96]"
+                      onClick={() => back(entry.key)}
+                    >
                       {entry.topic}
                     </button>
                   )}
                 </span>
               ))}
               <span className="text-muted-foreground">/</span>
-              <span className="font-medium" aria-current="page">
+              <span className="font-extrabold" aria-current="page">
                 {scene.topic}
               </span>
-              <Badge variant={scene.status === 'fresh' ? 'success' : 'warning'}>
-                {scene.status === 'fresh' ? 'Up to date' : 'Stale'}
-              </Badge>
+              <Badge variant={scene.status === 'fresh' ? 'success' : 'stale'}>{scene.status === 'fresh' ? 'Up to date' : 'Stale'}</Badge>
             </nav>
           )}
           {scene && (
             <span className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPresenting(true)}>
-                ▶ Present
+              <Button variant="primary" size="sm" onClick={() => setPresenting(true)}>
+                <PresentIcon size={16} />
+                Present
               </Button>
               {!offline && (
                 <a
                   href={exportUrl}
                   download={`${scene.key}.html`}
-                  className="inline-flex h-8 items-center rounded-md px-3 text-xs font-medium hover:bg-muted"
+                  className={buttonVariants({ variant: 'secondary', size: 'sm' })}
                   title="Download this scene as one HTML file that works offline"
                 >
-                  ⤓ Export
+                  <DownloadIcon size={16} />
+                  Export
                 </a>
               )}
             </span>
           )}
-          <span className={cn('flex items-center gap-2 text-xs text-muted-foreground', !scene && 'ml-auto')}>
+          <span className={cn('flex items-center gap-2 text-xs font-bold text-muted-foreground', !scene && 'ml-auto')}>
             <span
               className={cn(
-                'h-2 w-2 rounded-full',
-                connection === 'live' || connection === 'static' ? 'bg-emerald-500' : connection === 'connecting' ? 'bg-amber-400' : 'bg-red-500',
+                'h-2.5 w-2.5 rounded-full',
+                connection === 'live' || connection === 'static' ? 'bg-green-500' : connection === 'connecting' ? 'bg-primary' : 'bg-red-500',
               )}
             />
             {connectionText[connection]}
@@ -149,25 +161,32 @@ export function App() {
         </div>
       </header>
       {notice && (
-        <div className="mx-auto max-w-5xl px-6 pt-4">
+        <div className="mx-auto max-w-7xl px-6 pt-5">
           <div
             role="status"
             className={cn(
-              'flex items-start gap-3 rounded-lg border px-4 py-3 text-sm',
+              'animate-pop-in flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold',
               notice.tone === 'info'
-                ? 'border-border bg-muted text-foreground'
-                : 'border-warning-foreground/30 bg-warning text-warning-foreground',
+                ? 'border-border-soft bg-card shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
+                : 'border-warning-border bg-warning text-warning-foreground',
             )}
           >
-            {notice.tone === 'info' && <span className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-primary" />}
+            <span
+              className={cn(
+                'grid h-9 w-9 shrink-0 place-items-center rounded-full text-white',
+                notice.tone === 'info' ? 'bg-info' : 'bg-stale',
+              )}
+            >
+              {notice.tone === 'info' ? <SparkIcon size={18} className="animate-pulse" /> : <AlertIcon size={18} />}
+            </span>
             <p className="flex-1">{notice.text}</p>
-            <Button variant="ghost" size="sm" onClick={() => setNotice(undefined)} aria-label="Dismiss">
-              ✕
+            <Button variant="ghost" size="icon-sm" onClick={() => setNotice(undefined)} aria-label="Dismiss">
+              <CloseIcon size={16} />
             </Button>
           </div>
         </div>
       )}
-      <main ref={main} className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      <main ref={main} className="mx-auto max-w-7xl space-y-7 px-6 py-8">
         {scene ? <Scene scene={scene} onDrill={offline ? undefined : drill} /> : <Empty />}
       </main>
       {scene && presenting && <Presenter key={scene.version} scene={scene} onExit={() => setPresenting(false)} />}
@@ -179,16 +198,21 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
   return (
     <>
       {scene.status === 'stale' && (
-        <div role="alert" className="rounded-lg border border-warning-foreground/30 bg-warning px-4 py-3 text-sm text-warning-foreground">
-          <p className="font-medium">This scene may be out of date: files it references changed after it was made.</p>
-          <ul className="mt-1 list-disc pl-5">
-            {scene.changes.map((c) => (
-              <li key={c.path}>
-                <code>{c.path}</code> ({c.change})
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1">Ask Claude to explain it again to refresh it.</p>
+        <div role="alert" className="flex gap-3 rounded-2xl border border-warning-border bg-warning px-4 py-3 text-sm text-warning-foreground">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stale text-white">
+            <AlertIcon size={18} />
+          </span>
+          <div>
+            <p className="font-extrabold">This scene may be out of date: files it references changed after it was made.</p>
+            <ul className="mt-1 list-disc pl-5 font-semibold">
+              {scene.changes.map((c) => (
+                <li key={c.path}>
+                  <code className="font-mono">{c.path}</code> ({c.change})
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 font-semibold">Ask Claude to explain it again to refresh it.</p>
+          </div>
         </div>
       )}
       {scene.blocks.map((block, i) => {
@@ -204,9 +228,10 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
           </div>
         );
       })}
-      <p className="pt-2 text-xs text-muted-foreground">
+      <p className="flex items-center gap-2 pt-2 text-sm font-semibold text-muted-foreground">
+        <InfoIcon size={16} />
         Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}
-        {onDrill ? 'Click a node to go deeper; groups zoom in.' : 'Offline copy: groups zoom in; ask Claude Code to go deeper.'}
+        {onDrill ? 'Click a box to go deeper; groups zoom in.' : 'Offline copy: groups zoom in; ask Claude Code to go deeper.'}
       </p>
     </>
   );
@@ -214,11 +239,14 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
 
 function Empty() {
   return (
-    <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-      <p className="text-base font-medium text-foreground">Waiting for a scene</p>
-      <p className="mt-1 text-sm">
-        In Claude Code, run <code className="rounded bg-muted px-1.5 py-0.5">/explicador:explain login</code> or ask for any
-        explanation. Scenes appear here as soon as they are ready.
+    <div className="animate-pop-in flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-card p-10 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_3px_0_var(--primary-dark)]">
+        <SparkIcon size={22} />
+      </span>
+      <p className="text-xl font-extrabold">Waiting for a scene</p>
+      <p className="max-w-md text-base font-medium text-muted-foreground">
+        In Claude Code, run <code className="rounded-lg bg-subtle px-1.5 py-0.5 font-mono text-sm text-foreground">/explicador:explain login</code>{' '}
+        or ask for any explanation. Scenes appear here as soon as they are ready.
       </p>
     </div>
   );

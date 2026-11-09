@@ -3,15 +3,15 @@
 The browser form posts the credentials as JSON. The auth routes validate the input, the auth service checks the password with scrypt and opens an in-memory session, and the session id comes back as an `HttpOnly` cookie that later guards the cart.
 
 <arch id="login-architecture" title="Login: the parts involved">
-  <node id="user" label="User" kind="actor" />
-  <node id="form" label="Login form (browser)" kind="ui" ref="src/ui/login-form.js" />
-  <node id="routes" label="Auth routes" kind="service" ref="src/api/auth-routes.js" />
-  <group id="auth" label="Auth core" kind="module">
-    <node id="service" label="Auth service" kind="module" ref="src/auth/auth-service.js" />
-    <node id="password" label="Password check (scrypt)" kind="function" ref="src/auth/password.js" />
-    <node id="sessions" label="Session store" kind="store" ref="src/auth/sessions.js" />
+  <node id="user" label="User" desc="Types an email and a password" kind="actor" />
+  <node id="form" label="Login form (browser)" desc="Posts the credentials as JSON" kind="ui" ref="src/ui/login-form.js" />
+  <node id="routes" label="Auth routes" desc="Validate input and set the session cookie" kind="service" ref="src/api/auth-routes.js" />
+  <group id="auth" label="Auth core" desc="Checks passwords and opens sessions" kind="module">
+    <node id="service" label="Auth service" desc="Finds the user and runs the checks" kind="module" ref="src/auth/auth-service.js" />
+    <node id="password" label="Password check (scrypt)" desc="Re-hashes and compares in constant time" kind="function" ref="src/auth/password.js" />
+    <node id="sessions" label="Session store" desc="In-memory map of ids that expire in 1 h" kind="store" ref="src/auth/sessions.js" />
   </group>
-  <node id="users" label="Users table" kind="store" ref="src/db/users.js" />
+  <node id="users" label="Users table" desc="Fixed list of users and hashes" kind="store" ref="src/db/users.js" />
   <edge from="user" to="form" label="types" />
   <edge from="form" to="routes" label="POST /api/login" />
   <edge from="routes" to="service" label="login()" />
@@ -23,12 +23,12 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
 </arch>
 
 <flow id="login-flow" title="Logging in, step by step">
-  <node id="form" label="Login form" kind="ui" ref="src/ui/login-form.js" />
-  <node id="routes" label="Auth routes" kind="service" ref="src/api/auth-routes.js" />
-  <node id="service" label="Auth service" kind="module" ref="src/auth/auth-service.js" />
-  <node id="users" label="Users table" kind="store" ref="src/db/users.js" />
-  <node id="password" label="Password check" kind="function" ref="src/auth/password.js" />
-  <node id="sessions" label="Session store" kind="store" ref="src/auth/sessions.js" />
+  <node id="form" label="Login form" desc="Sends the credentials" kind="ui" ref="src/ui/login-form.js" />
+  <node id="routes" label="Auth routes" desc="Validate and reply" kind="service" ref="src/api/auth-routes.js" />
+  <node id="service" label="Auth service" desc="Runs the login checks" kind="module" ref="src/auth/auth-service.js" />
+  <node id="users" label="Users table" desc="Looks up by email" kind="store" ref="src/db/users.js" />
+  <node id="password" label="Password check" desc="scrypt, constant time" kind="function" ref="src/auth/password.js" />
+  <node id="sessions" label="Session store" desc="Random ids, 1 h TTL" kind="store" ref="src/auth/sessions.js" />
   <step from="form" to="routes" label="POST /api/login" ref="src/ui/login-form.js:7-11">
     On submit, the form sends the email and password as JSON.
   </step>
