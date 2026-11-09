@@ -76,8 +76,9 @@ explicador/
 - [x] **F3. Presentation mode.** Done 2026-11-09 except the user's review. Manual advance, visible narration, export a scene as standalone HTML.
   - Decisions (user, 2026-11-09): "Present" shows full-screen slides (each Markdown block, each `<arch>` with group zoom, each `<flow>` step with large narration), manual advance only (→/Space/PageDown, ←/PageUp, Home/End, F full screen, Esc). Export is one self-contained `.html` (JS, CSS, scene inline, CSP with no network) that works from `file://`; from a viewer button (`GET /api/export`) and the `export_scene` tool (`.explicador/exports/<key>.html`).
   - Criterion: slide-order and export tests, `export_scene` end to end, Playwright (keyboard presentation; exported file from `file://` with no requests and no errors), typecheck and lint; plus a ~5 minute review by the user. **User review: pending.**
-- [ ] **F4. More views.** `<data>` and `<state>`.
-  - Criterion: defined when F4 starts.
+- [x] **F4. More views.** Done 2026-11-09 except the user's review. `<data>` and `<state>`.
+  - Decisions (user, 2026-11-09): `<data>` is a data model (entities with typed fields and PK/FK/unique keys, relations with cardinality `1-1`/`1-n`/`n-1`/`n-n`); `<state>` is a state machine (`<status>` with one initial and optional finals, `<transition>` on events) with an optional narrated `<walk>` played like a flow; entities and states take refs and drills and are clickable; both views work in presentation and export.
+  - Criterion: parser tests (valid, invalid, incomplete), slides, click targets, render/cache/invalidation end to end, typecheck and lint; Playwright on sample scenes (walk, presentation, export); plus a ~5 minute review by the user. **User review: pending.**
 
 ## Decisions pending user review
 
@@ -108,6 +109,13 @@ Taken during F3 (2026-11-09), within the user's choices:
 19. **Presentation keys.** Enter and Space activate a focused button or node (e.g. a group) instead of advancing; Backspace also goes back.
 20. **`EXPLICADOR_VIEWER_DIR`** overrides the viewer folder the server serves and exports; used by tests.
 
+Taken during F4 (2026-11-09), within the user's choices:
+21. **Tag names.** States are `<status>` (not `<state>`, which is the block), walk steps are `<go event>`, and roles are an attribute (`role="initial|final"`) because EXL has no boolean attributes.
+22. **Walk validation.** The parser simulates the walk: each `<go event>` must match exactly one transition leaving the current state; the walk starts at the initial state.
+23. **Relations are undirected** in the drawing (no arrowheads); the cardinality is in the label (`owns (1 : 1)`), not crow's-foot markers.
+24. **Layout.** In state machines only, ELK breaks cycles by declaration order and pins the start dot to the first layer; other views keep ELK's defaults (declaration order drew a reversed-looking edge in the login architecture).
+25. **Limits.** Up to 40 fields per entity; entities and states count against the 60-node limit, relations and transitions against the 120-edge limit, walk steps against the 100-step limit.
+
 Open points:
 - Resolved in F2: the plugin's MCP config moved inline into `plugin.json`, so this repo no longer offers a broken project server.
 - Installing from a marketplace is not supported yet: `server/dist`, `viewer/dist` and `node_modules` are not committed, so an installed copy would need a build or dependency step (e.g. a SessionStart hook into `${CLAUDE_PLUGIN_DATA}`). `claude plugin validate .` warns that the README has no install line.
@@ -125,5 +133,5 @@ Open points:
 | F0 | done (2026-11-09) |
 | F1 | done (2026-11-09), decisions pending user review |
 | F2 | done (2026-11-09); user gave the go-ahead to continue |
-| F3 | done (2026-11-09), user review pending |
-| F4 | pending |
+| F3 | done (2026-11-09); user gave the go-ahead to continue |
+| F4 | done (2026-11-09), user review pending |

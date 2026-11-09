@@ -58,6 +58,8 @@ One short paragraph of context.
 - `<arch title>`: the static picture: `<node>`s and `<edge from to label?>`s. Use it for "what are the parts".
 - `<group id label kind?>` (in `<arch>` only) boxes related nodes; the viewer shows it collapsed and zooms in on click, without asking you. Edges may point at a group.
 - `<drill node topic>` marks a node that deserves its own deeper scene, under that topic. Add one for the 1–3 nodes a reader will most likely want next.
+- `<data title>`: the data model, for "what is stored and how it relates": `<entity id label ref>` with `<field name type? key?>` rows (`key` = `pk`, `fk`, `unique`) and `<relation from to card label?>` (`card` = `1-1`, `1-n`, `n-1`, `n-n`).
+- `<state title>`: a lifecycle, for "what states can X be in": `<status id label role? ref?>` (exactly one `role="initial"`, optional `role="final"`), `<transition from to event ref?>`, and optionally one `<walk>` of `<go event="...">narration</go>` steps that follow transitions from the initial state, like a `<flow>`.
 - `<flow title>`: an ordered story: `<node>`s and `<step from to? label? ref?>narration</step>`. A step without `to` is an action inside `from`. Use it for "what happens when".
 - `<node id label kind? ref?>`; `kind` is one of `actor`, `ui`, `service`, `module`, `function`, `store`, `external` (default `module`).
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
@@ -65,6 +67,6 @@ One short paragraph of context.
 
 ## Good scenes
 
-- One `<arch>` and/or one `<flow>` per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
+- Pick the view that answers the question: `<arch>` for parts, `<flow>` for a sequence, `<data>` for stored data, `<state>` for a lifecycle. One or two per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
 - Labels are names a reader recognizes (file or concept), at most 80 characters; narration is one or two plain sentences per step.
 - Explain what the code does, not what it might do; if you are unsure, say so in the prose.

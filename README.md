@@ -7,7 +7,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 0 (done): clicks in the viewer reach Claude through a plugin monitor, with no launch flags (`docs/decisions/interactivity.md`).
 - Phase 1 (MVP, done): EXL parser, project index, scene cache with hash invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, the `/explicador:explain` skill and a sample project.
 - Phase 2 (interactivity and zoom, done): `<group>` zooms in locally, clicking a node asks Claude to go deeper (or opens a cached `<drill>`), breadcrumbs zoom back out.
-- Phase 3 (presentation, done pending the user's review): full-screen slides with manual advance and large narration, and export of a scene as one HTML file that works offline. Plan and next phases: `.dev/PLAN.md`.
+- Phase 3 (presentation, done): full-screen slides with manual advance and large narration, and export of a scene as one HTML file that works offline.
+- Phase 4 (more views, done pending the user's review): `<data>` data models (entities, fields, relations with cardinality) and `<state>` machines with an optional narrated walk. Plan: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 
@@ -38,7 +39,8 @@ State lives in the analyzed project: `.explicador/index/` (file tree + imports),
 - `skills/explicador/`: how Claude explains and writes EXL; `skills/explain/`: `/explicador:explain <topic>`.
 - `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `export_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and feeds the monitor.
 - `viewer/`: Vite + React + Tailwind; scenes are SVG laid out with ELK.js.
-- `docs/EXL.md`: the scene format.
+- `docs/EXL.md`: the scene format. Views: `<arch>` (parts, with `<group>`), `<flow>` (steps), `<data>` (data model), `<state>` (state machine with a walk).
+- `examples/scenes/`: sample scenes for `examples/shop`; try them with `npm run preview -- examples/scenes/session-states.exl.md --project examples/shop`.
 
 ## Develop
 
