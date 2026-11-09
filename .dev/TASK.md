@@ -42,3 +42,9 @@
 - Server + viewer: typecheck 0 (server, viewer, spike), lint 0, `npm test` 43/43 pass, including the stdio end-to-end run on a copy of `examples/shop` (index → missing → render → fresh from cache with the EXL returned → edit `src/auth/sessions.js` → stale with the changed file; bridge refuses a bad or missing token; invalid EXL and missing refs save nothing; finding appended). `npm run build` builds `server/dist` and `viewer/dist`.
 - Viewer smoke check: `npm run preview -- examples/scenes/login.exl.md --project examples/shop` + Playwright Chromium. 13 scene nodes rendered, step 5 of 7 highlighted with its narration and ref, no console errors under the CSP, bad token → 403. Screenshot inspected by the agent only.
 
+- Plugin + skills: `claude plugin validate .` passes with one warning (README has no marketplace install line; no marketplace yet). Built server checked over stdio from `server/dist/index.js` (render + viewer index 200).
+- Criterion, headless (`claude -p --plugin-dir`, Claude Code 2.1.319, on a copy of `examples/shop`, allowed tools: the four Explicador tools + Read/Grep/Glob):
+  - Run 1: `show_scene` missing → `ensure_index` → read code → `render_scene` (one EXL error fixed by the agent) → cached, 9 refs; one finding appended. 11 turns, $0.40.
+  - Run 2, unchanged: `show_scene` fresh, answered from the EXL with no code reads. 5 turns, $0.15.
+  - Run 3, after appending a comment to `src/auth/sessions.js`: `show_scene` stale listing that file; the agent re-read only it and re-rendered. 7 turns, $0.23.
+- Not run: an interactive session watching the scene animate in a real browser tab (no display or interactive terminal in the cloud session; `xdg-open` is absent, so the server ran with `EXPLICADOR_NO_BROWSER=1`). Covered partly by the Playwright screenshot above.

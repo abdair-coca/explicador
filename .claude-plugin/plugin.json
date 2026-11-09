@@ -1,0 +1,8 @@
+{
+  "name": "explicador",
+  "version": "0.1.0",
+  "description": "Explains software systems with animated diagrams in a local browser tab.",
+  "author": { "name": "abdair-coca" },
+  "repository": "https://github.com/abdair-coca/explicador",
+  "keywords": ["explain", "architecture", "diagrams", "onboarding", "teaching"]
+}

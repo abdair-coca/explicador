@@ -4,14 +4,45 @@ Claude Code plugin that explains software systems with animated, interactive dia
 
 ## Status
 
-Phase 0 is done: clicks in the viewer reach Claude through a plugin monitor, with no launch flags (`docs/decisions/interactivity.md`). Phase 1 (MVP) is next; the plan lives in `.dev/PLAN.md`.
+- Phase 0 (done): clicks in the viewer reach Claude through a plugin monitor, with no launch flags (`docs/decisions/interactivity.md`).
+- Phase 1 (MVP, done): EXL parser, project index, scene cache with hash invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, the `/explicador:explain` skill and a sample project. Plan and next phases: `.dev/PLAN.md`.
 
-## Develop
+## Use it (from a checkout)
 
-Requires Node 24+.
+Requires Node 22.18+ (24+ recommended) and Claude Code.
 
 ```sh
 npm install
+npm run build            # server/dist and viewer/dist; the plugin runs the built files
+cd examples/shop
+claude --plugin-dir ../..
+> /explicador:explain login
+```
+
+The first run reads the index and the code, then renders the scene and opens the viewer. Asking again with no changes serves the cached scene without reading code. Editing a referenced file marks the scene stale, and the next explanation refreshes it.
+
+State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes) and `FINDINGS.md`.
+
+## How it fits together
+
+- `.claude-plugin/plugin.json`, `.mcp.json`: plugin manifest and the MCP server (`node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`).
+- `skills/explicador/`: how Claude explains and writes EXL; `skills/explain/`: `/explicador:explain <topic>`.
+- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token) that serves the viewer.
+- `viewer/`: Vite + React + Tailwind; scenes are SVG laid out with ELK.js.
+- `docs/EXL.md`: the scene format.
+
+## Develop
+
+```sh
 npm run typecheck
 npm run lint
+npm test                 # parser, cache, index, findings, end-to-end over stdio
+npm run build
 ```
+
+Development mode, without Claude:
+
+- `npm run preview -- examples/scenes/login.exl.md --project examples/shop` serves an EXL file in the viewer and reloads it on every save, printing validation errors.
+- `npm run dev -w server` and `npm run dev -w viewer` rebuild on change; in Claude Code, `/reload-plugins` picks up the new server.
+- `EXPLICADOR_SERVER=http://127.0.0.1:<port> npm run dev:server -w viewer` runs Vite with hot reload against a running bridge; open `http://localhost:5173/?t=<token>` with the token from the bridge URL.
+- `EXPLICADOR_NO_BROWSER=1` stops the server from opening browser tabs.
