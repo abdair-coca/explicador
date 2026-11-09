@@ -73,8 +73,9 @@ explicador/
 - [x] **F2. Interactivity and zoom.** Done 2026-11-09 except the user's interactive check. `<group>`, `<drill>`, zoom transitions, breadcrumbs, and click delivery through the plugin monitor chosen in F0 (per-session runtime file in `.explicador/`, click messages built from scene data). `spikes/interactivity/` removed.
   - Decisions (user, 2026-11-09): `<group>` zooms locally without Claude; `<drill node topic>` opens a cached fresh scene or asks Claude; clicks on other nodes also ask Claude; MCP config inline in `plugin.json`; monitor `when: "always"`.
   - Criterion: automatic tests (parser, levels, click message from scene data, runtime file, one monitor line per click end to end, cached drill, breadcrumb trail) pass with typecheck and lint; plus a ~5 minute interactive check by the user: in `examples/shop`, `/explicador:explain login`, click a node → Claude renders a deeper scene and the viewer zooms in; breadcrumb back zooms out; clicking a group zooms locally. **Interactive check: pending (user).**
-- [ ] **F3. Presentation mode.** Manual advance, visible narration, export a scene as standalone HTML.
-  - Criterion: defined when F3 starts.
+- [x] **F3. Presentation mode.** Done 2026-11-09 except the user's review. Manual advance, visible narration, export a scene as standalone HTML.
+  - Decisions (user, 2026-11-09): "Present" shows full-screen slides (each Markdown block, each `<arch>` with group zoom, each `<flow>` step with large narration), manual advance only (→/Space/PageDown, ←/PageUp, Home/End, F full screen, Esc). Export is one self-contained `.html` (JS, CSS, scene inline, CSP with no network) that works from `file://`; from a viewer button (`GET /api/export`) and the `export_scene` tool (`.explicador/exports/<key>.html`).
+  - Criterion: slide-order and export tests, `export_scene` end to end, Playwright (keyboard presentation; exported file from `file://` with no requests and no errors), typecheck and lint; plus a ~5 minute review by the user. **User review: pending.**
 - [ ] **F4. More views.** `<data>` and `<state>`.
   - Criterion: defined when F4 starts.
 
@@ -101,6 +102,12 @@ Taken during F2 (2026-11-09), within the user's choices:
 15. **No monitor.** When no monitor is connected (for example under `claude -p`), the viewer says so and suggests `/explicador:explain <topic>`; the click is not queued.
 16. **Development origin.** `EXPLICADOR_DEV_ORIGIN` lets the Vite dev page post clicks; unset by default.
 
+Taken during F3 (2026-11-09), within the user's choices:
+17. **Offline copies** show no click-to-Claude affordances and their breadcrumbs are plain text; drill marks (↘) still show which nodes have a deeper scene.
+18. **Export size.** The file inlines the whole viewer bundle (about 1.8 MB, mostly ELK); no minification beyond Vite's default.
+19. **Presentation keys.** Enter and Space activate a focused button or node (e.g. a group) instead of advancing; Backspace also goes back.
+20. **`EXPLICADOR_VIEWER_DIR`** overrides the viewer folder the server serves and exports; used by tests.
+
 Open points:
 - Resolved in F2: the plugin's MCP config moved inline into `plugin.json`, so this repo no longer offers a broken project server.
 - Installing from a marketplace is not supported yet: `server/dist`, `viewer/dist` and `node_modules` are not committed, so an installed copy would need a build or dependency step (e.g. a SessionStart hook into `${CLAUDE_PLUGIN_DATA}`). `claude plugin validate .` warns that the README has no install line.
@@ -117,6 +124,6 @@ Open points:
 |---|---|
 | F0 | done (2026-11-09) |
 | F1 | done (2026-11-09), decisions pending user review |
-| F2 | done (2026-11-09), interactive check pending (user) |
-| F3 | pending |
+| F2 | done (2026-11-09); user gave the go-ahead to continue |
+| F3 | done (2026-11-09), user review pending |
 | F4 | pending |

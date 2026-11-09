@@ -40,6 +40,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - `<flow>` is an ordered story. The viewer draws one edge per pair of nodes that talk, then plays the steps: the active nodes and edge are highlighted, a token travels along the edge, and the narration shows under the diagram. Play, pause, previous, next and jumping to a step are available. With reduced motion, playback does not start by itself and no token moves.
 - `<group>` shows collapsed as one box with its member count; edges into its members attach to the box (merged per pair; a label is kept only when all merged edges share it). Clicking it zooms in without asking Claude: its members appear, with faded context boxes for the nodes outside that its edges reach, and breadcrumbs lead back out.
 - Clicking any other node asks to go deeper. If the node has a `<drill>` whose topic is cached and fresh, the viewer opens that scene with a zoom-in. Otherwise the click reaches Claude through the plugin monitor as one line naming the node, its ref, the scene and the topic (the drill topic, or the node label); the next scene Claude renders becomes the deeper level. Scenes reached this way show the scenes above them as breadcrumbs.
+- Presentation mode shows one slide per Markdown block, one per `<arch>` and one per `<flow>` step (with its narration in large type), in document order, advancing only on request. Write prose blocks with that in mind: short, one idea each.
+- Exported files embed the parsed scene; they keep `<group>` zoom and `<flow>` playback but drop clicks to Claude.
 - Every file named in a `ref` is hashed when the scene is cached. If one of them changes or disappears, the scene is reported stale and the viewer shows which files changed.
 
 ## Errors

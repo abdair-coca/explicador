@@ -35,6 +35,7 @@ export const instructions = [
   'For any explanation: call show_scene first; if it is fresh, answer from it without reading code.',
   'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document',
   '(Markdown plus <arch>/<flow> tags; the explicador skill documents the format).',
+  'export_scene writes a cached scene as one offline HTML file for sharing.',
   'Record non-obvious facts worth keeping with add_finding.',
 ].join(' ');
 
