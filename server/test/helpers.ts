@@ -17,3 +17,24 @@ export function writeFiles(root: string, files: Record<string, string>): void {
     writeFileSync(join(root, path), content);
   }
 }
+
+/** A minimal built viewer: index.html plus one script and one stylesheet with tricky content. */
+export const fakeViewer = {
+  'index.html': [
+    '<!doctype html>',
+    '<html lang="en">',
+    '  <head>',
+    '    <meta charset="UTF-8" />',
+    '    <link rel="icon" href="data:," />',
+    '    <title>Explicador</title>',
+    '    <script type="module" crossorigin src="/assets/index-abc.js"></script>',
+    '    <link rel="stylesheet" crossorigin href="/assets/index-abc.css">',
+    '  </head>',
+    '  <body>',
+    '    <div id="root"></div>',
+    '  </body>',
+    '</html>',
+  ].join('\n'),
+  'assets/index-abc.js': 'const s = "</script>"; const r = "$&$1"; document.title = s + r;',
+  'assets/index-abc.css': 'body{color:red}/* </style> */',
+};

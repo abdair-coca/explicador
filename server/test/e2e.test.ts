@@ -6,7 +6,7 @@ import { after, before, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { tempProject } from './helpers.ts';
+import { fakeViewer, tempProject } from './helpers.ts';
 
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 const exl = readFileSync(join(repo, 'examples/scenes/login.exl.md'), 'utf8');
@@ -14,6 +14,7 @@ const exl = readFileSync(join(repo, 'examples/scenes/login.exl.md'), 'utf8');
 describe('MCP server over stdio', () => {
   const project = tempProject();
   cpSync(join(repo, 'examples/shop'), project, { recursive: true });
+  const viewer = tempProject(fakeViewer);
   const client = new Client({ name: 'e2e', version: '0.0.0' });
 
   before(async () => {
@@ -24,7 +25,7 @@ describe('MCP server over stdio', () => {
         command: process.execPath,
         args: [join(repo, 'server/src/index.ts')],
         cwd: project,
-        env: { ...env, CLAUDE_PROJECT_DIR: project, EXPLICADOR_NO_BROWSER: '1' },
+        env: { ...env, CLAUDE_PROJECT_DIR: project, EXPLICADOR_NO_BROWSER: '1', EXPLICADOR_VIEWER_DIR: viewer },
         stderr: 'inherit',
       }),
     );
@@ -39,9 +40,9 @@ describe('MCP server over stdio', () => {
     return { text: result.content.map((c) => c.text).join('\n'), isError: result.isError === true };
   }
 
-  it('lists the four tools', async () => {
+  it('lists the tools', async () => {
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map((t) => t.name).sort(), ['add_finding', 'ensure_index', 'render_scene', 'show_scene']);
+    assert.deepEqual(tools.map((t) => t.name).sort(), ['add_finding', 'ensure_index', 'export_scene', 'render_scene', 'show_scene']);
   });
 
   it('builds the index with the import graph', async () => {
@@ -84,6 +85,24 @@ describe('MCP server over stdio', () => {
     );
     assert.equal((await fetch(new URL('/api/scene', url), { headers: { 'x-token': 'nope' } })).status, 403);
     assert.equal((await fetch(new URL('/api/scene', url))).status, 403);
+  });
+
+  it('exports the current scene as a download and a cached scene as a file', async () => {
+    const url = new URL(viewerUrl);
+    const token = url.searchParams.get('t') ?? '';
+    const download = await fetch(new URL('/api/export', url), { headers: { 'x-token': token } });
+    assert.equal(download.status, 200);
+    assert.equal(download.headers.get('content-disposition'), 'attachment; filename="login.html"');
+    assert.match(await download.text(), /id="explicador-scene">\{"topic":"login"/);
+    assert.equal((await fetch(new URL('/api/export', url))).status, 403);
+
+    const exported = await call('export_scene', { topic: 'login' });
+    assert.equal(exported.isError, false, exported.text);
+    assert.match(exported.text, /Exported "login" to .*\.explicador\/exports\/login\.html/);
+    assert.match(exported.text, /the scene is stale/);
+    const html = readFileSync(join(project, '.explicador/exports/login.html'), 'utf8');
+    assert.match(html, /"status":"stale"/);
+    assert.equal((await call('export_scene', { topic: 'nothing here' })).isError, true);
   });
 
   it('rejects invalid EXL and missing refs without saving', async () => {

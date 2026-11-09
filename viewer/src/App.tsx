@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { ScenePayload } from '../../server/src/scene.ts';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
-import { post, useScene, type ClickReply, type Connection } from './api';
+import { exportUrl, post, staticScene, useScene, type ClickReply, type Connection } from './api';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
@@ -14,7 +14,9 @@ const connectionText: Record<Connection, string> = {
   live: 'Live',
   lost: 'Disconnected: is Claude Code still running?',
   forbidden: 'Open the link Claude gave you (this one has no valid token)',
+  static: 'Offline copy',
 };
+const offline = staticScene !== null;
 
 type Notice = { tone: 'info' | 'warning'; text: React.ReactNode } | undefined;
 /** A scene change the user started: zoom into the clicked node, or out to a breadcrumb. */
@@ -99,9 +101,13 @@ export function App() {
               {scene.trail.map((entry) => (
                 <span key={entry.key} className="flex items-center gap-2">
                   <span className="text-muted-foreground">/</span>
-                  <button type="button" className="text-primary hover:underline" onClick={() => back(entry.key)}>
-                    {entry.topic}
-                  </button>
+                  {offline ? (
+                    <span>{entry.topic}</span>
+                  ) : (
+                    <button type="button" className="text-primary hover:underline" onClick={() => back(entry.key)}>
+                      {entry.topic}
+                    </button>
+                  )}
                 </span>
               ))}
               <span className="text-muted-foreground">/</span>
@@ -114,15 +120,27 @@ export function App() {
             </nav>
           )}
           {scene && (
-            <Button variant="outline" size="sm" className="ml-auto" onClick={() => setPresenting(true)}>
-              ▶ Present
-            </Button>
+            <span className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPresenting(true)}>
+                ▶ Present
+              </Button>
+              {!offline && (
+                <a
+                  href={exportUrl}
+                  download={`${scene.key}.html`}
+                  className="inline-flex h-8 items-center rounded-md px-3 text-xs font-medium hover:bg-muted"
+                  title="Download this scene as one HTML file that works offline"
+                >
+                  ⤓ Export
+                </a>
+              )}
+            </span>
           )}
           <span className={cn('flex items-center gap-2 text-xs text-muted-foreground', !scene && 'ml-auto')}>
             <span
               className={cn(
                 'h-2 w-2 rounded-full',
-                connection === 'live' ? 'bg-emerald-500' : connection === 'connecting' ? 'bg-amber-400' : 'bg-red-500',
+                connection === 'live' || connection === 'static' ? 'bg-emerald-500' : connection === 'connecting' ? 'bg-amber-400' : 'bg-red-500',
               )}
             />
             {connectionText[connection]}
@@ -149,14 +167,14 @@ export function App() {
         </div>
       )}
       <main ref={main} className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-        {scene ? <Scene scene={scene} onDrill={drill} /> : <Empty />}
+        {scene ? <Scene scene={scene} onDrill={offline ? undefined : drill} /> : <Empty />}
       </main>
       {scene && presenting && <Presenter key={scene.version} scene={scene} onExit={() => setPresenting(false)} />}
     </div>
   );
 }
 
-function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler }) {
+function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler | undefined }) {
   return (
     <>
       {scene.status === 'stale' && (
@@ -184,7 +202,8 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
         );
       })}
       <p className="pt-2 text-xs text-muted-foreground">
-        Generated {new Date(scene.savedAt).toLocaleString()} · Click a node to go deeper; groups zoom in.
+        Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}
+        {onDrill ? 'Click a node to go deeper; groups zoom in.' : 'Offline copy: groups zoom in; ask Claude Code to go deeper.'}
       </p>
     </>
   );

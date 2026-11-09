@@ -8,6 +8,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildStandalone, ExportError } from '../export/index.ts';
 import type { ScenePayload } from '../scene.ts';
 
 export type { ScenePayload } from '../scene.ts';
@@ -58,7 +59,8 @@ export class Bridge {
   private origin = '';
 
   constructor(options: BridgeOptions = {}) {
-    this.viewerDir = resolve(options.viewerDir ?? defaultViewerDir);
+    // EXPLICADOR_VIEWER_DIR lets tests serve a stand-in viewer.
+    this.viewerDir = resolve(options.viewerDir ?? process.env.EXPLICADOR_VIEWER_DIR ?? defaultViewerDir);
     this.openUrl = options.openUrl ?? openInBrowser;
     this.server.on('request', (req, res) => {
       this.handle(req, res).catch((error: unknown) => {
@@ -150,6 +152,7 @@ export class Bridge {
         if (name === 'scene') return send(res, 200, { scene: this.scene ?? null });
         if (name === 'events') return this.stream(req, res, this.viewerStreams, true);
         if (name === 'clicks') return this.stream(req, res, this.monitorStreams, false);
+        if (name === 'export') return this.export(res);
         return send(res, 404, { error: 'not found' });
       }
       const action = this.actions.get(name);
@@ -163,6 +166,29 @@ export class Bridge {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { error: 'method not allowed' });
     this.serveStatic(url.pathname, res);
+  }
+
+  /** GET /api/export: the current scene as a standalone HTML download. */
+  private export(res: ServerResponse): void {
+    if (!this.scene) return send(res, 404, { error: 'no scene' });
+    let html: string;
+    try {
+      html = buildStandalone(this.viewerDir, this.scene);
+    } catch (error) {
+      if (error instanceof ExportError) return send(res, 503, { error: error.message });
+      throw error;
+    }
+    res.writeHead(200, {
+      'content-type': 'text/html; charset=utf-8',
+      'content-disposition': `attachment; filename="${this.scene.key}.html"`,
+      'cache-control': 'no-store',
+      ...securityHeaders,
+    });
+    res.end(html);
+  }
+
+  get viewerPath(): string {
+    return this.viewerDir;
   }
 
   private stream(req: IncomingMessage, res: ServerResponse, streams: Set<ServerResponse>, hello: boolean): void {

@@ -4,7 +4,13 @@ import type { ScenePayload } from '../../server/src/scene.ts';
 
 const token = new URLSearchParams(window.location.search).get('t') ?? '';
 
-export type Connection = 'connecting' | 'live' | 'lost' | 'forbidden';
+/** An exported file carries its scene inline and has no server behind it. */
+const embedded = document.getElementById('explicador-scene')?.textContent;
+export const staticScene: ScenePayload | null = embedded ? (JSON.parse(embedded) as ScenePayload) : null;
+
+export const exportUrl = `/api/export?t=${encodeURIComponent(token)}`;
+
+export type Connection = 'connecting' | 'live' | 'lost' | 'forbidden' | 'static';
 
 async function fetchScene(): Promise<ScenePayload | null> {
   const response = await fetch('/api/scene', { headers: { 'x-token': token }, cache: 'no-store' });
@@ -14,11 +20,11 @@ async function fetchScene(): Promise<ScenePayload | null> {
 }
 
 export function useScene(): { scene: ScenePayload | null; connection: Connection } {
-  const [scene, setScene] = useState<ScenePayload | null>(null);
-  const [connection, setConnection] = useState<Connection>(token ? 'connecting' : 'forbidden');
+  const [scene, setScene] = useState<ScenePayload | null>(staticScene);
+  const [connection, setConnection] = useState<Connection>(staticScene ? 'static' : token ? 'connecting' : 'forbidden');
 
   useEffect(() => {
-    if (!token) return;
+    if (staticScene || !token) return;
     const events = new EventSource(`/api/events?t=${encodeURIComponent(token)}`);
     let latest = -1;
     events.addEventListener('scene', (event) => {

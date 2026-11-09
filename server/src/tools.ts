@@ -3,10 +3,12 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Bridge } from './bridge/index.ts';
 import { SceneCache, topicKey } from './cache/index.ts';
+import { buildStandalone, ExportError } from './export/index.ts';
 import { appendFinding } from './findings/index.ts';
 import { describeIndex, ensureIndex } from './index/index.ts';
 import type { Navigator } from './navigation.ts';
 import { formatErrors, parseExl } from './parser/index.ts';
+import { stateDir, writeFileAtomic } from './project.ts';
 
 export interface ToolDeps {
   root: string;
@@ -123,6 +125,50 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           `Rendered "${topic}" (${blocks.join(', ')}) at ${bridge.url}`,
           `Cached as .explicador/scenes/${saved.scene.key}.json, tracking ${parsed.refs.length} referenced files.`,
           bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      );
+    },
+  );
+
+  mcp.registerTool(
+    'export_scene',
+    {
+      description:
+        'Write a cached scene as one self-contained HTML file (.explicador/exports/<topic>.html) that plays and presents ' +
+        'offline, for sharing or teaching. Clicks to Claude do not work in the exported file.',
+      inputSchema: { topic: topicSchema },
+    },
+    async ({ topic }) => {
+      if (!safeKey(topic)) return text(`Topic "${topic}" needs letters or digits.`, true);
+      const lookup = cache.lookup(topic);
+      if (lookup.status === 'missing') return text(`No cached scene for "${topic}"; render it first.`, true);
+      const parsed = parseExl(lookup.scene.exl);
+      if (!parsed.ok) return text(`The cached scene for "${topic}" no longer parses; regenerate it.`, true);
+      const changes = lookup.status === 'stale' ? lookup.changes : [];
+      let html: string;
+      try {
+        html = buildStandalone(bridge.viewerPath, {
+          version: 1,
+          topic: lookup.scene.topic,
+          key: lookup.scene.key,
+          status: lookup.status,
+          changes,
+          savedAt: lookup.scene.savedAt,
+          trail: [],
+          blocks: parsed.scene.blocks,
+        });
+      } catch (error) {
+        if (error instanceof ExportError) return text(error.message, true);
+        throw error;
+      }
+      const path = `${stateDir(root, 'exports', `${lookup.scene.key}.html`)}`;
+      writeFileAtomic(path, html);
+      return text(
+        [
+          `Exported "${lookup.scene.topic}" to ${path} (${Math.round(html.length / 1024)} KB). Open it in any browser; it needs no server.`,
+          lookup.status === 'stale' ? 'Note: the scene is stale; the export shows the warning. Refresh it first for an up-to-date copy.' : '',
         ]
           .filter(Boolean)
           .join('\n'),
