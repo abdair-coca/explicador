@@ -4,6 +4,7 @@ import Markdown from 'react-markdown';
 import type { ScenePayload } from '../../../server/src/scene.ts';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
 import { Button } from '../components/ui/button';
+import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
 import { buildSlides, keyAction, type Slide } from './slides';
 
 export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () => void }) {
@@ -115,6 +116,30 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
               {stepRoute(block, slide.step)}
               {step.ref && <code className="ml-2 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{formatRef(step.ref)}</code>}
             </p>
+            <p className="mt-2 text-2xl leading-snug">{step.narration}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (slide.kind === 'data' && block.type === 'data') return <DataScene key={slide.block} block={block} />;
+  if (slide.kind === 'state' && block.type === 'state') return <StateScene key={slide.block} block={block} />;
+  if (slide.kind === 'walk' && block.type === 'state') {
+    const step = block.walk[slide.step];
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold">
+          {block.title}
+          <span className="ml-3 text-base font-normal text-muted-foreground">
+            Step {slide.step + 1} of {slide.of}
+          </span>
+        </h2>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <StateDiagram block={block} step={slide.step} />
+        </div>
+        {step && (
+          <div aria-live="polite">
+            <p className="text-sm font-medium text-active">{walkRoute(block, slide.step)}</p>
             <p className="mt-2 text-2xl leading-snug">{step.narration}</p>
           </div>
         )}

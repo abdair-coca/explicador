@@ -119,6 +119,21 @@ describe('MCP server over stdio', () => {
     assert.match((await call('show_scene', { topic: 'ghost' })).text, /No cached scene/);
   });
 
+  it('caches <data> and <state> scenes and invalidates them through their refs', async () => {
+    for (const [topic, file] of [
+      ['data model', 'data-model.exl.md'],
+      ['session lifecycle', 'session-states.exl.md'],
+    ] as const) {
+      const rendered = await call('render_scene', { topic, exl: readFileSync(join(repo, 'examples/scenes', file), 'utf8') });
+      assert.equal(rendered.isError, false, rendered.text);
+    }
+    assert.match((await call('show_scene', { topic: 'data model' })).text, /is fresh: none of its 3 referenced files changed/);
+    appendFileSync(join(project, 'src/cart/cart-service.js'), '\n// edited\n');
+    assert.match((await call('show_scene', { topic: 'data model' })).text, /- src\/cart\/cart-service\.js \(modified\)/);
+    // The state scene does not reference the cart, so it stays fresh.
+    assert.match((await call('show_scene', { topic: 'session lifecycle' })).text, /is fresh/);
+  });
+
   it('appends findings to FINDINGS.md', async () => {
     const result = await call('add_finding', {
       title: 'Sessions are lost on restart',

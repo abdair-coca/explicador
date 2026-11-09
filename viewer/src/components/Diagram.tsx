@@ -1,6 +1,6 @@
 // SVG rendering of a laid-out scene. Highlighting and the moving token are driven by props.
 import { useId } from 'react';
-import type { Layout, LaidEdge, LaidNode } from '../layout/elk';
+import { ENTITY_HEADER, ENTITY_ROW, type Layout, type LaidEdge, type LaidNode } from '../layout/elk';
 import type { ViewNode } from '../layout/levels';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,8 @@ export interface DiagramProps {
   ariaLabel: string;
   /** Called when a node, a group or a drill is clicked (or activated with the keyboard). */
   onNodeClick?: (id: string, element: Element) => void;
+  /** Draw arrowheads (off for data relations, which are not directed). */
+  arrows?: boolean;
   /** Which nodes take clicks; by default every node that is not context. */
   isClickable?: (node: ViewNode) => boolean;
 }
@@ -59,7 +61,7 @@ export function Diagram(props: DiagramProps) {
             active={edge.id === activeEdge}
             dimmed={focus && edge.id !== activeEdge}
             label={edge.id === activeEdge ? (props.activeLabel ?? edge.label) : edge.label}
-            marker={`url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`}
+            marker={props.arrows === false ? undefined : `url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`}
           />
         ))}
         {layout.nodes.map((node) => (
@@ -85,7 +87,14 @@ export function Diagram(props: DiagramProps) {
   );
 }
 
-function Edge(props: { edge: LaidEdge; delay: number; active: boolean; dimmed: boolean; label?: string; marker: string }) {
+function Edge(props: {
+  edge: LaidEdge;
+  delay: number;
+  active: boolean;
+  dimmed: boolean;
+  label?: string | undefined;
+  marker: string | undefined;
+}) {
   const { edge, label } = props;
   const width = label ? label.length * 6.4 + 10 : 0;
   return (
@@ -118,7 +127,7 @@ function Node(props: {
   const { laid, onClick } = props;
   const { node } = laid;
   const role = node.role ?? 'node';
-  const radius = node.kind === 'actor' ? laid.height / 2 : 8;
+  const radius = node.shape === 'state' ? laid.height / 2 : node.kind === 'actor' ? laid.height / 2 : 8;
   const ref = node.ref
     ? `${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
     : undefined;
@@ -134,6 +143,7 @@ function Node(props: {
         `kind-${node.kind}`,
         node.kind,
         role,
+        node.shape,
         onClick && 'clickable',
         props.active && 'active',
         props.dimmed && 'dimmed',
@@ -155,21 +165,14 @@ function Node(props: {
       <title>{[ref ? `${node.label} (${ref})` : node.label, onClick ? action : ''].filter(Boolean).join('\n')}</title>
       <g className="node-inner" style={{ animationDelay: `${props.delay}ms` }}>
         {props.pulse && <rect className="pulse" width={laid.width} height={laid.height} rx={radius} />}
-        {role === 'group' && <rect className="stack" x={5} y={5} width={laid.width} height={laid.height} rx={radius} />}
-        <rect className="body" width={laid.width} height={laid.height} rx={radius} />
-        {node.kind !== 'actor' && <rect className="accent" x={0} y={10} width={4} height={laid.height - 20} rx={2} />}
-        <text className="kind-caption" x={laid.width / 2} y={18} textAnchor="middle">
-          {role === 'group' ? `${node.kind} · group` : node.kind}
-        </text>
-        {laid.lines.map((line, i) => (
-          <text key={i} className="label" x={laid.width / 2} y={37 + i * 17} textAnchor="middle">
-            {line}
-          </text>
-        ))}
-        {role === 'group' && (
-          <text className="hint" x={laid.width / 2} y={laid.height - 9} textAnchor="middle">
-            {node.members} inside · zoom ⤢
-          </text>
+        {node.shape === 'start' ? (
+          <circle className="start-dot" cx={laid.width / 2} cy={laid.height / 2} r={8} />
+        ) : node.shape === 'entity' ? (
+          <EntityBody laid={laid} />
+        ) : node.shape === 'state' ? (
+          <StateBody laid={laid} />
+        ) : (
+          <BoxBody laid={laid} radius={radius} />
         )}
         {node.drill && role === 'node' && (
           <text className="drill-mark" x={laid.width - 10} y={17} textAnchor="end">
@@ -178,5 +181,83 @@ function Node(props: {
         )}
       </g>
     </g>
+  );
+}
+
+function BoxBody({ laid, radius }: { laid: LaidNode; radius: number }) {
+  const { node } = laid;
+  const role = node.role ?? 'node';
+  return (
+    <>
+      {role === 'group' && <rect className="stack" x={5} y={5} width={laid.width} height={laid.height} rx={radius} />}
+      <rect className="body" width={laid.width} height={laid.height} rx={radius} />
+      {node.kind !== 'actor' && <rect className="accent" x={0} y={10} width={4} height={laid.height - 20} rx={2} />}
+      <text className="kind-caption" x={laid.width / 2} y={18} textAnchor="middle">
+        {role === 'group' ? `${node.kind} · group` : node.kind}
+      </text>
+      {laid.lines.map((line, i) => (
+        <text key={i} className="label" x={laid.width / 2} y={37 + i * 17} textAnchor="middle">
+          {line}
+        </text>
+      ))}
+      {role === 'group' && (
+        <text className="hint" x={laid.width / 2} y={laid.height - 9} textAnchor="middle">
+          {node.members} inside · zoom ⤢
+        </text>
+      )}
+    </>
+  );
+}
+
+const keyBadge: Record<string, string> = { pk: 'PK', fk: 'FK', unique: 'UQ' };
+
+function EntityBody({ laid }: { laid: LaidNode }) {
+  const fields = laid.node.fields ?? [];
+  return (
+    <>
+      <rect className="body" width={laid.width} height={laid.height} rx={8} />
+      <rect className="entity-header" width={laid.width} height={ENTITY_HEADER} rx={8} />
+      <rect className="entity-header" y={ENTITY_HEADER - 8} width={laid.width} height={8} />
+      <text className="label entity-title" x={14} y={22}>
+        {laid.node.label}
+      </text>
+      {fields.map((field, i) => {
+        const y = ENTITY_HEADER + 15 + i * ENTITY_ROW;
+        return (
+          <g key={field.name}>
+            {field.key && (
+              <text className={`field-key key-${field.key}`} x={14} y={y}>
+                {keyBadge[field.key]}
+              </text>
+            )}
+            <text className="field-name" x={field.key ? 40 : 14} y={y}>
+              {field.name}
+            </text>
+            {field.type && (
+              <text className="field-type" x={laid.width - 12} y={y} textAnchor="end">
+                {field.type}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+function StateBody({ laid }: { laid: LaidNode }) {
+  const radius = laid.height / 2;
+  return (
+    <>
+      <rect className="body" width={laid.width} height={laid.height} rx={radius} />
+      {laid.node.final && (
+        <rect className="final-ring" x={4} y={4} width={laid.width - 8} height={laid.height - 8} rx={radius - 4} />
+      )}
+      {laid.lines.map((line, i) => (
+        <text key={i} className="label" x={laid.width / 2} y={laid.height / 2 + 5 - ((laid.lines.length - 1) * 17) / 2 + i * 17} textAnchor="middle">
+          {line}
+        </text>
+      ))}
+    </>
   );
 }

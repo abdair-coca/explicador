@@ -102,6 +102,18 @@ body {
 
 .token { fill: var(--active); }
 
+/* <data> entities and <state> machines. */
+.scene-node.start { opacity: 1; }
+.scene-node .start-dot { fill: var(--foreground); }
+.scene-node rect.final-ring { fill: none; stroke: var(--edge); stroke-width: 1.5; }
+.scene-node rect.entity-header { fill: color-mix(in oklch, var(--kind) 16%, var(--node-fill)); }
+.scene-node .entity-title { font-weight: 650; }
+.scene-node .field-name { fill: var(--foreground); font-size: 12px; }
+.scene-node .field-type { fill: var(--muted-foreground); font-size: 11px; font-family: ui-monospace, monospace; }
+.scene-node .field-key { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; fill: var(--primary); }
+.scene-node .field-key.key-fk { fill: oklch(0.62 0.13 190); }
+.scene-node .field-key.key-unique { fill: var(--muted-foreground); }
+
 /* Reveal: nodes rise in by layer, then edges draw. */
 @keyframes node-in {
   from { opacity: 0; transform: translateY(8px) scale(0.97); }

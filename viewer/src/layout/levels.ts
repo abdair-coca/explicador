@@ -1,6 +1,6 @@
 // Zoom levels of an <arch>: what is visible at the top or inside one <group>.
 // Pure functions so they can be tested without a browser.
-import type { ArchBlock, Drill, SceneNode } from '../../../server/src/scene.ts';
+import type { ArchBlock, DataBlock, Drill, Field, SceneNode, StateBlock } from '../../../server/src/scene.ts';
 
 export interface ViewNode extends SceneNode {
   /** `group`: a collapsed <group> (zooms in). `context`: a node outside the open group, shown faded. */
@@ -9,6 +9,10 @@ export interface ViewNode extends SceneNode {
   members?: number;
   /** Topic of the deeper scene when the node has a <drill>. */
   drill?: string;
+  /** How the node is drawn: a box (default), an entity with field rows, a state pill, or the start dot. */
+  shape?: 'entity' | 'state' | 'start';
+  fields?: Field[];
+  final?: boolean;
 }
 
 export interface ViewEdge {
@@ -110,4 +114,62 @@ export function archLevel(block: ArchBlock, groupId?: string): Level {
     }
     return key;
   }
+}
+
+export const START_ID = '__start';
+
+const cardText: Record<string, string> = { '1-1': '1 : 1', '1-n': '1 : n', 'n-1': 'n : 1', 'n-n': 'n : n' };
+
+/** A <data> model: entities with their fields; relations labelled with their cardinality. */
+export function dataView(block: DataBlock): Level {
+  const drill = (id: string): string | undefined => block.drills.find((d) => d.node === id)?.topic;
+  return {
+    nodes: block.entities.map((e): ViewNode => {
+      const topic = drill(e.id);
+      return {
+        id: e.id,
+        label: e.label,
+        kind: 'store',
+        shape: 'entity',
+        fields: e.fields,
+        ...(e.ref ? { ref: e.ref } : {}),
+        ...(topic ? { drill: topic } : {}),
+      };
+    }),
+    edges: block.relations.map((r, i) => ({
+      id: `r${i}`,
+      from: r.from,
+      to: r.to,
+      label: r.label ? `${r.label} (${cardText[r.card] ?? r.card})` : (cardText[r.card] ?? r.card),
+    })),
+  };
+}
+
+/** Edge id of a transition, shared by the layout and the walk highlight. */
+export function transitionId(index: number): string {
+  return `t${index}`;
+}
+
+/** A <state> machine: a start dot pointing at the initial state, states as pills, transitions by event. */
+export function stateView(block: StateBlock): Level {
+  const drill = (id: string): string | undefined => block.drills.find((d) => d.node === id)?.topic;
+  const initial = block.states.find((s) => s.role === 'initial');
+  const nodes: ViewNode[] = block.states.map((s): ViewNode => {
+    const topic = drill(s.id);
+    return {
+      id: s.id,
+      label: s.label,
+      kind: 'module',
+      shape: 'state',
+      ...(s.role === 'final' ? { final: true } : {}),
+      ...(s.ref ? { ref: s.ref } : {}),
+      ...(topic ? { drill: topic } : {}),
+    };
+  });
+  const edges: ViewEdge[] = block.transitions.map((t, i) => ({ id: transitionId(i), from: t.from, to: t.to, label: t.event }));
+  if (initial) {
+    nodes.unshift({ id: START_ID, label: 'start', kind: 'module', shape: 'start', role: 'context' });
+    edges.unshift({ id: 'start', from: START_ID, to: initial.id });
+  }
+  return { nodes, edges };
 }

@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 /** Asks to go deeper from a node: the App sends the click to the server. */
 export type DrillHandler = (blockId: string, nodeId: string, element: Element) => void;
 
-function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | undefined {
+export function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | undefined {
   const [layout, setLayout] = useState<Layout | Error>();
   useEffect(() => {
     let live = true;
@@ -28,7 +28,7 @@ function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | unde
   return layout;
 }
 
-function SceneFrame(props: {
+export function SceneFrame(props: {
   kind: string;
   title: React.ReactNode;
   actions?: React.ReactNode;
@@ -48,7 +48,7 @@ function SceneFrame(props: {
   );
 }
 
-function LayoutState(props: { layout: Layout | Error | undefined }) {
+export function LayoutState(props: { layout: Layout | Error | undefined }) {
   if (props.layout instanceof Error) {
     return <p className="p-6 text-sm text-red-600">Layout failed: {props.layout.message}</p>;
   }

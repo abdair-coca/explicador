@@ -71,3 +71,65 @@ describe('archLevel', () => {
     assert.deepEqual(groupPath(block, 'core'), ['auth', 'core']);
   });
 });
+
+describe('dataView and stateView', () => {
+  it('turns entities into field tables and relations into cardinality edges', async () => {
+    const { dataView } = await import('../src/layout/levels.ts');
+    const level = dataView({
+      type: 'data',
+      id: 'd',
+      title: 'D',
+      entities: [
+        { id: 'u', label: 'User', fields: [{ name: 'id', key: 'pk' }] },
+        { id: 's', label: 'Session', fields: [] },
+      ],
+      relations: [
+        { from: 'u', to: 's', card: '1-n', label: 'logs in' },
+        { from: 's', to: 'u', card: 'n-1' },
+      ],
+      drills: [{ node: 's', topic: 'sessions' }],
+    });
+    assert.deepEqual(
+      level.nodes.map((n) => [n.id, n.shape, n.fields?.length, n.drill ?? null]),
+      [
+        ['u', 'entity', 1, null],
+        ['s', 'entity', 0, 'sessions'],
+      ],
+    );
+    assert.deepEqual(
+      level.edges.map((e) => e.label),
+      ['logs in (1 : n)', 'n : 1'],
+    );
+  });
+
+  it('adds a start dot before the initial state and marks final states', async () => {
+    const { stateView, START_ID } = await import('../src/layout/levels.ts');
+    const level = stateView({
+      type: 'state',
+      id: 's',
+      title: 'S',
+      states: [
+        { id: 'a', label: 'A', role: 'initial' },
+        { id: 'z', label: 'Z', role: 'final' },
+      ],
+      transitions: [{ from: 'a', to: 'z', event: 'go' }],
+      walk: [],
+      drills: [],
+    });
+    assert.deepEqual(
+      level.nodes.map((n) => [n.id, n.shape, n.role ?? null, n.final ?? false]),
+      [
+        [START_ID, 'start', 'context', false],
+        ['a', 'state', null, false],
+        ['z', 'state', null, true],
+      ],
+    );
+    assert.deepEqual(
+      level.edges.map((e) => [e.id, e.from, e.to, e.label ?? null]),
+      [
+        ['start', START_ID, 'a', null],
+        ['t0', 'a', 'z', 'go'],
+      ],
+    );
+  });
+});

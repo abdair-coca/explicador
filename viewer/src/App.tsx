@@ -4,6 +4,7 @@ import type { ScenePayload } from '../../server/src/scene.ts';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { exportUrl, post, staticScene, useScene, type ClickReply, type Connection } from './api';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
+import { DataScene, StateScene } from './components/views';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Presenter } from './presentation/Presenter';
@@ -195,7 +196,8 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
         const key = `${scene.version}-${i}`;
         if (block.type === 'arch') return <ArchScene key={key} block={block} onDrill={onDrill} />;
         if (block.type === 'flow') return <FlowScene key={key} block={block} onDrill={onDrill} />;
-        if (block.type !== 'markdown') return null;
+        if (block.type === 'data') return <DataScene key={key} block={block} onDrill={onDrill} />;
+        if (block.type === 'state') return <StateScene key={key} block={block} onDrill={onDrill} />;
         return (
           <div key={key} className="prose-exl max-w-3xl">
             <Markdown>{block.text}</Markdown>

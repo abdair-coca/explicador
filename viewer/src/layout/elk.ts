@@ -44,6 +44,8 @@ const elk = new ELK();
 const CHAR_WIDTH = 7.2;
 const MAX_LINE = 26;
 const PADDING = 20;
+export const ENTITY_HEADER = 34;
+export const ENTITY_ROW = 20;
 
 /** Splits a label into at most two lines at word boundaries. */
 export function wrapLabel(label: string): string[] {
@@ -57,7 +59,18 @@ export function wrapLabel(label: string): string[] {
 
 export async function layoutGraph(nodes: ViewNode[], edges: EdgeInput[]): Promise<Layout> {
   const sized = nodes.map((node) => {
+    if (node.shape === 'start') return { node, lines: [], width: 20, height: 20 };
+    if (node.shape === 'entity') {
+      const rows = (node.fields ?? []).map((f) => `${f.key ? 'XX ' : ''}${f.name}${f.type ? `  ${f.type}` : ''}`);
+      const longest = Math.max(node.label.length + 2, ...rows.map((row) => row.length));
+      const width = Math.max(150, Math.round(longest * CHAR_WIDTH + PADDING * 2));
+      return { node, lines: [node.label], width, height: ENTITY_HEADER + rows.length * ENTITY_ROW + 8 };
+    }
     const lines = wrapLabel(node.label);
+    if (node.shape === 'state') {
+      const longest = Math.max(...lines.map((line) => line.length));
+      return { node, lines, width: Math.max(110, Math.round(longest * CHAR_WIDTH + PADDING * 2 + 10)), height: 26 + lines.length * 17 };
+    }
     const longest = Math.max(...lines.map((line) => line.length), node.kind.length + 2);
     const extra = node.role === 'group' ? 16 : 0;
     return { node, lines, width: Math.max(130, Math.round(longest * CHAR_WIDTH + PADDING * 2)), height: 34 + lines.length * 17 + extra };
@@ -73,8 +86,17 @@ export async function layoutGraph(nodes: ViewNode[], edges: EdgeInput[]): Promis
       'elk.spacing.edgeNode': '24',
       'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
       'elk.padding': '[top=24,left=24,bottom=24,right=24]',
+      // State machines are full of cycles: break them by declaration order so the start dot and the
+      // initial state stay on the left. Other views keep ELK's default, which draws them better.
+      ...(nodes.some((n) => n.shape === 'start') ? { 'elk.layered.cycleBreaking.strategy': 'MODEL_ORDER' } : {}),
     },
-    children: sized.map((s) => ({ id: s.node.id, width: s.width, height: s.height })),
+    children: sized.map((s) => ({
+      id: s.node.id,
+      width: s.width,
+      height: s.height,
+      // The start dot of a state machine always sits in the first layer.
+      ...(s.node.shape === 'start' ? { layoutOptions: { 'elk.layered.layering.layerConstraint': 'FIRST' } } : {}),
+    })),
     edges: edges.map((e): ElkExtendedEdge => ({ id: e.id, sources: [e.from], targets: [e.to] })),
   };
   const result = await elk.layout(graph);
