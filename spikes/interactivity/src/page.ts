@@ -11,6 +11,7 @@ import { logEvent, spikeDir } from './log.ts';
 export interface PageHandlers {
   onClick(click: Click): Promise<string>;
   state(): Record<string, unknown>;
+  subscribe(res: ServerResponse): void;
 }
 
 const MAX_BODY_BYTES = 4096;
@@ -41,6 +42,7 @@ export async function startPage(handlers: PageHandlers): Promise<string> {
     }
     if (req.headers['x-token'] !== token) return send(res, 403, { error: 'bad token' });
     if (req.method === 'GET' && url.pathname === '/state') return send(res, 200, handlers.state());
+    if (req.method === 'GET' && url.pathname === '/events') return handlers.subscribe(res);
     if (req.method === 'POST' && url.pathname === '/click') {
       if (req.headers.origin !== origin) return send(res, 403, { error: 'bad origin' });
       const parsed = clickRequestSchema.safeParse(JSON.parse(await readBody(req)));

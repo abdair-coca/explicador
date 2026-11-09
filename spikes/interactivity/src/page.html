@@ -21,6 +21,7 @@
       <label><input type="radio" name="mechanism" value="wait" checked /> (a) wait_for_interaction</label>
       <label><input type="radio" name="mechanism" value="relaunch" /> (b) relaunch with claude -p --resume</label>
       <label><input type="radio" name="mechanism" value="channel" /> (c) channel</label>
+      <label><input type="radio" name="mechanism" value="monitor" /> (d) plugin monitor</label>
     </fieldset>
     <p id="state">Connecting…</p>
     <div class="nodes">
@@ -58,7 +59,7 @@
           const state = await (await fetch('/state', { headers })).json();
           stateBox.textContent =
             `wait_for_interaction armed: ${state.waiting ? 'yes' : 'no'} · ` +
-            `queued clicks: ${state.queued} · session: ${state.session ?? 'not recorded'}`;
+            `queued clicks: ${state.queued} · monitors: ${state.monitors} · session: ${state.session ?? 'not recorded'}`;
         } catch {
           stateBox.textContent = 'Server not reachable (is the Claude Code session still open?)';
         }
