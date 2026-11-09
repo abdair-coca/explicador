@@ -14,7 +14,7 @@ Fixed by the master prompt (change only with user confirmation):
 3. Scene cache in `.explicador/scenes/`, invalidated by hashes of referenced files.
 4. Viewer in a local browser tab (localhost).
 5. Two animation types: step-by-step flow playback and zoom between levels.
-6. Interactive: clicking an element asks the agent to go deeper. It must work without launch flags (user, 2026-11-09).
+6. Interactive: clicking an element asks the agent to go deeper. It must work without launch flags (user, 2026-11-09). Changed in F7 with the user's approval of the F5–F8 plan: a click opens the detail panel, and its "Go deeper" button asks the agent.
 7. Persistent findings appended to `FINDINGS.md` at the analyzed project's root (renamed from `HALLAZGOS.md` by the user on 2026-11-09).
 8. EXL response format: Markdown + closed catalog of JSX-like tags, no embedded JavaScript.
 
@@ -111,7 +111,7 @@ Defaults (approved with the plan):
   - Viewer: the narration says where the step comes from and what follows.
   - Skill: show returns when the data that comes back matters, edge and step labels name what travels, middleware appears as steps before the handler, every step says why.
   - Criterion: parser tests (kinds, continuity valid and invalid), viewer drawing, the SocialNeo scenes re-rendered; user review.
-- [ ] **F7. Detail panel and key code.**
+- [x] **F7. Detail panel and key code.** Done 2026-11-09 except the user's review. Taken during the phase: the long description is called `about` (Markdown, 1200 characters, paragraphs kept); `<code>` needs a line range of at most 40 lines and a note, at most 3 per item, and only error-free snippets count; the server copies the lines whenever a scene is published (navigator, export, preview), cutting lines over 400 characters and marking missing ones; blocks carry `codes` only when they have some; clicking the open box again closes the panel; the panel sits beside the scene from `lg` up (the page widens to 1720 px) and is a bottom sheet below; code wraps instead of scrolling and ligatures are off. The app root uses `overflow-x-clip` (`hidden` broke the sticky panel). The bottom sheet was not checked on a small screen.
   - Clicking a node, entity or state opens a side panel without asking Claude: kind, label, ref, short and long description, key code, and "Go deeper" (cached drill or ask Claude, as today). Groups keep zooming in.
   - EXL: optional body text in `<node>`, `<entity>` and `<status>` as the long description; `<code ref="path:start-end" node="id">why it matters</code>`, up to about 30 lines; the server reads the lines and hashes the file like any ref.
   - Exports show the panel read-only (no "Go deeper", no questions). `AGENTS.md` decision 6 is updated.
@@ -179,5 +179,5 @@ Open points:
 | F4 | done (2026-11-09), user review pending |
 | F5 | done (2026-11-09), reviewed by the user |
 | F6 | done (2026-11-09), user review pending |
-| F7 | planned (approved 2026-11-09) |
+| F7 | done (2026-11-09), user review pending |
 | F8 | planned (approved 2026-11-09) |

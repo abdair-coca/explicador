@@ -19,16 +19,17 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<arch>` | `title` (required), `id` | `<node>`, `<group>`, `<edge>`, `<drill>` |
 | `<flow>` | `title` (required), `id` | `<node>`, `<step>`, `<drill>` |
 | `<group>` | `id`, `label` (required), `desc`, `kind` | `<node>` and nested `<group>`, only in `<arch>` |
-| `<node>` | `id`, `label` (required), `desc`, `kind`, `ref` | none (self-closing) |
+| `<node>` | `id`, `label` (required), `desc`, `kind`, `ref` | optional text: the long description (or self-closing) |
 | `<edge>` | `from`, `to` (required), `label`, `kind` | none (self-closing), only in `<arch>` |
 | `<step>` | `from` (required), `to`, `label`, `kind`, `ref` | narration text (required), only in `<flow>` |
 | `<drill>` | `node`, `topic` (required) | none (self-closing) |
+| `<code>` | `node`, `ref` (required) | why these lines matter (required); in any block |
 | `<data>` | `title` (required), `id` | `<entity>`, `<relation>`, `<drill>` |
-| `<entity>` | `id`, `label` (required), `desc`, `ref` | `<field>` rows (may be empty or self-closing) |
+| `<entity>` | `id`, `label` (required), `desc`, `ref` | `<field>` rows and optional text, the long description (may be empty or self-closing) |
 | `<field>` | `name` (required), `type`, `key` | none (self-closing) |
 | `<relation>` | `from`, `to`, `card` (required), `label` | none (self-closing) |
 | `<state>` | `title` (required), `id` | `<status>`, `<transition>`, one `<walk>`, `<drill>` |
-| `<status>` | `id`, `label` (required), `desc`, `role`, `ref` | none (self-closing) |
+| `<status>` | `id`, `label` (required), `desc`, `role`, `ref` | optional text: the long description (or self-closing) |
 | `<transition>` | `from`, `to`, `event` (required), `ref` | none (self-closing) |
 | `<walk>` | none | `<go>` steps |
 | `<go>` | `event` (required) | narration text (required) |
@@ -37,6 +38,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - `kind`: `actor`, `ui`, `service`, `module`, `function`, `store` or `external`; default `module`.
 - `title`, `label`: one line, not empty. Titles up to 120 characters, labels up to 80.
 - `desc`: optional, one line of up to 80 characters saying what the part does ("Checks the password hash"). The viewer shows it inside the box, under the label, wrapped to at most three lines.
+- Long description: the text inside `<node>`, `<entity>` or `<status>`, up to 1200 characters. It is Markdown (`**bold**`, `` `code` ``, lists); blank lines separate paragraphs, other whitespace collapses; no tags. The detail panel shows it.
+- `<code node ref>`: key lines for a node, entity or state of the same block. `ref` must be a line range (`path:start-end` or `path:line`) of at most 40 lines; the text says why these lines matter (up to 300 characters). At most 3 per item. The server copies the lines from the file each time the scene is shown, so the agent never writes code into EXL; the file counts as a ref, so editing it marks the scene stale.
 - `from` / `to`: ids of nodes declared in the same block. An `<edge>` may also name a `<group>`; a `<step>` only nodes. A `<step>` without `to` is an action inside `from`.
 - `kind` on `<edge>` and `<step>` (not the node `kind`): `call` (default) when one part asks another, `return` when the answer comes back, `async` for a message nobody waits for (a queue, an event, a background job). A `return` step needs `to`.
 - Continuity: in a `<flow>`, every step after the first starts at a node an earlier step already reached (as `from` or `to`). A step that starts anywhere else is an error naming the nodes in play; add the step that reaches that node first.
@@ -57,11 +60,12 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - `<flow>` is an ordered story. The viewer draws one edge per pair of nodes and kind (a call and its return are two edges), then plays the steps: the active nodes and edge are highlighted, a token travels along the edge, and the narration shows under the diagram with links to the step before and after. Play, pause, previous, next and jumping to a step are available. With reduced motion, playback does not start by itself and no token moves.
 - Line styles: calls are solid, returns dashed, async messages dotted; a legend appears under any diagram that uses returns or async messages, and the step badge says "Answer back" or "Async".
 - `<group>` shows collapsed as one box with its member count; edges into its members attach to the box (merged per pair; a label is kept only when all merged edges share it). Clicking it zooms in without asking Claude: its members appear, with faded context boxes for the nodes outside that its edges reach, and breadcrumbs lead back out.
-- Clicking any other node asks to go deeper. If the node has a `<drill>` whose topic is cached and fresh, the viewer opens that scene with a zoom-in. Otherwise the click reaches Claude through the plugin monitor as one line naming the node, its ref, the scene and the topic (the drill topic, or the node label); the next scene Claude renders becomes the deeper level. Scenes reached this way show the scenes above them as breadcrumbs.
+- Clicking any other node, entity or state opens its detail panel beside the scene (a bottom sheet on small screens): kind, label, ref, `desc`, long description, key code with line numbers and highlighting, and its drill topic. Clicking it again or pressing Esc closes it.
+- "Go deeper" in the panel asks to go deeper. If the node has a `<drill>` whose topic is cached and fresh, the viewer opens that scene with a zoom-in. Otherwise the request reaches Claude through the plugin monitor as one line naming the node, its ref, the scene and the topic (the drill topic, or the node label); the next scene Claude renders becomes the deeper level. Scenes reached this way show the scenes above them as breadcrumbs.
 - `<data>` draws each entity as a table (PK, FK and UQ badges, types on the right) and each relation as an undirected edge labelled with its cardinality, e.g. `owns (1 : 1)`.
 - `<state>` draws a start dot pointing at the initial state, states as pills (final states with a double ring) and transitions labelled with their event. With a `<walk>`, it plays like a `<flow>`: the transition taken and both states are highlighted and the narration shows below. Entities and states are clickable like nodes.
 - Presentation mode shows one slide per Markdown block, one per `<arch>` and `<data>`, one per `<walk>` step (or one per `<state>` without a walk), one per `<arch>` and one per `<flow>` step (with its narration in large type), in document order, advancing only on request. Write prose blocks with that in mind: short, one idea each.
-- Exported files embed the parsed scene; they keep `<group>` zoom and `<flow>` playback but drop clicks to Claude.
+- Exported files embed the parsed scene with its key code; they keep `<group>` zoom, `<flow>` playback and the detail panel, read-only: no "Go deeper".
 - Every file named in a `ref` is hashed when the scene is cached. If one of them changes or disappears, the scene is reported stale and the viewer shows which files changed.
 
 ## Errors

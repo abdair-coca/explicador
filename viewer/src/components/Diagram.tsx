@@ -28,6 +28,8 @@ export interface DiagramProps {
   /** Remount key: changing it replays the reveal animation. */
   revealKey?: number;
   activeNodes?: ReadonlySet<string>;
+  /** Node whose details are open in the side panel. */
+  selected?: string | undefined;
   activeEdge?: string;
   /** Label shown on the active edge (the step label), overriding the edge's own label. */
   activeLabel?: string;
@@ -105,7 +107,8 @@ export function Diagram(props: DiagramProps) {
                 laid={node}
                 delay={nodeDelay(node.node.id)}
                 active={activeNodes?.has(node.node.id) ?? false}
-                dimmed={focus && !activeNodes?.has(node.node.id)}
+                selected={props.selected === node.node.id}
+                dimmed={focus && !activeNodes?.has(node.node.id) && props.selected !== node.node.id}
                 pulse={props.pulseNode === node.node.id && !reducedMotion}
                 {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
                   ? { onClick: props.onNodeClick }
@@ -188,6 +191,7 @@ function Node(props: {
   laid: LaidNode;
   delay: number;
   active: boolean;
+  selected: boolean;
   dimmed: boolean;
   pulse: boolean;
   onClick?: (id: string, element: Element) => void;
@@ -198,8 +202,7 @@ function Node(props: {
   const ref = node.ref
     ? `${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
     : undefined;
-  const action =
-    role === 'group' ? `Zoom into ${node.label}` : node.drill ? `Open ${node.drill}` : `Ask Claude to go deeper into ${node.label}`;
+  const action = role === 'group' ? `Zoom into ${node.label}` : `Show the details of ${node.label}`;
   const activate = (element: Element): void => onClick?.(node.id, element);
   const radius = node.shape === 'state' ? Math.min(laid.height / 2, 24) : node.kind === 'actor' && !node.shape ? 22 : 16;
   return (
@@ -213,8 +216,10 @@ function Node(props: {
         node.shape,
         onClick && 'clickable',
         props.active && 'active',
+        props.selected && 'selected',
         props.dimmed && 'dimmed',
       )}
+      {...(onClick && role !== 'group' ? { 'aria-pressed': props.selected } : {})}
       {...(onClick
         ? {
             role: 'button',

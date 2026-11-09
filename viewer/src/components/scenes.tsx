@@ -7,12 +7,20 @@ import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
 import { archLevel, linkId, withDrills, type ViewNode } from '../layout/levels';
 import { Diagram } from './Diagram';
 import { ArrowLeftIcon, ArrowRightIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
+import { selectedIn, useSelection } from './selection';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
-/** Asks to go deeper from a node: the App sends the click to the server. */
+/** Asks to go deeper from a node ("Go deeper" in the detail panel): the App sends the click to the server. */
 export type DrillHandler = (blockId: string, nodeId: string, element: Element) => void;
+
+/** Click handler and highlight for a block's boxes, from the selection; none in presentation mode. */
+export function useBoxSelection(blockId: string): { onNodeClick?: (id: string, element: Element) => void; selected?: string | undefined } {
+  const selection = useSelection();
+  if (!selection) return {};
+  return { onNodeClick: (id, element) => selection.select(blockId, id, element), selected: selectedIn(selection, blockId) };
+}
 
 export function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | undefined {
   const [layout, setLayout] = useState<Layout | Error>();
@@ -190,7 +198,8 @@ export function StepProgress(props: { index: number; labels: string[]; onPick: (
 
 type Zoom = { direction: 'in'; from: Box | undefined } | { direction: 'out'; focus: string } | undefined;
 
-export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: DrillHandler | undefined }) {
+export function ArchScene({ block }: { block: ArchBlock }) {
+  const boxes = useBoxSelection(block.id);
   // Open groups, outermost first; empty at the top level.
   const [path, setPath] = useState<string[]>([]);
   const [zoom, setZoom] = useState<Zoom>();
@@ -218,7 +227,7 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: Dril
       setReplay((r) => r + 1);
       return;
     }
-    onDrill?.(block.id, id, element);
+    boxes.onNodeClick?.(id, element);
   };
   const goUp = (depth: number): void => {
     const focus = path[depth];
@@ -275,7 +284,8 @@ export function ArchScene({ block, onDrill }: { block: ArchBlock; onDrill?: Dril
               revealKey={replay}
               ariaLabel={`Architecture diagram: ${block.title}`}
               onNodeClick={clickNode}
-              isClickable={(node) => node.role === 'group' || onDrill !== undefined}
+              selected={boxes.selected}
+              isClickable={(node) => node.role === 'group' || boxes.onNodeClick !== undefined}
             />
           ) : (
             <LayoutState layout={layout} />
@@ -304,8 +314,9 @@ function flowEdges(block: FlowBlock): EdgeInput[] {
 }
 
 /** The diagram of a flow with one step highlighted; used inline and in presentation mode. */
-export function FlowDiagram(props: { block: FlowBlock; index: number; onDrill?: DrillHandler | undefined }) {
-  const { block, index, onDrill } = props;
+export function FlowDiagram(props: { block: FlowBlock; index: number }) {
+  const { block, index } = props;
+  const boxes = useBoxSelection(block.id);
   const edges = useMemo(() => flowEdges(block), [block]);
   const nodes = useMemo(() => withDrills(block.nodes, block.drills), [block]);
   const layout = useLayout(nodes, edges);
@@ -324,7 +335,7 @@ export function FlowDiagram(props: { block: FlowBlock; index: number; onDrill?: 
       tokenKey={index}
       reducedMotion={reducedMotion}
       ariaLabel={`Flow diagram: ${block.title}`}
-      {...(onDrill ? { onNodeClick: (id: string, element: Element) => onDrill(block.id, id, element) } : {})}
+      {...boxes}
     />
   );
 }
@@ -336,7 +347,7 @@ export function stepRoute(block: FlowBlock, index: number): string {
   return `${label(step.from)}${step.to && step.to !== step.from ? ` → ${label(step.to)}` : ''}${step.label ? ` · ${step.label}` : ''}`;
 }
 
-export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill?: DrillHandler | undefined }) {
+export function FlowScene({ block }: { block: FlowBlock }) {
   const reducedMotion = useReducedMotion();
   const durations = useMemo(() => block.steps.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
@@ -345,7 +356,7 @@ export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill?: Dril
   return (
     <SceneFrame kind="Flow" title={block.title} actions={<StepControls playback={playback} />}>
       <div className="p-4">
-        <FlowDiagram block={block} index={playback.index} onDrill={onDrill} />
+        <FlowDiagram block={block} index={playback.index} />
       </div>
       {step && (
         <StepNarration

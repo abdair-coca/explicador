@@ -18,6 +18,7 @@ import {
   type Transition,
   type WalkStep,
   type ArchEdge,
+  type CodeSnippet,
   type Drill,
   type Block,
   type ExlError,
@@ -37,15 +38,16 @@ interface TagSpec {
 }
 
 export const catalog: Record<string, TagSpec> = {
-  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'group', 'edge', 'drill'] },
-  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill'] },
+  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'group', 'edge', 'drill', 'code'] },
+  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill', 'code'] },
+  code: { attrs: { node: 'required', ref: 'required' }, text: true },
   group: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional' }, children: ['node', 'group'] },
   drill: { attrs: { node: 'required', topic: 'required' } },
-  data: { attrs: { id: 'optional', title: 'required' }, children: ['entity', 'relation', 'drill'] },
+  data: { attrs: { id: 'optional', title: 'required' }, children: ['entity', 'relation', 'drill', 'code'] },
   entity: { attrs: { id: 'required', label: 'required', desc: 'optional', ref: 'optional' }, children: ['field'] },
   field: { attrs: { name: 'required', type: 'optional', key: 'optional' } },
   relation: { attrs: { from: 'required', to: 'required', card: 'required', label: 'optional' } },
-  state: { attrs: { id: 'optional', title: 'required' }, children: ['status', 'transition', 'walk', 'drill'] },
+  state: { attrs: { id: 'optional', title: 'required' }, children: ['status', 'transition', 'walk', 'drill', 'code'] },
   status: { attrs: { id: 'required', label: 'required', desc: 'optional', role: 'optional', ref: 'optional' } },
   transition: { attrs: { from: 'required', to: 'required', event: 'required', ref: 'optional' } },
   walk: { attrs: {}, children: ['go'] },
@@ -66,6 +68,10 @@ export const limits = {
   fieldLength: 60,
   fields: 40,
   narrationLength: 600,
+  aboutLength: 1200,
+  noteLength: 300,
+  codeLines: 40,
+  codesPerNode: 3,
   nodes: 60,
   edges: 120,
   steps: 100,
@@ -185,6 +191,7 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
   const edges: ArchEdge[] = [];
   const steps: FlowStep[] = [];
   const drills: Drill[] = [];
+  const codes: CodeSnippet[] = [];
   const children = childElements(element, spec, report);
 
   const nodeIds = new Set<string>();
@@ -225,6 +232,10 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
   for (const child of children.filter((c) => c.name !== 'node' && c.name !== 'group')) {
     const childSpec = catalog[child.name];
     if (!childSpec) continue;
+    if (child.name === 'code') {
+      readCode(child, nodeIds, codes, report);
+      continue;
+    }
     const a = readAttrs(child, childSpec, report);
     if (child.name === 'drill') {
       if (!child.selfClosing) report(child.offset, '<drill> must be self-closing: <drill node="a" topic="..." />');
@@ -287,11 +298,11 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
   }
   if (element.name === 'arch') {
     if (edges.length > limits.edges) report(element.offset, `<arch> has more than ${limits.edges} edges`);
-    return { type: 'arch', id, title, nodes, groups, edges, drills };
+    return { type: 'arch', id, title, nodes, groups, edges, drills, ...withCodes(codes) };
   }
   if (steps.length === 0) report(element.offset, '<flow> needs at least one <step>');
   if (steps.length > limits.steps) report(element.offset, `<flow> has more than ${limits.steps} steps`);
-  return { type: 'flow', id, title, nodes, steps, drills };
+  return { type: 'flow', id, title, nodes, steps, drills, ...withCodes(codes) };
 }
 
 /** Child elements a tag allows; stray text and other tags are reported. */
@@ -321,6 +332,68 @@ function buildGroup(element: Element, report: Report): SceneGroup | undefined {
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
   return { id: a.id, label, ...readDesc(a.desc, element, report), kind: parseKind(a.kind, element, report) };
+}
+
+/**
+ * The tag's body as its long description (`about`): text only, paragraphs kept, spaces collapsed.
+ * Child tags other than `allowed` are reported.
+ */
+function readAbout(element: Element, allowed: readonly string[], report: Report): { about?: string } {
+  if (element.selfClosing) return {};
+  const text = element.children
+    .map((c) => {
+      if (c.kind === 'text') return c.text;
+      if (!allowed.includes(c.name)) report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);
+      return '\n\n';
+    })
+    .join('');
+  const about = text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n\n');
+  if (about.length > limits.aboutLength) {
+    report(element.offset, `The text inside <${element.name}> is longer than ${limits.aboutLength} characters`);
+  }
+  return about ? { about } : {};
+}
+
+/** `codes` only when a block has some, so blocks without key code keep their old shape. */
+function withCodes(codes: CodeSnippet[]): { codes?: CodeSnippet[] } {
+  return codes.length > 0 ? { codes } : {};
+}
+
+/** <code ref="path:start-end" node="id">why it matters</code>: key lines the server copies from the file. */
+function readCode(child: Element, ids: Set<string>, codes: CodeSnippet[], report: Report): void {
+  // Only a snippet without errors is kept, so a rejected one does not count against the per-node limit.
+  let valid = true;
+  const fail = (offset: number, message: string): void => {
+    valid = false;
+    report(offset, message);
+  };
+  const a = readAttrs(child, catalog.code ?? { attrs: {} }, fail);
+  const nodeOffset = child.attrs.get('node')?.offset ?? child.offset;
+  if (a.node !== undefined && !ids.has(a.node)) fail(nodeOffset, `"node" refers to unknown item "${a.node}"`);
+  else if (a.node !== undefined && codes.filter((c) => c.node === a.node).length >= limits.codesPerNode) {
+    fail(nodeOffset, `"${a.node}" already has ${limits.codesPerNode} <code> snippets`);
+  }
+  const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, fail);
+  const refOffset = child.attrs.get('ref')?.offset ?? child.offset;
+  if (ref && ref.start === undefined) fail(refOffset, '<code> needs a line range: ref="path:start-end"');
+  else if (ref?.start !== undefined && (ref.end ?? ref.start) - ref.start + 1 > limits.codeLines) {
+    fail(refOffset, `<code> shows at most ${limits.codeLines} lines; pick the ones that matter`);
+  }
+  const note = child.children
+    .map((c) => {
+      if (c.kind === 'element') fail(c.offset, `<${c.name}> is not allowed inside <code>`);
+      return c.kind === 'text' ? c.text : '';
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!note) fail(child.offset, '<code> needs a note on why these lines matter: <code ref="a.js:3-9" node="x">Why.</code>');
+  else if (note.length > limits.noteLength) fail(child.offset, `<code> note is longer than ${limits.noteLength} characters`);
+  if (valid && a.node !== undefined && ref?.start !== undefined) codes.push({ node: a.node, ref, note });
 }
 
 /** The optional one-line `desc`, as a spreadable object. */
@@ -368,14 +441,14 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   const spec = catalog.node;
   if (!spec) return undefined;
   const a = readAttrs(element, spec, report);
-  if (!element.selfClosing) report(element.offset, '<node> must be self-closing: <node id="a" label="A" />');
   if (a.id === undefined || a.label === undefined) return undefined;
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
   const desc = readDesc(a.desc, element, report);
+  const about = readAbout(element, [], report);
   const kind = parseKind(a.kind, element, report);
   const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
-  return { id: a.id, label, ...desc, kind, ...(ref ? { ref } : {}) };
+  return { id: a.id, label, ...desc, ...about, kind, ...(ref ? { ref } : {}) };
 }
 
 function readAttrs(element: Element, spec: TagSpec, report: Report): Record<string, string | undefined> {
@@ -459,6 +532,7 @@ function collectRefs(blocks: Block[]): string[] {
       block.states.forEach((status) => add(status.ref));
       block.transitions.forEach((transition) => add(transition.ref));
     }
+    if (block.type !== 'markdown') block.codes?.forEach((code) => add(code.ref));
   }
   return [...paths].sort();
 }
@@ -509,6 +583,7 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
   const entities: Entity[] = [];
   const relations: DataBlock['relations'] = [];
   const drills: Drill[] = [];
+  const codes: CodeSnippet[] = [];
   const ids = new Set<string>();
 
   for (const child of children.filter((c) => c.name === 'entity')) {
@@ -518,7 +593,9 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
     if (ids.has(a.id)) report(child.offset, `Duplicate entity id "${a.id}"`);
     ids.add(a.id);
     const fields: Field[] = [];
-    for (const row of childElements(child, catalog.entity ?? { attrs: {} }, report)) {
+    // Text between the fields is the entity's long description.
+    const about = readAbout(child, ['field'], report);
+    for (const row of child.children.filter((c): c is Element => c.kind === 'element' && c.name === 'field')) {
       const f = readAttrs(row, catalog.field ?? { attrs: {} }, report);
       if (!row.selfClosing) report(row.offset, '<field> must be self-closing: <field name="id" type="int" key="pk" />');
       if (f.name === undefined) continue;
@@ -538,6 +615,7 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
       id: a.id,
       label: checkText(a.label, 'label', limits.labelLength, child, report),
       ...readDesc(a.desc, child, report),
+      ...about,
       fields,
       ...(ref ? { ref } : {}),
     });
@@ -546,6 +624,10 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
   for (const child of children.filter((c) => c.name !== 'entity')) {
     if (child.name === 'drill') {
       readDrill(child, ids, drills, report);
+      continue;
+    }
+    if (child.name === 'code') {
+      readCode(child, ids, codes, report);
       continue;
     }
     const a = readAttrs(child, catalog.relation ?? { attrs: {} }, report);
@@ -566,7 +648,7 @@ function buildData(element: Element, ordinal: number, report: Report): DataBlock
   if (entities.length === 0) report(element.offset, '<data> needs at least one <entity>');
   if (entities.length > limits.nodes) report(element.offset, `<data> has more than ${limits.nodes} entities`);
   if (relations.length > limits.edges) report(element.offset, `<data> has more than ${limits.edges} relations`);
-  return { type: 'data', id, title, entities, relations, drills };
+  return { type: 'data', id, title, entities, relations, drills, ...withCodes(codes) };
 }
 
 function buildState(element: Element, ordinal: number, report: Report): StateBlock {
@@ -581,7 +663,6 @@ function buildState(element: Element, ordinal: number, report: Report): StateBlo
 
   for (const child of children.filter((c) => c.name === 'status')) {
     const a = readAttrs(child, catalog.status ?? { attrs: {} }, report);
-    if (!child.selfClosing) report(child.offset, '<status> must be self-closing: <status id="a" label="A" />');
     if (a.id === undefined || a.label === undefined) continue;
     checkId(a.id, child, report);
     if (ids.has(a.id)) report(child.offset, `Duplicate state id "${a.id}"`);
@@ -599,6 +680,7 @@ function buildState(element: Element, ordinal: number, report: Report): StateBlo
       id: a.id,
       label: checkText(a.label, 'label', limits.labelLength, child, report),
       ...readDesc(a.desc, child, report),
+      ...readAbout(child, [], report),
       role,
       ...(ref ? { ref } : {}),
     });
@@ -649,9 +731,11 @@ function buildState(element: Element, ordinal: number, report: Report): StateBlo
     if (walk.length > limits.steps) report(first.offset, `<walk> has more than ${limits.steps} steps`);
   }
   for (const child of children.filter((c) => c.name === 'drill')) readDrill(child, ids, drills, report);
+  const codes: CodeSnippet[] = [];
+  for (const child of children.filter((c) => c.name === 'code')) readCode(child, ids, codes, report);
 
   if (states.length === 0) report(element.offset, '<state> needs at least one <status>');
   if (states.length > limits.nodes) report(element.offset, `<state> has more than ${limits.nodes} states`);
   if (transitions.length > limits.edges) report(element.offset, `<state> has more than ${limits.edges} transitions`);
-  return { type: 'state', id, title, states, transitions, walk, drills };
+  return { type: 'state', id, title, states, transitions, walk, drills, ...withCodes(codes) };
 }

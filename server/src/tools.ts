@@ -9,6 +9,7 @@ import { describeIndex, ensureIndex } from './index/index.ts';
 import type { Navigator } from './navigation.ts';
 import { formatErrors, parseExl } from './parser/index.ts';
 import { stateDir, writeFileAtomic } from './project.ts';
+import { withSnippets } from './snippets.ts';
 
 export interface ToolDeps {
   root: string;
@@ -168,7 +169,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           changes,
           savedAt: lookup.scene.savedAt,
           trail: [],
-          blocks: parsed.scene.blocks,
+          blocks: withSnippets(root, parsed.scene.blocks),
         });
       } catch (error) {
         if (error instanceof ExportError) return text(error.message, true);

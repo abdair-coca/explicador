@@ -86,7 +86,7 @@ describe('parseExl: invalid documents', () => {
   it('rejects unknown tags at the top level and inside blocks', () => {
     assert.match(errorsOf('<script>alert(1)</script>')[0] ?? '', /^1:1 Unknown tag <script>/);
     const inside = errorsOf('<arch title="A">\n  <node id="a" label="A" />\n  <div />\n</arch>');
-    assert.deepEqual(inside, ['3:3 <div> is not allowed inside <arch>; use <node>, <group>, <edge>, <drill>']);
+    assert.deepEqual(inside, ['3:3 <div> is not allowed inside <arch>; use <node>, <group>, <edge>, <drill>, <code>']);
   });
 
   it('rejects child tags outside a block', () => {
@@ -453,6 +453,92 @@ describe('parseExl: link kinds and continuity', () => {
       ]),
     );
     assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+  });
+});
+
+describe('parseExl: long descriptions and key code', () => {
+  it('reads the body of nodes, entities and states as their long description, keeping paragraphs', () => {
+    const result = parseExl(
+      [
+        '<arch title="A">',
+        '  <node id="svc" label="Service" ref="src/svc.js">',
+        '    Checks the password',
+        '    in constant time.',
+        '',
+        '    Unknown emails use a **dummy** hash.',
+        '  </node>',
+        '  <node id="ui" label="Form" />',
+        '</arch>',
+        '<data title="D"><entity id="user" label="User">One per account.<field name="id" key="pk" /></entity></data>',
+        '<state title="S"><status id="new" label="New" role="initial">Just signed up.</status></state>',
+      ].join('\n'),
+    );
+    assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+    if (!result.ok) return;
+    const [arch, data, state] = result.scene.blocks;
+    if (arch?.type !== 'arch' || data?.type !== 'data' || state?.type !== 'state') throw new Error('unexpected blocks');
+    assert.equal(arch.nodes[0]?.about, 'Checks the password in constant time.\n\nUnknown emails use a **dummy** hash.');
+    assert.equal('about' in (arch.nodes[1] ?? {}), false);
+    assert.equal(data.entities[0]?.about, 'One per account.');
+    assert.deepEqual(data.entities[0]?.fields, [{ name: 'id', key: 'pk' }]);
+    assert.equal(state.states[0]?.about, 'Just signed up.');
+  });
+
+  it('keeps <code> snippets with their note and counts their files as refs', () => {
+    const result = parseExl(
+      [
+        '<flow title="F">',
+        '  <node id="a" label="A" ref="src/a.js" />',
+        '  <step from="a">Works.</step>',
+        '  <code node="a" ref="src/lib/hash.js:10-24">',
+        '    The comparison runs in constant time.',
+        '  </code>',
+        '</flow>',
+        '<arch title="Plain"><node id="b" label="B" /></arch>',
+      ].join('\n'),
+    );
+    assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+    if (!result.ok) return;
+    const [flow, plain] = result.scene.blocks;
+    assert.deepEqual((flow as FlowBlock).codes, [
+      { node: 'a', ref: { path: 'src/lib/hash.js', start: 10, end: 24 }, note: 'The comparison runs in constant time.' },
+    ]);
+    assert.equal('codes' in (plain ?? {}), false, 'no codes field without snippets');
+    assert.deepEqual(result.refs, ['src/a.js', 'src/lib/hash.js']);
+  });
+
+  it('rejects bad <code>: unknown node, no line range, too many lines, no note, more than 3 per node', () => {
+    const code = (attrs: string, body = 'Why.'): string => `  <code ${attrs}>${body}</code>`;
+    assert.deepEqual(
+      errorsOf(
+        [
+          '<arch title="A">',
+          '  <node id="a" label="A" />',
+          code('node="ghost" ref="a.js:1-2"'),
+          code('node="a" ref="a.js"'),
+          code('node="a" ref="a.js:1-41"'),
+          code('node="a" ref="a.js:1-2"', '  '),
+          code('node="a" ref="a.js:1-2"'),
+          code('node="a" ref="a.js:3-4"'),
+          code('node="a" ref="a.js:5-6"'),
+          code('node="a" ref="a.js:7-8"'),
+          '</arch>',
+        ].join('\n'),
+      ),
+      [
+        '3:9 "node" refers to unknown item "ghost"',
+        '4:18 <code> needs a line range: ref="path:start-end"',
+        '5:18 <code> shows at most 40 lines; pick the ones that matter',
+        '6:3 <code> needs a note on why these lines matter: <code ref="a.js:3-9" node="x">Why.</code>',
+        '10:9 "a" already has 3 <code> snippets',
+      ],
+    );
+  });
+
+  it('rejects tags inside a long description', () => {
+    assert.deepEqual(errorsOf('<arch title="A">\n<node id="a" label="A">Uses <b>bold</b>.</node>\n</arch>'), [
+      '2:29 <b> is not allowed inside <node>',
+    ]);
   });
 });
 

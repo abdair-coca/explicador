@@ -8,7 +8,11 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <node id="routes" label="Auth routes" desc="Validate input and set the session cookie" kind="service" ref="src/api/auth-routes.js" />
   <group id="auth" label="Auth core" desc="Checks passwords and opens sessions" kind="module">
     <node id="service" label="Auth service" desc="Finds the user and runs the checks" kind="module" ref="src/auth/auth-service.js" />
-    <node id="password" label="Password check (scrypt)" desc="Re-hashes and compares in constant time" kind="function" ref="src/auth/password.js" />
+    <node id="password" label="Password check (scrypt)" desc="Re-hashes and compares in constant time" kind="function" ref="src/auth/password.js">
+      Passwords are stored as `scrypt$salt$hash` in hex: a random 16-byte salt and a 64-byte key.
+
+      To check a login it derives the key again with the stored salt and compares both keys with `timingSafeEqual`, so the time it takes does not reveal how much of the password matched.
+    </node>
     <node id="sessions" label="Session store" desc="In-memory map of ids that expire in 1 h" kind="store" ref="src/auth/sessions.js" />
   </group>
   <node id="users" label="Users table" desc="Fixed list of users and hashes" kind="store" ref="src/db/users.js" />
@@ -20,6 +24,12 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <edge from="service" to="sessions" label="create" />
   <drill node="routes" topic="auth routes" />
   <drill node="password" topic="password hashing" />
+  <code node="password" ref="src/auth/password.js:14-19">
+    The stored salt re-derives the key, and timingSafeEqual compares it without leaking timing.
+  </code>
+  <code node="service" ref="src/auth/auth-service.js:6-14">
+    Unknown emails still run scrypt against a dummy hash, so a wrong email and a wrong password take the same time.
+  </code>
 </arch>
 
 <flow id="login-flow" title="Logging in, step by step">
@@ -54,6 +64,9 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
     The route sets the session as an HttpOnly, SameSite=Strict cookie and the form moves on to the cart.
   </step>
   <drill node="password" topic="password hashing" />
+  <code node="sessions" ref="src/auth/sessions.js:7-11">
+    The id is 24 random bytes and lives only in memory, so a restart logs everyone out.
+  </code>
 </flow>
 
 Wrong email and wrong password get the same `401` message, so the API does not leak which accounts exist.

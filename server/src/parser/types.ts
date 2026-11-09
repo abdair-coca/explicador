@@ -15,6 +15,8 @@ export interface SceneNode {
   label: string;
   /** One line on what the part does, shown inside the box. */
   desc?: string;
+  /** Longer explanation (the tag's body, Markdown), shown in the detail panel. */
+  about?: string;
   kind: NodeKind;
   ref?: Ref;
   /** Id of the enclosing <group>, if any. */
@@ -29,6 +31,19 @@ export interface SceneGroup {
   kind: NodeKind;
   /** Id of the enclosing <group>, if any. */
   parent?: string;
+}
+
+/** Key lines of code for a node, chosen by the agent and copied from the file by the server. */
+export interface CodeSnippet {
+  node: string;
+  /** Always a line range. */
+  ref: Ref;
+  /** Why these lines matter. */
+  note: string;
+  /** The lines, filled in by the server from the file when the scene is shown. */
+  lines?: string[];
+  /** Set by the server when the file or the lines are gone. */
+  missing?: boolean;
 }
 
 /** A node that leads to a deeper scene, explained under `topic`. */
@@ -74,6 +89,8 @@ export interface ArchBlock {
   /** Endpoints may be nodes or groups. */
   edges: ArchEdge[];
   drills: Drill[];
+  /** Key code for some nodes; absent when there is none. */
+  codes?: CodeSnippet[];
 }
 
 export interface FlowBlock {
@@ -83,6 +100,7 @@ export interface FlowBlock {
   nodes: SceneNode[];
   steps: FlowStep[];
   drills: Drill[];
+  codes?: CodeSnippet[];
 }
 
 export const fieldKeys = ['pk', 'fk', 'unique'] as const;
@@ -98,6 +116,7 @@ export interface Entity {
   id: string;
   label: string;
   desc?: string;
+  about?: string;
   fields: Field[];
   ref?: Ref;
 }
@@ -120,6 +139,7 @@ export interface DataBlock {
   entities: Entity[];
   relations: Relation[];
   drills: Drill[];
+  codes?: CodeSnippet[];
 }
 
 export const statusRoles = ['initial', 'final'] as const;
@@ -128,6 +148,7 @@ export interface Status {
   id: string;
   label: string;
   desc?: string;
+  about?: string;
   role: 'initial' | 'final' | 'normal';
   ref?: Ref;
 }
@@ -158,6 +179,7 @@ export interface StateBlock {
   transitions: Transition[];
   walk: WalkStep[];
   drills: Drill[];
+  codes?: CodeSnippet[];
 }
 
 export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock;

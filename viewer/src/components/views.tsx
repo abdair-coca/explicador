@@ -13,25 +13,20 @@ import {
   StepControls,
   StepNarration,
   StepProgress,
+  useBoxSelection,
   useLayout,
-  type DrillHandler,
 } from './scenes';
 
-export function DataScene({ block, onDrill }: { block: DataBlock; onDrill?: DrillHandler | undefined }) {
+export function DataScene({ block }: { block: DataBlock }) {
   const level = useMemo(() => dataView(block), [block]);
   const layout = useLayout(level.nodes, level.edges);
   const [replay, setReplay] = useState(0);
+  const boxes = useBoxSelection(block.id);
   return (
     <SceneFrame kind="Data" title={block.title} actions={<ReplayButton onClick={() => setReplay((r) => r + 1)} />}>
       <div className="p-4">
         {layout && !(layout instanceof Error) ? (
-          <Diagram
-            layout={layout}
-            revealKey={replay}
-            arrows={false}
-            ariaLabel={`Data model: ${block.title}`}
-            {...(onDrill ? { onNodeClick: (id: string, element: Element) => onDrill(block.id, id, element) } : {})}
-          />
+          <Diagram layout={layout} revealKey={replay} arrows={false} ariaLabel={`Data model: ${block.title}`} {...boxes} />
         ) : (
           <LayoutState layout={layout} />
         )}
@@ -41,16 +36,12 @@ export function DataScene({ block, onDrill }: { block: DataBlock; onDrill?: Dril
 }
 
 /** The state diagram, optionally at a walk step (the transition taken is highlighted). */
-export function StateDiagram(props: {
-  block: StateBlock;
-  step?: number | undefined;
-  revealKey?: number;
-  onDrill?: DrillHandler | undefined;
-}) {
-  const { block, step, onDrill } = props;
+export function StateDiagram(props: { block: StateBlock; step?: number | undefined; revealKey?: number }) {
+  const { block, step } = props;
   const level = useMemo(() => stateView(block), [block]);
   const layout = useLayout(level.nodes, level.edges);
   const reducedMotion = useReducedMotion();
+  const boxes = useBoxSelection(block.id);
   const current = step === undefined ? undefined : block.walk[step];
   const activeNodes = useMemo(() => new Set(current ? [current.from, current.to] : []), [current]);
   if (!layout || layout instanceof Error) return <LayoutState layout={layout} />;
@@ -62,7 +53,7 @@ export function StateDiagram(props: {
       tokenKey={step ?? 0}
       reducedMotion={reducedMotion}
       ariaLabel={`State machine: ${block.title}`}
-      {...(onDrill ? { onNodeClick: (id: string, element: Element) => onDrill(block.id, id, element) } : {})}
+      {...boxes}
     />
   );
 }
@@ -74,21 +65,21 @@ export function walkRoute(block: StateBlock, index: number): string {
   return `${label(step.from)} → ${label(step.to)} · on “${step.event}”`;
 }
 
-export function StateScene({ block, onDrill }: { block: StateBlock; onDrill?: DrillHandler | undefined }) {
+export function StateScene({ block }: { block: StateBlock }) {
   const [replay, setReplay] = useState(0);
   if (block.walk.length === 0) {
     return (
       <SceneFrame kind="States" title={block.title} actions={<ReplayButton onClick={() => setReplay((r) => r + 1)} />}>
         <div className="p-4">
-          <StateDiagram block={block} revealKey={replay} onDrill={onDrill} />
+          <StateDiagram block={block} revealKey={replay} />
         </div>
       </SceneFrame>
     );
   }
-  return <StateWalk block={block} onDrill={onDrill} />;
+  return <StateWalk block={block} />;
 }
 
-function StateWalk({ block, onDrill }: { block: StateBlock; onDrill?: DrillHandler | undefined }) {
+function StateWalk({ block }: { block: StateBlock }) {
   const reducedMotion = useReducedMotion();
   const durations = useMemo(() => block.walk.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
@@ -97,7 +88,7 @@ function StateWalk({ block, onDrill }: { block: StateBlock; onDrill?: DrillHandl
   return (
     <SceneFrame kind="States" title={block.title} actions={<StepControls playback={playback} />}>
       <div className="p-4">
-        <StateDiagram block={block} step={playback.index} onDrill={onDrill} />
+        <StateDiagram block={block} step={playback.index} />
       </div>
       {step && (
         <StepNarration

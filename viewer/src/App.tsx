@@ -1,11 +1,13 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { ScenePayload } from '../../server/src/scene.ts';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { exportUrl, post, staticScene, useScene, type ClickReply, type Connection } from './api';
+import { DetailPanel } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
+import { SelectionContext, type Selected, type Selection } from './components/selection';
 import { DataScene, StateScene } from './components/views';
 import { Badge } from './components/ui/badge';
 import { Button, buttonVariants } from './components/ui/button';
@@ -30,13 +32,39 @@ export function App() {
   const [notice, setNotice] = useState<Notice>();
   const [transition, setTransition] = useState<Transition>();
   const [presenting, setPresenting] = useState(false);
+  const [selected, setSelected] = useState<Selected>();
   const main = useRef<HTMLElement>(null);
-  const shown = useRef<number | undefined>(undefined);
+  const shown = useRef<{ version: number; key: string } | undefined>(undefined);
+  /** The clicked box, so "Go deeper" can zoom out of it. */
+  const anchor = useRef<Element | null>(null);
+
+  const selection = useMemo<Selection>(
+    () => ({
+      selected,
+      select: (block, node, element) => {
+        anchor.current = element;
+        // Clicking the open box again closes its details.
+        setSelected((current) => (current?.block === block && current.node === node ? undefined : { block, node }));
+      },
+    }),
+    [selected],
+  );
+
+  // Esc closes the details (presentation mode has its own keys).
+  useEffect(() => {
+    if (!selected || presenting) return;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setSelected(undefined);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected, presenting]);
 
   // When a new scene arrives, zoom if it answers the user's last click or breadcrumb; otherwise its blocks pop in.
   useLayoutEffect(() => {
-    if (!scene || scene.version === shown.current) return;
-    shown.current = scene.version;
+    if (!scene || scene.version === shown.current?.version) return;
+    if (scene.key !== shown.current?.key) setSelected(undefined);
+    shown.current = { version: scene.version, key: scene.key };
     const element = main.current;
     if (!element) return;
     if (transition?.direction === 'in' && scene.trail.at(-1)?.key === transition.fromKey) {
@@ -98,7 +126,8 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    // overflow-x-clip, not hidden: hidden makes this a scroll container and the sticky detail panel stops following the page.
+    <div className="min-h-screen overflow-x-clip">
       <header className="sticky top-0 z-10 border-b border-border-soft bg-card">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-2 px-6 py-3">
           <span className="flex items-center gap-2 text-lg font-black tracking-tight">
@@ -186,15 +215,32 @@ export function App() {
           </div>
         </div>
       )}
-      <main ref={main} className="mx-auto max-w-7xl space-y-7 px-6 py-8">
-        {scene ? <Scene scene={scene} onDrill={offline ? undefined : drill} /> : <Empty />}
-      </main>
+      <SelectionContext.Provider value={selection}>
+        <div
+          className={cn(
+            'mx-auto px-6 py-8',
+            scene && selected ? 'max-w-[1720px] lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6' : 'max-w-7xl',
+          )}
+        >
+          <main ref={main} className="min-w-0 space-y-7">
+            {scene ? <Scene scene={scene} /> : <Empty />}
+          </main>
+          {scene && selected && (
+            <DetailPanel
+              scene={scene}
+              selected={selected}
+              onClose={() => setSelected(undefined)}
+              onDeeper={offline ? undefined : () => drill(selected.block, selected.node, anchor.current ?? main.current ?? document.body)}
+            />
+          )}
+        </div>
+      </SelectionContext.Provider>
       {scene && presenting && <Presenter key={scene.version} scene={scene} onExit={() => setPresenting(false)} />}
     </div>
   );
 }
 
-function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler | undefined }) {
+function Scene({ scene }: { scene: ScenePayload }) {
   return (
     <>
       {scene.status === 'stale' && (
@@ -218,10 +264,10 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
       {scene.blocks.map((block, i) => {
         // Keyed by version so a new scene restarts its animations.
         const key = `${scene.version}-${i}`;
-        if (block.type === 'arch') return <ArchScene key={key} block={block} onDrill={onDrill} />;
-        if (block.type === 'flow') return <FlowScene key={key} block={block} onDrill={onDrill} />;
-        if (block.type === 'data') return <DataScene key={key} block={block} onDrill={onDrill} />;
-        if (block.type === 'state') return <StateScene key={key} block={block} onDrill={onDrill} />;
+        if (block.type === 'arch') return <ArchScene key={key} block={block} />;
+        if (block.type === 'flow') return <FlowScene key={key} block={block} />;
+        if (block.type === 'data') return <DataScene key={key} block={block} />;
+        if (block.type === 'state') return <StateScene key={key} block={block} />;
         return (
           <div key={key} className="prose-exl max-w-3xl">
             <Markdown>{block.text}</Markdown>
@@ -231,7 +277,7 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
       <p className="flex items-center gap-2 pt-2 text-sm font-semibold text-muted-foreground">
         <InfoIcon size={16} />
         Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}
-        {onDrill ? 'Click a box to go deeper; groups zoom in.' : 'Offline copy: groups zoom in; ask Claude Code to go deeper.'}
+        {offline ? 'Offline copy: click a box for its details; groups zoom in.' : 'Click a box for its details and to go deeper; groups zoom in.'}
       </p>
     </>
   );

@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util';
 import { Bridge } from './bridge/index.ts';
 import { formatErrors, parseExl } from './parser/index.ts';
 import { resolveInside } from './project.ts';
+import { withSnippets } from './snippets.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -38,7 +39,7 @@ function load(): void {
     changes: [],
     savedAt: new Date().toISOString(),
     trail: [],
-    blocks: parsed.scene.blocks,
+    blocks: withSnippets(project, parsed.scene.blocks),
   });
   console.log(`${new Date().toLocaleTimeString()} published ${file}`);
 }

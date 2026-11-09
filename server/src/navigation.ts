@@ -5,6 +5,7 @@ import { topicKey, type CachedScene, type SceneCache } from './cache/index.ts';
 import { describeClick, findClickTarget } from './clicks/index.ts';
 import { parseExl, formatErrors } from './parser/index.ts';
 import type { FileChange, TrailEntry } from './scene.ts';
+import { withSnippets } from './snippets.ts';
 
 /** A click forwarded to Claude: the next scene rendered within this time is its answer. */
 const PENDING_MS = 15 * 60 * 1000;
@@ -51,7 +52,7 @@ export class Navigator {
       changes,
       savedAt: scene.savedAt,
       trail: (resolved ?? []).filter((entry) => entry.key !== scene.key),
-      blocks: parsed.scene.blocks,
+      blocks: withSnippets(this.cache.root, parsed.scene.blocks),
     });
     return { ok: true };
   }

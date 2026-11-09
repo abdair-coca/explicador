@@ -10,7 +10,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 3 (presentation, done): full-screen slides with manual advance and large narration, and export of a scene as one HTML file that works offline.
 - Phase 4 (more views, done pending the user's review): `<data>` data models (entities, fields, relations with cardinality) and `<state>` machines with an optional narrated walk.
 - Phase 5 (Titi look, done pending the user's review): the viewer follows SocialNeo's Titi design system (cream and yellow, Nunito, tiles with a hard shadow, playful entrances), edge labels get their own room and stay legible, long chains wrap into rows, and boxes show a one-line `desc`.
-- Phase 6 (flows that make sense, done pending the user's review): steps and edges have a `kind` (calls solid, returns dashed, async dotted, with a legend); a flow step can only start where the story already is, so scenes cannot jump; the narration links the step before and after. Next: a detail panel with key code (F7) and questions about a box (F8). Plan: `.dev/PLAN.md`.
+- Phase 6 (flows that make sense, done pending the user's review): steps and edges have a `kind` (calls solid, returns dashed, async dotted, with a legend); a flow step can only start where the story already is, so scenes cannot jump; the narration links the step before and after.
+- Phase 7 (detail panel, done pending the user's review): clicking a box opens a side panel with its description, a longer explanation and its key code (`<code>`, lines copied from the file by the server, highlighted), plus "Go deeper". Next: questions about a box (F8). Plan: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 
@@ -28,9 +29,9 @@ The first run reads the index and the code, then renders the scene and opens the
 
 **Present** turns the scene into full-screen slides (each prose block, each architecture, each flow step) that only advance when you press →, Space or PageDown; ← goes back, F toggles full screen, Esc leaves.
 
-**Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom and presentation work, clicks to Claude do not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
+**Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom, presentation and the detail panel (with its key code) work; "Go deeper" does not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
 
-In the viewer, click a group to zoom into it, or any other node to go deeper: Claude receives the click (through the plugin monitor), explains that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back. Clicks need an interactive session; plugin monitors do not run under `claude -p`.
+In the viewer, click a group to zoom into it, or any other box to open its detail panel: what it does, a longer explanation and its key code, read from the file. "Go deeper" in the panel asks Claude (through the plugin monitor) to explain that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back. Going deeper needs an interactive session; plugin monitors do not run under `claude -p`.
 
 State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes) and `FINDINGS.md`.
 

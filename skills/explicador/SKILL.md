@@ -37,12 +37,17 @@ One short paragraph of context.
   <node id="users" label="Users table" desc="Users and password hashes" kind="store" ref="src/db/users.js" />
   <group id="auth" label="Auth core" desc="Checks passwords, opens sessions">
     <node id="service" label="Auth service" desc="Runs the login checks" ref="src/auth/auth-service.js" />
-    <node id="password" label="Password check" desc="scrypt, constant time" kind="function" ref="src/auth/password.js" />
+    <node id="password" label="Password check" desc="scrypt, constant time" kind="function" ref="src/auth/password.js">
+      Re-derives the key with the stored salt and compares with `timingSafeEqual`, so timing does not leak how much matched.
+
+      Unknown emails are checked against a dummy hash for the same reason.
+    </node>
   </group>
   <edge from="form" to="api" label="POST /api/login" />
   <edge from="api" to="service" label="login()" />
   <edge from="service" to="users" label="find by email" />
   <drill node="password" topic="password hashing" />
+  <code node="password" ref="src/auth/password.js:14-19">The comparison that keeps timing constant.</code>
 </arch>
 
 <flow id="login" title="Logging in">
@@ -67,6 +72,8 @@ One short paragraph of context.
 - `kind` on `<step>` and `<edge>`: `call` (default), `return` (the answer coming back; needs `to`), `async` (queues, events, background jobs). Calls are drawn solid, returns dashed, async dotted.
 - `<node id label desc? kind? ref?>`; `kind` is one of `actor`, `ui`, `service`, `module`, `function`, `store`, `external` (default `module`).
 - `desc` (on `<node>`, `<group>`, `<entity>`, `<status>`): one line, at most 80 characters, saying what the part does, shown inside the box. Give one to every box; start with a verb or name the responsibility ("Validates the session", "Ranks the 15 candidates"), never repeat the label.
+- Long description: text inside `<node>…</node>`, `<entity>` or `<status>` (Markdown, up to 1200 characters, blank line between paragraphs). Clicking the box shows it in the detail panel. Write one for the 2–5 boxes a reader will open: what it does, why it matters, and any gotcha, in 2–6 sentences.
+- `<code node ref>why</code>`: the key lines of a box, shown in its panel. `ref` is a line range of at most 40 lines (check the numbers), the text says in one sentence why these lines matter; at most 3 per box, 1–4 per scene. The server copies the lines from the file: never paste code into EXL.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 

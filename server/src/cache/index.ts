@@ -47,7 +47,8 @@ export function hashFile(path: string): string | undefined {
 }
 
 export class SceneCache {
-  private readonly root: string;
+  /** The analyzed project; scenes and their refs live under it. */
+  readonly root: string;
   private readonly dir: string;
 
   constructor(root: string) {

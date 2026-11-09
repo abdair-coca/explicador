@@ -77,13 +77,18 @@ describe('MCP server over stdio', () => {
     const url = new URL(viewerUrl);
     const token = url.searchParams.get('t') ?? '';
     const ok = await fetch(new URL('/api/scene', url), { headers: { 'x-token': token } });
-    const body = (await ok.json()) as { scene: { status: string; changes: unknown[]; blocks: { type: string }[] } };
+    const body = (await ok.json()) as {
+      scene: { status: string; changes: unknown[]; blocks: { type: string; codes?: { node: string; lines?: string[] }[] }[] };
+    };
     assert.equal(body.scene.status, 'stale');
     assert.deepEqual(body.scene.changes, [{ path: 'src/auth/sessions.js', change: 'modified' }]);
     assert.deepEqual(
       body.scene.blocks.map((b) => b.type),
       ['markdown', 'arch', 'flow', 'markdown'],
     );
+    // Key code arrives with the real lines, read from the project when the scene is shown.
+    const password = body.scene.blocks[1]?.codes?.find((c) => c.node === 'password');
+    assert.match(password?.lines?.join('\n') ?? '', /timingSafeEqual\(key, Buffer\.from\(expected, 'hex'\)\)/);
     assert.equal((await fetch(new URL('/api/scene', url), { headers: { 'x-token': 'nope' } })).status, 403);
     assert.equal((await fetch(new URL('/api/scene', url))).status, 403);
   });
