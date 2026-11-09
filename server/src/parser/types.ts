@@ -74,7 +74,82 @@ export interface FlowBlock {
   drills: Drill[];
 }
 
-export type Block = MarkdownBlock | ArchBlock | FlowBlock;
+export const fieldKeys = ['pk', 'fk', 'unique'] as const;
+export type FieldKey = (typeof fieldKeys)[number];
+
+export interface Field {
+  name: string;
+  type?: string;
+  key?: FieldKey;
+}
+
+export interface Entity {
+  id: string;
+  label: string;
+  fields: Field[];
+  ref?: Ref;
+}
+
+export const cardinalities = ['1-1', '1-n', 'n-1', 'n-n'] as const;
+export type Cardinality = (typeof cardinalities)[number];
+
+export interface Relation {
+  from: string;
+  to: string;
+  card: Cardinality;
+  label?: string;
+}
+
+/** A data model: entities with fields, and relations between them. */
+export interface DataBlock {
+  type: 'data';
+  id: string;
+  title: string;
+  entities: Entity[];
+  relations: Relation[];
+  drills: Drill[];
+}
+
+export const statusRoles = ['initial', 'final'] as const;
+
+export interface Status {
+  id: string;
+  label: string;
+  role: 'initial' | 'final' | 'normal';
+  ref?: Ref;
+}
+
+export interface Transition {
+  from: string;
+  to: string;
+  event: string;
+  ref?: Ref;
+}
+
+/** One step of a narrated walk: the transition taken from the current state. */
+export interface WalkStep {
+  /** Index into `transitions`. */
+  transition: number;
+  from: string;
+  to: string;
+  event: string;
+  narration: string;
+}
+
+/** A state machine, optionally with a narrated walk from the initial state. */
+export interface StateBlock {
+  type: 'state';
+  id: string;
+  title: string;
+  states: Status[];
+  transitions: Transition[];
+  walk: WalkStep[];
+  drills: Drill[];
+}
+
+export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock;
+
+export type Block = MarkdownBlock | SceneBlock;
 
 export interface Scene {
   blocks: Block[];

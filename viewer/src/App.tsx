@@ -195,6 +195,7 @@ function Scene({ scene, onDrill }: { scene: ScenePayload; onDrill: DrillHandler 
         const key = `${scene.version}-${i}`;
         if (block.type === 'arch') return <ArchScene key={key} block={block} onDrill={onDrill} />;
         if (block.type === 'flow') return <FlowScene key={key} block={block} onDrill={onDrill} />;
+        if (block.type !== 'markdown') return null;
         return (
           <div key={key} className="prose-exl max-w-3xl">
             <Markdown>{block.text}</Markdown>

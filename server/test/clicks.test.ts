@@ -64,3 +64,26 @@ describe('runtime file', () => {
     assert.equal(runtimePath('/p', ''), undefined);
   });
 });
+
+describe('click targets in <data> and <state>', () => {
+  const views = scene(
+    [
+      '<data id="model" title="Model">',
+      '  <entity id="user" label="User" ref="src/db/users.js"><field name="id" key="pk" /></entity>',
+      '  <drill node="user" topic="users table" />',
+      '</data>',
+      '<state id="life" title="Session">',
+      '  <status id="anon" label="Anonymous" role="initial" />',
+      '</state>',
+    ].join('\n'),
+  );
+
+  it('finds entities and states, with their drills', () => {
+    const entity = findClickTarget(views, 'model', 'user');
+    assert.equal(entity?.topic, 'users table');
+    assert.match(describeClick(views, entity!), /clicked "User" \(node user, entity, src\/db\/users\.js\) in "Model"/);
+    const state = findClickTarget(views, 'life', 'anon');
+    assert.equal(state?.topic, 'Anonymous');
+    assert.equal(state?.node.kind, 'state');
+  });
+});

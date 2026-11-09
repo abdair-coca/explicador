@@ -143,7 +143,7 @@ describe('parseExl: invalid documents', () => {
   });
 
   it('requires at least one scene block', () => {
-    assert.deepEqual(errorsOf('Just prose.'), ['1:1 A scene needs at least one <arch> or <flow>']);
+    assert.deepEqual(errorsOf('Just prose.'), ['1:1 A scene needs at least one <arch>, <flow>, <data> or <state>']);
   });
 
   it('rejects mismatched closing tags', () => {
@@ -248,5 +248,143 @@ describe('parseExl: groups and drills', () => {
       errorsOf('<flow title="F"><node id="a" label="A" /><group id="g" label="G"><node id="b" label="B" /></group><step from="a">x</step></flow>')[0] ?? '',
       /<group> is not allowed inside <flow>/,
     );
+  });
+});
+
+describe('parseExl: <data>', () => {
+  const doc = [
+    '<data id="model" title="Shop data">',
+    '  <entity id="user" label="User" ref="src/db/users.js">',
+    '    <field name="id" type="int" key="pk" />',
+    '    <field name="email" type="string" key="unique" />',
+    '  </entity>',
+    '  <entity id="cart" label="Cart" ref="src/cart/cart-service.js">',
+    '    <field name="userId" type="int" key="fk" />',
+    '  </entity>',
+    '  <entity id="session" label="Session" />',
+    '  <relation from="user" to="cart" card="1-n" label="owns" />',
+    '  <drill node="user" topic="users table" />',
+    '</data>',
+  ].join('\n');
+
+  it('parses entities, fields, relations and drills', () => {
+    const result = parseExl(doc);
+    assert.ok(result.ok, result.ok ? '' : formatErrors(result.errors));
+    const block = result.scene.blocks[0];
+    assert.equal(block?.type, 'data');
+    if (block?.type !== 'data') return;
+    assert.deepEqual(block.entities[0]?.fields, [
+      { name: 'id', type: 'int', key: 'pk' },
+      { name: 'email', type: 'string', key: 'unique' },
+    ]);
+    assert.deepEqual(block.entities[2], { id: 'session', label: 'Session', fields: [] });
+    assert.deepEqual(block.relations, [{ from: 'user', to: 'cart', card: '1-n', label: 'owns' }]);
+    assert.deepEqual(block.drills, [{ node: 'user', topic: 'users table' }]);
+    assert.deepEqual(result.refs, ['src/cart/cart-service.js', 'src/db/users.js']);
+  });
+
+  it('rejects bad keys, cards, duplicates and unknown entities', () => {
+    const errors = errorsOf(
+      [
+        '<data title="D">',
+        '  <entity id="a" label="A">',
+        '    <field name="x" key="primary" />',
+        '    <field name="x" />',
+        '  </entity>',
+        '  <relation from="a" to="b" card="many" />',
+        '  <drill node="ghost" topic="t" />',
+        '</data>',
+      ].join('\n'),
+    );
+    assert.deepEqual(errors, [
+      '3:21 Unknown key "primary"; use pk, fk, unique',
+      '4:5 Duplicate field "x" in "a"',
+      '6:22 "to" refers to unknown entity "b"',
+      '6:29 Unknown card "many"; use 1-1, 1-n, n-1, n-n',
+      '7:10 "node" refers to unknown item "ghost"',
+    ]);
+  });
+
+  it('reports a <field> outside an entity and an unclosed entity', () => {
+    assert.deepEqual(errorsOf('<field name="x" />'), ['1:1 <field> must be inside a scene block']);
+    assert.deepEqual(errorsOf('<data title="D">\n<entity id="a" label="A">\n<field name="x" />\n</data>'), [
+      '4:1 Expected </entity> but found </data>',
+    ]);
+  });
+});
+
+describe('parseExl: <state>', () => {
+  const doc = [
+    '<state id="session" title="Session lifecycle">',
+    '  <status id="anon" label="Anonymous" role="initial" />',
+    '  <status id="active" label="Logged in" ref="src/auth/sessions.js:7-11" />',
+    '  <status id="expired" label="Expired" role="final" />',
+    '  <transition from="anon" to="active" event="login ok" ref="src/auth/auth-service.js" />',
+    '  <transition from="active" to="anon" event="logout" />',
+    '  <transition from="active" to="expired" event="1 h passes" />',
+    '  <walk>',
+    '    <go event="login ok">The password matches.</go>',
+    '    <go event="logout">The cookie is cleared.</go>',
+    '    <go event="login ok">Back in.</go>',
+    '    <go event="1 h passes">The TTL runs out.</go>',
+    '  </walk>',
+    '  <drill node="active" topic="sessions" />',
+    '</state>',
+  ].join('\n');
+
+  it('parses states, transitions and follows the walk from the initial state', () => {
+    const result = parseExl(doc);
+    assert.ok(result.ok, result.ok ? '' : formatErrors(result.errors));
+    const block = result.scene.blocks[0];
+    if (block?.type !== 'state') return assert.fail('expected <state>');
+    assert.deepEqual(
+      block.states.map((s) => [s.id, s.role]),
+      [
+        ['anon', 'initial'],
+        ['active', 'normal'],
+        ['expired', 'final'],
+      ],
+    );
+    assert.deepEqual(
+      block.walk.map((w) => [w.transition, w.from, w.to]),
+      [
+        [0, 'anon', 'active'],
+        [1, 'active', 'anon'],
+        [0, 'anon', 'active'],
+        [2, 'active', 'expired'],
+      ],
+    );
+    assert.equal(block.walk[3]?.narration, 'The TTL runs out.');
+    assert.deepEqual(result.refs, ['src/auth/auth-service.js', 'src/auth/sessions.js']);
+  });
+
+  it('needs exactly one initial state and a walk that follows real transitions', () => {
+    const errors = errorsOf(
+      [
+        '<state title="S">',
+        '  <status id="a" label="A" role="initial" />',
+        '  <status id="b" label="B" role="initial" />',
+        '  <status id="c" label="C" role="start" />',
+        '  <transition from="a" to="b" event="go" />',
+        '  <transition from="a" to="c" event="go" />',
+        '  <transition from="b" to="z" event="x" />',
+        '  <walk><go event="go">Ambiguous.</go><go event="nope">Nothing.</go></walk>',
+        '</state>',
+      ].join('\n'),
+    );
+    assert.deepEqual(errors, [
+      '3:3 Only one <status> can have role="initial"',
+      '4:28 Unknown role "start"; use initial, final',
+      '7:24 "to" refers to unknown state "z"',
+      '8:13 Several transitions leave "a" on event "go"',
+      '8:43 No <transition> leaves "b" on event "nope"',
+    ]);
+    assert.match(errorsOf('<state title="S"><status id="a" label="A" /></state>')[0] ?? '', /needs one <status role="initial">/);
+  });
+
+  it('reports an unclosed walk step', () => {
+    assert.deepEqual(errorsOf('<state title="S">\n<status id="a" label="A" role="initial" />\n<walk><go event="x">half'), [
+      '3:7 Unclosed <go>: expected </go>',
+    ]);
   });
 });

@@ -2,13 +2,23 @@
 // Tags are recognized only at the start of a line outside code fences; everything else is Markdown.
 import { readElement, ExlSyntaxError, type Element } from './reader.ts';
 import {
+  cardinalities,
+  fieldKeys,
   nodeKinds,
-  type ArchBlock,
+  statusRoles,
+  type Cardinality,
+  type DataBlock,
+  type Entity,
+  type Field,
+  type FieldKey,
+  type StateBlock,
+  type Status,
+  type Transition,
+  type WalkStep,
   type ArchEdge,
   type Drill,
   type Block,
   type ExlError,
-  type FlowBlock,
   type FlowStep,
   type NodeKind,
   type ParseResult,
@@ -29,18 +39,29 @@ export const catalog: Record<string, TagSpec> = {
   flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill'] },
   group: { attrs: { id: 'required', label: 'required', kind: 'optional' }, children: ['node', 'group'] },
   drill: { attrs: { node: 'required', topic: 'required' } },
+  data: { attrs: { id: 'optional', title: 'required' }, children: ['entity', 'relation', 'drill'] },
+  entity: { attrs: { id: 'required', label: 'required', ref: 'optional' }, children: ['field'] },
+  field: { attrs: { name: 'required', type: 'optional', key: 'optional' } },
+  relation: { attrs: { from: 'required', to: 'required', card: 'required', label: 'optional' } },
+  state: { attrs: { id: 'optional', title: 'required' }, children: ['status', 'transition', 'walk', 'drill'] },
+  status: { attrs: { id: 'required', label: 'required', role: 'optional', ref: 'optional' } },
+  transition: { attrs: { from: 'required', to: 'required', event: 'required', ref: 'optional' } },
+  walk: { attrs: {}, children: ['go'] },
+  go: { attrs: { event: 'required' }, text: true },
   node: { attrs: { id: 'required', label: 'required', kind: 'optional', ref: 'optional' } },
   edge: { attrs: { from: 'required', to: 'required', label: 'optional' } },
   step: { attrs: { from: 'required', to: 'optional', label: 'optional', ref: 'optional' }, text: true },
 };
 
-const topLevelTags = ['arch', 'flow'];
+const topLevelTags = ['arch', 'flow', 'data', 'state'];
 
 export const limits = {
   idLength: 40,
   labelLength: 80,
   titleLength: 120,
   topicLength: 80,
+  fieldLength: 60,
+  fields: 40,
   narrationLength: 600,
   nodes: 60,
   edges: 120,
@@ -105,9 +126,12 @@ export function parseExl(source: string): ParseResult {
         return { ok: false, errors };
       }
       if (!topLevelTags.includes(name)) {
-        const message = catalog[name]
-          ? `<${name}> must be inside <arch> or <flow>`
-          : `Unknown tag <${name}>. EXL top-level tags: ${topLevelTags.join(', ')}`;
+        const parents = topLevelTags.filter((tag) => catalog[tag]?.children?.includes(name)).map((tag) => `<${tag}>`);
+        const message = !catalog[name]
+          ? `Unknown tag <${name}>. EXL top-level tags: ${topLevelTags.join(', ')}`
+          : parents.length > 0
+            ? `<${name}> must be inside ${parents.join(' or ')}`
+            : `<${name}> must be inside a scene block`;
         errors.push(at.error(tagStart, message));
         return { ok: false, errors };
       }
@@ -133,7 +157,7 @@ export function parseExl(source: string): ParseResult {
 
   checkBlockIds(blocks, errors);
   if (!blocks.some((block) => block.type !== 'markdown') && errors.length === 0) {
-    errors.push({ line: 1, column: 1, message: 'A scene needs at least one <arch> or <flow>' });
+    errors.push({ line: 1, column: 1, message: 'A scene needs at least one <arch>, <flow>, <data> or <state>' });
   }
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, scene: { blocks }, refs: collectRefs(blocks) };
@@ -141,7 +165,9 @@ export function parseExl(source: string): ParseResult {
 
 type Report = (offset: number, message: string) => void;
 
-function buildBlock(element: Element, ordinal: number, report: Report): ArchBlock | FlowBlock | undefined {
+function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
+  if (element.name === 'data') return buildData(element, ordinal, report);
+  if (element.name === 'state') return buildState(element, ordinal, report);
   const spec = catalog[element.name];
   if (!spec) return undefined;
   const attrs = readAttrs(element, spec, report);
@@ -375,10 +401,198 @@ function checkBlockIds(blocks: Block[], errors: ExlError[]): void {
 
 function collectRefs(blocks: Block[]): string[] {
   const paths = new Set<string>();
+  const add = (ref: Ref | undefined): void => {
+    if (ref) paths.add(ref.path);
+  };
   for (const block of blocks) {
-    if (block.type === 'markdown') continue;
-    for (const node of block.nodes) if (node.ref) paths.add(node.ref.path);
-    if (block.type === 'flow') for (const step of block.steps) if (step.ref) paths.add(step.ref.path);
+    if (block.type === 'arch' || block.type === 'flow') block.nodes.forEach((node) => add(node.ref));
+    if (block.type === 'flow') block.steps.forEach((step) => add(step.ref));
+    if (block.type === 'data') block.entities.forEach((entity) => add(entity.ref));
+    if (block.type === 'state') {
+      block.states.forEach((status) => add(status.ref));
+      block.transitions.forEach((transition) => add(transition.ref));
+    }
   }
   return [...paths].sort();
+}
+
+/** id and title shared by every scene block. */
+function blockHead(element: Element, spec: TagSpec, ordinal: number, report: Report): { id: string; title: string } {
+  const attrs = readAttrs(element, spec, report);
+  if (element.selfClosing) report(element.offset, `<${element.name}> must have children`);
+  if (attrs.id !== undefined) checkId(attrs.id, element, report);
+  return {
+    id: attrs.id ?? `${element.name}-${ordinal}`,
+    title: checkText(attrs.title ?? '', 'title', limits.titleLength, element, report),
+  };
+}
+
+/** Reads a <drill> for a block whose clickable items have the given ids. */
+function readDrill(child: Element, ids: Set<string>, drills: Drill[], report: Report): void {
+  const a = readAttrs(child, catalog.drill ?? { attrs: {} }, report);
+  if (!child.selfClosing) report(child.offset, '<drill> must be self-closing: <drill node="a" topic="..." />');
+  const offset = child.attrs.get('node')?.offset ?? child.offset;
+  if (a.node !== undefined && !ids.has(a.node)) report(offset, `"node" refers to unknown item "${a.node}"`);
+  else if (a.node !== undefined && drills.some((d) => d.node === a.node)) report(offset, `"${a.node}" already has a <drill>`);
+  const topic = checkText(a.topic ?? '', 'topic', limits.topicLength, child, report);
+  if (topic && !/[\p{L}\p{N}]/u.test(topic)) report(child.offset, '"topic" needs letters or digits');
+  if (a.node !== undefined && a.topic !== undefined) drills.push({ node: a.node, topic });
+}
+
+function narrationOf(element: Element, report: Report): string {
+  const narration = element.children
+    .map((c) => {
+      if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);
+      return c.kind === 'text' ? c.text : '';
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!narration) report(element.offset, `<${element.name}> needs narration text`);
+  else if (narration.length > limits.narrationLength) {
+    report(element.offset, `Narration is longer than ${limits.narrationLength} characters`);
+  }
+  return narration;
+}
+
+function buildData(element: Element, ordinal: number, report: Report): DataBlock {
+  const spec = catalog.data ?? { attrs: {} };
+  const { id, title } = blockHead(element, spec, ordinal, report);
+  const children = childElements(element, spec, report);
+  const entities: Entity[] = [];
+  const relations: DataBlock['relations'] = [];
+  const drills: Drill[] = [];
+  const ids = new Set<string>();
+
+  for (const child of children.filter((c) => c.name === 'entity')) {
+    const a = readAttrs(child, catalog.entity ?? { attrs: {} }, report);
+    if (a.id === undefined || a.label === undefined) continue;
+    checkId(a.id, child, report);
+    if (ids.has(a.id)) report(child.offset, `Duplicate entity id "${a.id}"`);
+    ids.add(a.id);
+    const fields: Field[] = [];
+    for (const row of childElements(child, catalog.entity ?? { attrs: {} }, report)) {
+      const f = readAttrs(row, catalog.field ?? { attrs: {} }, report);
+      if (!row.selfClosing) report(row.offset, '<field> must be self-closing: <field name="id" type="int" key="pk" />');
+      if (f.name === undefined) continue;
+      const name = checkText(f.name, 'name', limits.fieldLength, row, report);
+      if (fields.some((existing) => existing.name === name)) report(row.offset, `Duplicate field "${name}" in "${a.id}"`);
+      const type = f.type === undefined ? undefined : checkText(f.type, 'type', limits.fieldLength, row, report);
+      let key: FieldKey | undefined;
+      if (f.key !== undefined) {
+        if ((fieldKeys as readonly string[]).includes(f.key)) key = f.key as FieldKey;
+        else report(row.attrs.get('key')?.offset ?? row.offset, `Unknown key "${f.key}"; use ${fieldKeys.join(', ')}`);
+      }
+      fields.push({ name, ...(type ? { type } : {}), ...(key ? { key } : {}) });
+    }
+    if (fields.length > limits.fields) report(child.offset, `<entity> has more than ${limits.fields} fields`);
+    const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
+    entities.push({ id: a.id, label: checkText(a.label, 'label', limits.labelLength, child, report), fields, ...(ref ? { ref } : {}) });
+  }
+
+  for (const child of children.filter((c) => c.name !== 'entity')) {
+    if (child.name === 'drill') {
+      readDrill(child, ids, drills, report);
+      continue;
+    }
+    const a = readAttrs(child, catalog.relation ?? { attrs: {} }, report);
+    if (!child.selfClosing) report(child.offset, '<relation> must be self-closing');
+    for (const attr of ['from', 'to'] as const) {
+      const value = a[attr];
+      if (value !== undefined && !ids.has(value)) {
+        report(child.attrs.get(attr)?.offset ?? child.offset, `"${attr}" refers to unknown entity "${value}"`);
+      }
+    }
+    if (a.card !== undefined && !(cardinalities as readonly string[]).includes(a.card)) {
+      report(child.attrs.get('card')?.offset ?? child.offset, `Unknown card "${a.card}"; use ${cardinalities.join(', ')}`);
+    }
+    const label = a.label === undefined ? undefined : checkText(a.label, 'label', limits.labelLength, child, report);
+    relations.push({ from: a.from ?? '', to: a.to ?? '', card: (a.card ?? '1-n') as Cardinality, ...(label ? { label } : {}) });
+  }
+
+  if (entities.length === 0) report(element.offset, '<data> needs at least one <entity>');
+  if (entities.length > limits.nodes) report(element.offset, `<data> has more than ${limits.nodes} entities`);
+  if (relations.length > limits.edges) report(element.offset, `<data> has more than ${limits.edges} relations`);
+  return { type: 'data', id, title, entities, relations, drills };
+}
+
+function buildState(element: Element, ordinal: number, report: Report): StateBlock {
+  const spec = catalog.state ?? { attrs: {} };
+  const { id, title } = blockHead(element, spec, ordinal, report);
+  const children = childElements(element, spec, report);
+  const states: Status[] = [];
+  const transitions: Transition[] = [];
+  const walk: WalkStep[] = [];
+  const drills: Drill[] = [];
+  const ids = new Set<string>();
+
+  for (const child of children.filter((c) => c.name === 'status')) {
+    const a = readAttrs(child, catalog.status ?? { attrs: {} }, report);
+    if (!child.selfClosing) report(child.offset, '<status> must be self-closing: <status id="a" label="A" />');
+    if (a.id === undefined || a.label === undefined) continue;
+    checkId(a.id, child, report);
+    if (ids.has(a.id)) report(child.offset, `Duplicate state id "${a.id}"`);
+    ids.add(a.id);
+    let role: Status['role'] = 'normal';
+    if (a.role !== undefined) {
+      if ((statusRoles as readonly string[]).includes(a.role)) role = a.role as Status['role'];
+      else report(child.attrs.get('role')?.offset ?? child.offset, `Unknown role "${a.role}"; use ${statusRoles.join(', ')}`);
+    }
+    if (role === 'initial' && states.some((s) => s.role === 'initial')) {
+      report(child.offset, 'Only one <status> can have role="initial"');
+    }
+    const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
+    states.push({ id: a.id, label: checkText(a.label, 'label', limits.labelLength, child, report), role, ...(ref ? { ref } : {}) });
+  }
+
+  for (const child of children.filter((c) => c.name === 'transition')) {
+    const a = readAttrs(child, catalog.transition ?? { attrs: {} }, report);
+    if (!child.selfClosing) report(child.offset, '<transition> must be self-closing');
+    for (const attr of ['from', 'to'] as const) {
+      const value = a[attr];
+      if (value !== undefined && !ids.has(value)) {
+        report(child.attrs.get(attr)?.offset ?? child.offset, `"${attr}" refers to unknown state "${value}"`);
+      }
+    }
+    const event = checkText(a.event ?? '', 'event', limits.labelLength, child, report);
+    const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, report);
+    transitions.push({ from: a.from ?? '', to: a.to ?? '', event, ...(ref ? { ref } : {}) });
+  }
+
+  const initial = states.find((s) => s.role === 'initial');
+  if (states.length > 0 && !initial) report(element.offset, '<state> needs one <status role="initial">');
+  const walks = children.filter((c) => c.name === 'walk');
+  if (walks.length > 1) report(walks[1]?.offset ?? element.offset, 'Only one <walk> per <state>');
+  const first = walks[0];
+  if (first) {
+    if (first.attrs.size > 0) readAttrs(first, catalog.walk ?? { attrs: {} }, report);
+    let current = initial?.id;
+    const steps = childElements(first, catalog.walk ?? { attrs: {} }, report);
+    if (steps.length === 0) report(first.offset, '<walk> needs at least one <go>');
+    for (const go of steps) {
+      const a = readAttrs(go, catalog.go ?? { attrs: {} }, report);
+      const narration = narrationOf(go, report);
+      if (a.event === undefined || current === undefined) continue;
+      const matches = transitions.flatMap((t, index) => (t.from === current && t.event === a.event ? [index] : []));
+      const offset = go.attrs.get('event')?.offset ?? go.offset;
+      if (matches.length === 0) {
+        report(offset, `No <transition> leaves "${current}" on event "${a.event}"`);
+        current = undefined;
+        continue;
+      }
+      if (matches.length > 1) report(offset, `Several transitions leave "${current}" on event "${a.event}"`);
+      const index = matches[0] ?? 0;
+      const transition = transitions[index];
+      if (!transition) continue;
+      walk.push({ transition: index, from: transition.from, to: transition.to, event: transition.event, narration });
+      current = transition.to;
+    }
+    if (walk.length > limits.steps) report(first.offset, `<walk> has more than ${limits.steps} steps`);
+  }
+  for (const child of children.filter((c) => c.name === 'drill')) readDrill(child, ids, drills, report);
+
+  if (states.length === 0) report(element.offset, '<state> needs at least one <status>');
+  if (states.length > limits.nodes) report(element.offset, `<state> has more than ${limits.nodes} states`);
+  if (transitions.length > limits.edges) report(element.offset, `<state> has more than ${limits.edges} transitions`);
+  return { type: 'state', id, title, states, transitions, walk, drills };
 }

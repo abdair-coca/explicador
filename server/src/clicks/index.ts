@@ -3,11 +3,19 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { stateDir, writeFileAtomic } from '../project.ts';
-import type { ArchBlock, FlowBlock, ScenePayload, SceneNode } from '../scene.ts';
+import type { Ref, SceneBlock, ScenePayload } from '../scene.ts';
+
+/** Something the user can click: a node, an entity or a state. */
+export interface ClickItem {
+  id: string;
+  label: string;
+  kind: string;
+  ref?: Ref;
+}
 
 export interface ClickTarget {
-  block: ArchBlock | FlowBlock;
-  node: SceneNode;
+  block: SceneBlock;
+  node: ClickItem;
   /** Topic of the deeper scene: the node's <drill> topic, or its label. */
   topic: string;
   drilled: boolean;
@@ -15,11 +23,23 @@ export interface ClickTarget {
 
 export function findClickTarget(scene: ScenePayload, blockId: unknown, nodeId: unknown): ClickTarget | undefined {
   if (typeof blockId !== 'string' || typeof nodeId !== 'string') return undefined;
-  const block = scene.blocks.find((b): b is ArchBlock | FlowBlock => b.type !== 'markdown' && b.id === blockId);
-  const node = block?.nodes.find((n) => n.id === nodeId);
+  const block = scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === blockId);
+  const node = block ? clickItems(block).find((n) => n.id === nodeId) : undefined;
   if (!block || !node) return undefined;
   const drill = block.drills.find((d) => d.node === nodeId);
   return { block, node, topic: drill?.topic ?? node.label, drilled: drill !== undefined };
+}
+
+export function clickItems(block: SceneBlock): ClickItem[] {
+  switch (block.type) {
+    case 'arch':
+    case 'flow':
+      return block.nodes;
+    case 'data':
+      return block.entities.map((e) => ({ id: e.id, label: e.label, kind: 'entity', ...(e.ref ? { ref: e.ref } : {}) }));
+    case 'state':
+      return block.states.map((s) => ({ id: s.id, label: s.label, kind: 'state', ...(s.ref ? { ref: s.ref } : {}) }));
+  }
 }
 
 /** One line for Claude. It describes the click; it does not restrict what Claude may do. */

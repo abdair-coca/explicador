@@ -44,3 +44,30 @@ describe('keyAction', () => {
     assert.equal(keyAction('a'), undefined);
   });
 });
+
+describe('buildSlides with <data> and <state>', () => {
+  it('gives <data> one slide and a <state> one slide per walk step, or one without a walk', () => {
+    const views: Block[] = [
+      { type: 'data', id: 'd', title: 'D', entities: [{ id: 'e', label: 'E', fields: [] }], relations: [], drills: [] },
+      {
+        type: 'state',
+        id: 's',
+        title: 'S',
+        states: [{ id: 'a', label: 'A', role: 'initial' }],
+        transitions: [{ from: 'a', to: 'a', event: 'tick' }],
+        walk: [
+          { transition: 0, from: 'a', to: 'a', event: 'tick', narration: 'one' },
+          { transition: 0, from: 'a', to: 'a', event: 'tick', narration: 'two' },
+        ],
+        drills: [],
+      },
+      { type: 'state', id: 't', title: 'T', states: [{ id: 'a', label: 'A', role: 'initial' }], transitions: [], walk: [], drills: [] },
+    ];
+    assert.deepEqual(buildSlides(views), [
+      { kind: 'data', block: 0 },
+      { kind: 'walk', block: 1, step: 0, of: 2 },
+      { kind: 'walk', block: 1, step: 1, of: 2 },
+      { kind: 'state', block: 2 },
+    ]);
+  });
+});
