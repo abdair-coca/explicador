@@ -1,0 +1,8 @@
+[
+  {
+    "name": "viewer-clicks",
+    "command": "node \"${CLAUDE_PLUGIN_ROOT}/server/dist/monitor.js\" \"${CLAUDE_PROJECT_DIR}\"",
+    "description": "Clicks from the Explicador viewer",
+    "when": "always"
+  }
+]

@@ -1,6 +1,6 @@
 {
   "name": "@explicador/server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Explicador MCP server: EXL parser, scene cache, project index, findings and the local viewer bridge.",
   "type": "module",

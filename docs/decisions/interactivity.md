@@ -60,6 +60,6 @@ Other findings:
 - The page keeps the 127.0.0.1 binding, Host and Origin checks, and a per-launch token.
 - `monitors/monitors.json` is part of the standard plugin layout, but its manifest key sits under `experimental`, whose shape may still change; re-check the docs before Phase 2. On Bedrock, Vertex or Foundry, or with telemetry or nonessential traffic disabled, monitors need Claude Code 2.1.310 or later.
 
-## Reproduce
+## Implementation
 
-See `spikes/interactivity/README.md`. The server and the monitor log to `spikes/interactivity/sandbox/.spike/events.jsonl`.
+Built in Phase 2: `monitors/monitors.json`, `server/src/monitor.ts`, `server/src/clicks/` and `server/src/navigation.ts`. The spike was removed afterwards; it is in git history up to commit `df57412` (`spikes/interactivity/`).

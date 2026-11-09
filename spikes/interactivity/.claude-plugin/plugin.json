@@ -1,5 +1,0 @@
-{
-  "name": "explicador-spike",
-  "version": "0.0.0",
-  "description": "Phase 0 spike: delivers Explicador viewer clicks to Claude Code through a plugin monitor."
-}

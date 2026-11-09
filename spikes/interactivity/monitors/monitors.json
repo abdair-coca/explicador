@@ -1,7 +1,0 @@
-[
-  {
-    "name": "click-feed",
-    "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/click-feed.ts\"",
-    "description": "Clicks from the Explicador viewer"
-  }
-]

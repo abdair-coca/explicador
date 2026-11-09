@@ -5,7 +5,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 ## Status
 
 - Phase 0 (done): clicks in the viewer reach Claude through a plugin monitor, with no launch flags (`docs/decisions/interactivity.md`).
-- Phase 1 (MVP, done): EXL parser, project index, scene cache with hash invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, the `/explicador:explain` skill and a sample project. Plan and next phases: `.dev/PLAN.md`.
+- Phase 1 (MVP, done): EXL parser, project index, scene cache with hash invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, the `/explicador:explain` skill and a sample project.
+- Phase 2 (interactivity and zoom, done pending the interactive check): `<group>` zooms in locally, clicking a node asks Claude to go deeper (or opens a cached `<drill>`), breadcrumbs zoom back out. Plan and next phases: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 
@@ -21,13 +22,16 @@ claude --plugin-dir ../..
 
 The first run reads the index and the code, then renders the scene and opens the viewer. Asking again with no changes serves the cached scene without reading code. Editing a referenced file marks the scene stale, and the next explanation refreshes it.
 
+In the viewer, click a group to zoom into it, or any other node to go deeper: Claude receives the click (through the plugin monitor), explains that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back. Clicks need an interactive session; plugin monitors do not run under `claude -p`.
+
 State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes) and `FINDINGS.md`.
 
 ## How it fits together
 
-- `.claude-plugin/plugin.json`, `.mcp.json`: plugin manifest and the MCP server (`node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`).
+- `.claude-plugin/plugin.json`: plugin manifest, including the MCP server (`node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`).
+- `monitors/monitors.json`: the click monitor (`server/dist/monitor.js`). It reads `.explicador/runtime/<session id>.json`, written by the MCP server of the same session, and prints one line per click, which Claude Code delivers to Claude.
 - `skills/explicador/`: how Claude explains and writes EXL; `skills/explain/`: `/explicador:explain <topic>`.
-- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token) that serves the viewer.
+- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and feeds the monitor.
 - `viewer/`: Vite + React + Tailwind; scenes are SVG laid out with ELK.js.
 - `docs/EXL.md`: the scene format.
 
@@ -36,7 +40,7 @@ State lives in the analyzed project: `.explicador/index/` (file tree + imports),
 ```sh
 npm run typecheck
 npm run lint
-npm test                 # parser, cache, index, findings, end-to-end over stdio
+npm test                 # parser, cache, index, findings, clicks, levels, end-to-end over stdio
 npm run build
 ```
 
@@ -44,5 +48,5 @@ Development mode, without Claude:
 
 - `npm run preview -- examples/scenes/login.exl.md --project examples/shop` serves an EXL file in the viewer and reloads it on every save, printing validation errors.
 - `npm run dev -w server` and `npm run dev -w viewer` rebuild on change; in Claude Code, `/reload-plugins` picks up the new server.
-- `EXPLICADOR_SERVER=http://127.0.0.1:<port> npm run dev:server -w viewer` runs Vite with hot reload against a running bridge; open `http://localhost:5173/?t=<token>` with the token from the bridge URL.
+- `EXPLICADOR_SERVER=http://127.0.0.1:<port> npm run dev:server -w viewer` runs Vite with hot reload against a running bridge; open `http://localhost:5173/?t=<token>` with the token from the bridge URL. To click from the Vite page, start the bridge with `EXPLICADOR_DEV_ORIGIN=http://localhost:5173`.
 - `EXPLICADOR_NO_BROWSER=1` stops the server from opening browser tabs.

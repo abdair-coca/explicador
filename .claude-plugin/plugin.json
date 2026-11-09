@@ -1,8 +1,24 @@
 {
   "name": "explicador",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Explains software systems with animated diagrams in a local browser tab.",
-  "author": { "name": "abdair-coca" },
+  "author": {
+    "name": "abdair-coca"
+  },
   "repository": "https://github.com/abdair-coca/explicador",
-  "keywords": ["explain", "architecture", "diagrams", "onboarding", "teaching"]
+  "keywords": [
+    "explain",
+    "architecture",
+    "diagrams",
+    "onboarding",
+    "teaching"
+  ],
+  "mcpServers": {
+    "explicador": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/dist/index.js"
+      ]
+    }
+  }
 }

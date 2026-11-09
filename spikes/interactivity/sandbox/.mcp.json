@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "explicador-spike": {
-      "command": "node",
-      "args": ["../src/server.ts"]
-    }
-  }
-}

@@ -28,7 +28,8 @@ Taken on 2026-11-09:
 - **Plugin format** (checked against code.claude.com docs on 2026-11-09):
   - Manifest at `.claude-plugin/plugin.json`; only `name` is required.
   - Skills at `skills/<name>/SKILL.md`. Commands are now skills: `/explain` ships as `skills/explain/SKILL.md` and is invoked as `/explicador:explain` (plugin components are namespaced).
-  - MCP server declared in the root `.mcp.json`, started with `node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`. State goes in the analyzed project (`${CLAUDE_PROJECT_DIR}`), never in the plugin root.
+  - MCP server declared inline under `mcpServers` in `.claude-plugin/plugin.json` (moved from the root `.mcp.json` by the user on 2026-11-09, F2), started with `node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`. State goes in the analyzed project (`${CLAUDE_PROJECT_DIR}`), never in the plugin root.
+  - Monitors (re-checked 2026-11-09): default file `monitors/monitors.json`; entries are strict objects with `name`, `command`, `description` and optional `when` (`"always"` or `"on-skill-invoke:<skill>"`); `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PROJECT_DIR}` are substituted in `command`; monitors do not start under `claude -p`.
   - Local development: `claude --plugin-dir .`, `/reload-plugins`, `claude plugin validate .`. A local `marketplace.json` is only for installing.
 - **Monorepo:** npm workspaces (`server`, `viewer`).
 - **Decision record path:** `docs/decisions/interactivity.md` (English form of `docs/decisiones/interactividad.md`).
@@ -40,17 +41,15 @@ explicador/
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json        # local install
-├── .mcp.json
 ├── monitors/monitors.json      # click feed (interactivity mechanism d)
 ├── skills/
 │   ├── explicador/SKILL.md     # how to explain and write EXL
 │   └── explain/SKILL.md        # /explicador:explain <topic>
 ├── server/                     # MCP server, Node + TS
-│   ├── src/{parser,cache,index,findings,bridge}/
+│   ├── src/{parser,cache,index,findings,bridge,clicks}/
 │   └── test/
 ├── viewer/                     # Vite + React + TS
 │   └── src/{layout,animation,components}/
-├── spikes/interactivity/       # Phase 0 only; removed once Phase 2 reimplements the winner
 ├── examples/                   # sample project (Phase 1)
 ├── docs/EXL.md, docs/decisions/
 ├── package.json                # npm workspaces
@@ -71,8 +70,9 @@ explicador/
 - [x] **F1. MVP.** Done 2026-11-09 in an unattended cloud session; decisions taken there are listed under "Decisions pending user review".
   - Original scope: EXL parser + validation, `ensure_index`, cache with invalidation, `FINDINGS.md`, viewer with `<arch>` and `<flow>`, development mode, `/explicador:explain`, skill, `docs/EXL.md`, sample project in `examples/`.
   - Criterion: in the sample project, `/explicador:explain login` produces an animated scene; repeating it unchanged serves it from cache without reading code; editing a referenced file marks it stale. Parser tests (valid, invalid, incomplete) and cache-invalidation tests pass; lint passes.
-- [ ] **F2. Interactivity and zoom.** `<group>`, `<drill>`, zoom transitions, breadcrumbs, and click delivery through the plugin monitor chosen in F0 (per-session runtime file in `.explicador/`, click messages built from scene data). Remove `spikes/interactivity/` once this works.
-  - Criterion: defined when F2 starts, from the F0 decision.
+- [x] **F2. Interactivity and zoom.** Done 2026-11-09 except the user's interactive check. `<group>`, `<drill>`, zoom transitions, breadcrumbs, and click delivery through the plugin monitor chosen in F0 (per-session runtime file in `.explicador/`, click messages built from scene data). `spikes/interactivity/` removed.
+  - Decisions (user, 2026-11-09): `<group>` zooms locally without Claude; `<drill node topic>` opens a cached fresh scene or asks Claude; clicks on other nodes also ask Claude; MCP config inline in `plugin.json`; monitor `when: "always"`.
+  - Criterion: automatic tests (parser, levels, click message from scene data, runtime file, one monitor line per click end to end, cached drill, breadcrumb trail) pass with typecheck and lint; plus a ~5 minute interactive check by the user: in `examples/shop`, `/explicador:explain login`, click a node → Claude renders a deeper scene and the viewer zooms in; breadcrumb back zooms out; clicking a group zooms locally. **Interactive check: pending (user).**
 - [ ] **F3. Presentation mode.** Manual advance, visible narration, export a scene as standalone HTML.
   - Criterion: defined when F3 starts.
 - [ ] **F4. More views.** `<data>` and `<state>`.
@@ -95,8 +95,14 @@ Taken during the unattended F1 session (2026-11-09) as the most conservative opt
 11. **Tests without new dependencies.** `npm test` uses `node --test` on the TypeScript sources (type stripping), including an end-to-end stdio test; no Vitest. The viewer has no unit tests yet (checked with a Playwright screenshot during the session).
 12. **Node version.** The cloud session had Node 22.23; everything ran there (type stripping is on by default since 22.18). README now says 22.18+ (24+ recommended) instead of 24+.
 
+Taken during F2 (2026-11-09), within the user's choices:
+13. **Answer to a click.** After a click is sent to Claude, the next scene rendered within 15 minutes is treated as its answer and gets the clicked scene as its parent in the trail, whatever topic Claude used. Re-rendering the same scene keeps its trail; any other unprompted scene starts a new trail.
+14. **Context nodes.** Inside a group, edges that leave it end in faded, non-clickable boxes named after the outside node; merged edges keep a label only when all of them share it.
+15. **No monitor.** When no monitor is connected (for example under `claude -p`), the viewer says so and suggests `/explicador:explain <topic>`; the click is not queued.
+16. **Development origin.** `EXPLICADOR_DEV_ORIGIN` lets the Vite dev page post clicks; unset by default.
+
 Open points:
-- The root `.mcp.json` is the plugin's MCP config; opening Claude Code in this repo without `--plugin-dir` also offers it as a project server, where `${CLAUDE_PLUGIN_ROOT}` is not set and it fails to start. Decline it, or move plugin MCP config into `plugin.json` later.
+- Resolved in F2: the plugin's MCP config moved inline into `plugin.json`, so this repo no longer offers a broken project server.
 - Installing from a marketplace is not supported yet: `server/dist`, `viewer/dist` and `node_modules` are not committed, so an installed copy would need a build or dependency step (e.g. a SessionStart hook into `${CLAUDE_PLUGIN_DATA}`). `claude plugin validate .` warns that the README has no install line.
 - Plugin docs were not re-fetched in this session: the plan records them as verified on 2026-11-09, the same day.
 
@@ -111,6 +117,6 @@ Open points:
 |---|---|
 | F0 | done (2026-11-09) |
 | F1 | done (2026-11-09), decisions pending user review |
-| F2 | pending |
+| F2 | done (2026-11-09), interactive check pending (user) |
 | F3 | pending |
 | F4 | pending |
