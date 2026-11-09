@@ -28,3 +28,4 @@
 
 ### Results
 - Parser: typecheck 0, lint 0, `npm test` 46/46 pass (groups nest, edges may target groups, drills validated; bad groups and drills rejected).
+- Click delivery: typecheck 0, lint 0, `npm test` 56/56 pass. End to end: monitor started before the server finds it through `.explicador/runtime/<session>.json`, prints exactly one line per click built from scene data (extra page text ignored), the next render becomes the answer with trail `[login]`, breadcrumb `/api/open` goes back, a cached `<drill>` opens without reaching Claude, foreign Origin and missing token get 403, the runtime file is removed on shutdown.

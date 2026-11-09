@@ -8,6 +8,12 @@ export interface FileChange {
   change: 'modified' | 'deleted';
 }
 
+/** A scene the user came from; the viewer shows the trail as breadcrumbs. */
+export interface TrailEntry {
+  topic: string;
+  key: string;
+}
+
 /** What the viewer receives from GET /api/scene. */
 export interface ScenePayload {
   version: number;
@@ -16,5 +22,7 @@ export interface ScenePayload {
   status: 'fresh' | 'stale';
   changes: FileChange[];
   savedAt: string;
+  /** Ancestors, outermost first: scenes the user drilled down from. */
+  trail: TrailEntry[];
   blocks: Block[];
 }

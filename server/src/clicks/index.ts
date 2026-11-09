@@ -1,0 +1,75 @@
+// Clicks in the viewer: the message Claude receives, built only from scene data the server holds,
+// and the per-session runtime file through which the click monitor finds the bridge.
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { stateDir, writeFileAtomic } from '../project.ts';
+import type { ArchBlock, FlowBlock, ScenePayload, SceneNode } from '../scene.ts';
+
+export interface ClickTarget {
+  block: ArchBlock | FlowBlock;
+  node: SceneNode;
+  /** Topic of the deeper scene: the node's <drill> topic, or its label. */
+  topic: string;
+  drilled: boolean;
+}
+
+export function findClickTarget(scene: ScenePayload, blockId: unknown, nodeId: unknown): ClickTarget | undefined {
+  if (typeof blockId !== 'string' || typeof nodeId !== 'string') return undefined;
+  const block = scene.blocks.find((b): b is ArchBlock | FlowBlock => b.type !== 'markdown' && b.id === blockId);
+  const node = block?.nodes.find((n) => n.id === nodeId);
+  if (!block || !node) return undefined;
+  const drill = block.drills.find((d) => d.node === nodeId);
+  return { block, node, topic: drill?.topic ?? node.label, drilled: drill !== undefined };
+}
+
+/** One line for Claude. It describes the click; it does not restrict what Claude may do. */
+export function describeClick(scene: ScenePayload, target: ClickTarget): string {
+  const { node } = target;
+  const ref = node.ref
+    ? `, ${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
+    : '';
+  return oneLine(
+    `Explicador viewer: the user clicked "${node.label}" (node ${node.id}, ${node.kind}${ref}) ` +
+      `in "${target.block.title}" of the scene "${scene.topic}" and wants to go deeper. ` +
+      `Explain it with Explicador under the topic "${target.topic}": call show_scene first, ` +
+      'then build the scene with render_scene if it is missing or stale, and reply briefly in the chat.',
+  );
+}
+
+function oneLine(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\u0000-\u001f\u007f\u2028\u2029]+/g, ' ');
+}
+
+export interface RuntimeInfo {
+  origin: string;
+  token: string;
+  pid: number;
+}
+
+const SESSION_ID = /^[A-Za-z0-9_-]{1,128}$/;
+
+export function runtimePath(root: string, sessionId: string): string | undefined {
+  return SESSION_ID.test(sessionId) ? join(stateDir(root, 'runtime'), `${sessionId}.json`) : undefined;
+}
+
+export function writeRuntime(root: string, sessionId: string, info: RuntimeInfo): string | undefined {
+  const path = runtimePath(root, sessionId);
+  if (path) writeFileAtomic(path, `${JSON.stringify(info)}\n`);
+  return path;
+}
+
+export function readRuntime(path: string): RuntimeInfo | undefined {
+  if (!existsSync(path)) return undefined;
+  try {
+    const info = JSON.parse(readFileSync(path, 'utf8')) as RuntimeInfo;
+    return typeof info.origin === 'string' && typeof info.token === 'string' ? info : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Removes the file only if it still belongs to this process (a newer server may have replaced it). */
+export function removeRuntime(path: string, pid = process.pid): void {
+  if (readRuntime(path)?.pid === pid) rmSync(path, { force: true });
+}

@@ -1,5 +1,6 @@
-// Local HTTP bridge between the MCP server and the viewer tab.
-// 127.0.0.1 only, Host check against DNS rebinding, per-launch token on every API call.
+// Local HTTP bridge between the MCP server, the viewer tab and the click monitor.
+// 127.0.0.1 only, Host check against DNS rebinding, per-launch token on every API call,
+// and an Origin check on every POST from the page.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -13,6 +14,9 @@ export type { ScenePayload } from '../scene.ts';
 
 export type SceneInput = Omit<ScenePayload, 'version'>;
 
+/** Handler for POST /api/<name>; receives the parsed JSON body, returns the JSON reply. */
+export type Action = (body: Record<string, unknown>) => Record<string, unknown>;
+
 export interface BridgeOptions {
   /** Folder with the built viewer (`viewer/dist`). */
   viewerDir?: string;
@@ -21,6 +25,8 @@ export interface BridgeOptions {
 }
 
 const defaultViewerDir = fileURLToPath(new URL('../../../viewer/dist/', import.meta.url));
+const MAX_BODY_BYTES = 4096;
+const KEEPALIVE_MS = 25_000;
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -43,7 +49,10 @@ export class Bridge {
   private readonly server: Server = createServer();
   private readonly viewerDir: string;
   private readonly openUrl: (url: string) => void;
-  private readonly listeners = new Set<ServerResponse>();
+  private readonly viewerStreams = new Set<ServerResponse>();
+  private readonly monitorStreams = new Set<ServerResponse>();
+  private readonly actions = new Map<string, Action>();
+  private readonly keepalive: NodeJS.Timeout;
   private scene: ScenePayload | undefined;
   private version = 0;
   private origin = '';
@@ -52,12 +61,15 @@ export class Bridge {
     this.viewerDir = resolve(options.viewerDir ?? defaultViewerDir);
     this.openUrl = options.openUrl ?? openInBrowser;
     this.server.on('request', (req, res) => {
-      try {
-        this.handle(req, res);
-      } catch (error) {
-        send(res, 500, { error: String(error) });
-      }
+      this.handle(req, res).catch((error: unknown) => {
+        if (!res.headersSent) send(res, 500, { error: String(error) });
+      });
     });
+    // Comments keep idle streams open through proxies and reveal dead connections.
+    this.keepalive = setInterval(() => {
+      for (const res of [...this.viewerStreams, ...this.monitorStreams]) res.write(': keepalive\n\n');
+    }, KEEPALIVE_MS);
+    this.keepalive.unref();
   }
 
   async start(port = 0): Promise<string> {
@@ -74,12 +86,29 @@ export class Bridge {
     return `${this.origin}/?t=${this.token}`;
   }
 
+  get pageOrigin(): string {
+    return this.origin;
+  }
+
   get viewers(): number {
-    return this.listeners.size;
+    return this.viewerStreams.size;
+  }
+
+  get monitors(): number {
+    return this.monitorStreams.size;
+  }
+
+  get current(): ScenePayload | undefined {
+    return this.scene;
   }
 
   get viewerBuilt(): boolean {
     return existsSync(join(this.viewerDir, 'index.html'));
+  }
+
+  /** Registers POST /api/<name>. */
+  action(name: string, handler: Action): void {
+    this.actions.set(name, handler);
   }
 
   /** Shows a scene in every open viewer tab; opens a tab when none is connected. */
@@ -87,48 +116,65 @@ export class Bridge {
     this.version += 1;
     this.scene = { ...scene, version: this.version };
     const message = `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n`;
-    for (const res of this.listeners) res.write(message);
-    if (this.listeners.size === 0) this.openUrl(this.url);
+    for (const res of this.viewerStreams) res.write(message);
+    if (this.viewerStreams.size === 0) this.openUrl(this.url);
     return this.scene;
   }
 
+  /** Sends one single-line message to every connected click monitor; returns how many got it. */
+  sendToMonitors(message: string): number {
+    const line = message.replace(/[\r\n]+/g, ' ');
+    for (const res of this.monitorStreams) res.write(`event: click\ndata: ${line}\n\n`);
+    return this.monitorStreams.size;
+  }
+
   close(): Promise<void> {
-    for (const res of this.listeners) res.end();
-    this.listeners.clear();
+    clearInterval(this.keepalive);
+    for (const res of [...this.viewerStreams, ...this.monitorStreams]) res.end();
+    this.viewerStreams.clear();
+    this.monitorStreams.clear();
     return new Promise((done) => this.server.close(() => done()));
   }
 
-  private handle(req: IncomingMessage, res: ServerResponse): void {
+  private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const host = this.origin.slice('http://'.length);
     if (req.headers.host !== host) return send(res, 403, { error: 'bad host' });
     const url = new URL(req.url ?? '/', this.origin);
 
     if (url.pathname.startsWith('/api/')) {
-      // EventSource cannot set headers, so the event stream takes the token as a query parameter.
+      // EventSource cannot set headers, so the viewer's event stream takes the token as a query parameter.
       const token = req.headers['x-token'] ?? url.searchParams.get('t');
       if (token !== this.token) return send(res, 403, { error: 'bad token' });
-      if (req.method !== 'GET') return send(res, 405, { error: 'method not allowed' });
-      if (url.pathname === '/api/scene') {
-        if (!this.scene) return send(res, 200, { scene: null });
-        return send(res, 200, { scene: this.scene });
+      const name = url.pathname.slice('/api/'.length);
+      if (req.method === 'GET') {
+        if (name === 'scene') return send(res, 200, { scene: this.scene ?? null });
+        if (name === 'events') return this.stream(req, res, this.viewerStreams, true);
+        if (name === 'clicks') return this.stream(req, res, this.monitorStreams, false);
+        return send(res, 404, { error: 'not found' });
       }
-      if (url.pathname === '/api/events') return this.subscribe(req, res);
-      return send(res, 404, { error: 'not found' });
+      const action = this.actions.get(name);
+      if (req.method !== 'POST' || !action) return send(res, 404, { error: 'not found' });
+      if (!allowedOrigins(this.origin).includes(req.headers.origin ?? '')) {
+        return send(res, 403, { error: 'bad origin' });
+      }
+      const body = parseJson(await readBody(req));
+      if (!body) return send(res, 400, { error: 'expected a JSON object' });
+      return send(res, 200, action(body));
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { error: 'method not allowed' });
     this.serveStatic(url.pathname, res);
   }
 
-  private subscribe(req: IncomingMessage, res: ServerResponse): void {
+  private stream(req: IncomingMessage, res: ServerResponse, streams: Set<ServerResponse>, hello: boolean): void {
     res.writeHead(200, {
       'content-type': 'text/event-stream',
       'cache-control': 'no-store',
       connection: 'keep-alive',
       ...securityHeaders,
     });
-    res.write(`event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n`);
-    this.listeners.add(res);
-    req.on('close', () => this.listeners.delete(res));
+    res.write(hello ? `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n` : ': connected\n\n');
+    streams.add(res);
+    req.on('close', () => streams.delete(res));
   }
 
   private serveStatic(pathname: string, res: ServerResponse): void {
@@ -152,9 +198,33 @@ export class Bridge {
   }
 }
 
+/** The page's own origin, plus the Vite dev server when one is configured for development. */
+function allowedOrigins(origin: string): string[] {
+  const dev = process.env.EXPLICADOR_DEV_ORIGIN;
+  return dev ? [origin, dev] : [origin];
+}
+
 function send(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', ...securityHeaders });
   res.end(JSON.stringify(body));
+}
+
+async function readBody(req: IncomingMessage): Promise<string> {
+  let body = '';
+  for await (const chunk of req) {
+    body += String(chunk);
+    if (body.length > MAX_BODY_BYTES) throw new Error('body too large');
+  }
+  return body;
+}
+
+function parseJson(text: string): Record<string, unknown> | undefined {
+  try {
+    const value: unknown = JSON.parse(text);
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function openInBrowser(url: string): void {

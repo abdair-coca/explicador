@@ -37,6 +37,7 @@ function load(): void {
     status: 'fresh',
     changes: [],
     savedAt: new Date().toISOString(),
+    trail: [],
     blocks: parsed.scene.blocks,
   });
   console.log(`${new Date().toLocaleTimeString()} published ${file}`);

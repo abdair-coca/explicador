@@ -2,15 +2,17 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Bridge } from './bridge/index.ts';
-import { SceneCache, topicKey, type CachedScene, type FileChange } from './cache/index.ts';
+import { SceneCache, topicKey } from './cache/index.ts';
 import { appendFinding } from './findings/index.ts';
 import { describeIndex, ensureIndex } from './index/index.ts';
+import type { Navigator } from './navigation.ts';
 import { formatErrors, parseExl } from './parser/index.ts';
 
 export interface ToolDeps {
   root: string;
   bridge: Bridge;
   cache: SceneCache;
+  navigator: Navigator;
 }
 
 type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
@@ -35,7 +37,7 @@ export const instructions = [
 ].join(' ');
 
 export function registerTools(mcp: McpServer, deps: ToolDeps): void {
-  const { root, bridge, cache } = deps;
+  const { root, bridge, cache, navigator } = deps;
 
   mcp.registerTool(
     'ensure_index',
@@ -65,7 +67,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
         );
       }
       const changes = lookup.status === 'stale' ? lookup.changes : [];
-      const shown = show(deps, lookup.scene, lookup.status, changes);
+      const shown = navigator.show(lookup.scene, lookup.status, changes);
       if (!shown.ok) return text(`The cached scene for "${topic}" no longer parses; regenerate it.\n${shown.errors}`);
       if (lookup.status === 'fresh') {
         return text(
@@ -114,7 +116,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           true,
         );
       }
-      show(deps, saved.scene, 'fresh', []);
+      navigator.show(saved.scene, 'fresh', []);
       const blocks = parsed.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => `<${b.type} id="${b.id}">`);
       return text(
         [
@@ -155,23 +157,4 @@ function safeKey(topic: string): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-function show(
-  deps: ToolDeps,
-  scene: CachedScene,
-  status: 'fresh' | 'stale',
-  changes: FileChange[],
-): { ok: true } | { ok: false; errors: string } {
-  const parsed = parseExl(scene.exl);
-  if (!parsed.ok) return { ok: false, errors: formatErrors(parsed.errors) };
-  deps.bridge.publish({
-    topic: scene.topic,
-    key: scene.key,
-    status,
-    changes,
-    savedAt: scene.savedAt,
-    blocks: parsed.scene.blocks,
-  });
-  return { ok: true };
 }
