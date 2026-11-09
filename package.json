@@ -1,0 +1,19 @@
+{
+  "name": "explicador",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Claude Code plugin that explains software systems with animated, interactive diagrams.",
+  "type": "module",
+  "workspaces": [
+    "spikes/interactivity"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "oxlint"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "oxlint": "^1.93.0",
+    "typescript": "^7.0.2"
+  }
+}

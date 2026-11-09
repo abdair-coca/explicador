@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explicador spike</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; line-height: 1.5; }
+      body { max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+      fieldset { margin-bottom: 1rem; display: grid; gap: 0.25rem; }
+      .nodes { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+      button { padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
+      #state { font-weight: 600; }
+      #log { font-family: ui-monospace, monospace; font-size: 0.85rem; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Explicador interactivity spike</h1>
+    <fieldset>
+      <legend>Mechanism</legend>
+      <label><input type="radio" name="mechanism" value="wait" checked /> (a) wait_for_interaction</label>
+      <label><input type="radio" name="mechanism" value="relaunch" /> (b) relaunch with claude -p --resume</label>
+      <label><input type="radio" name="mechanism" value="channel" /> (c) channel</label>
+    </fieldset>
+    <p id="state">Connecting…</p>
+    <div class="nodes">
+      <button data-node="api">AuthController</button>
+      <button data-node="svc">AuthService</button>
+      <button data-node="db">users table</button>
+    </div>
+    <h2>Log</h2>
+    <div id="log"></div>
+    <script>
+      const headers = { 'content-type': 'application/json', 'x-token': '__TOKEN__' };
+      const logBox = document.getElementById('log');
+      const stateBox = document.getElementById('state');
+
+      function log(message) {
+        logBox.textContent = `${new Date().toLocaleTimeString()}  ${message}\n${logBox.textContent}`;
+      }
+
+      for (const button of document.querySelectorAll('[data-node]')) {
+        button.addEventListener('click', async () => {
+          const mechanism = document.querySelector('input[name=mechanism]:checked').value;
+          const body = JSON.stringify({ node: button.dataset.node, label: button.textContent, mechanism });
+          try {
+            const response = await fetch('/click', { method: 'POST', headers, body });
+            const result = await response.json();
+            log(`${mechanism} → ${button.textContent}: ${result.status ?? result.error}`);
+          } catch {
+            log(`${mechanism} → ${button.textContent}: server not reachable`);
+          }
+        });
+      }
+
+      async function refresh() {
+        try {
+          const state = await (await fetch('/state', { headers })).json();
+          stateBox.textContent =
+            `wait_for_interaction armed: ${state.waiting ? 'yes' : 'no'} · ` +
+            `queued clicks: ${state.queued} · session: ${state.session ?? 'not recorded'}`;
+        } catch {
+          stateBox.textContent = 'Server not reachable (is the Claude Code session still open?)';
+        }
+      }
+      setInterval(refresh, 1000);
+      refresh();
+    </script>
+  </body>
+</html>
