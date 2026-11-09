@@ -12,10 +12,12 @@ const repo = fileURLToPath(new URL('../../', import.meta.url));
 const exl = readFileSync(join(repo, 'examples/scenes/login.exl.md'), 'utf8');
 
 describe('MCP server over stdio', () => {
+  const client = new Client({ name: 'e2e', version: '0.0.0' });
+  // Before tempProject's cleanup: after hooks run in order, and Windows cannot delete the running server's cwd.
+  after(() => client.close());
   const project = tempProject();
   cpSync(join(repo, 'examples/shop'), project, { recursive: true });
   const viewer = tempProject(fakeViewer);
-  const client = new Client({ name: 'e2e', version: '0.0.0' });
 
   before(async () => {
     const env: Record<string, string> = {};
@@ -30,7 +32,6 @@ describe('MCP server over stdio', () => {
       }),
     );
   });
-  after(() => client.close());
 
   async function call(name: string, args: Record<string, unknown> = {}): Promise<{ text: string; isError: boolean }> {
     const result = (await client.callTool({ name, arguments: args })) as {
@@ -98,7 +99,7 @@ describe('MCP server over stdio', () => {
 
     const exported = await call('export_scene', { topic: 'login' });
     assert.equal(exported.isError, false, exported.text);
-    assert.match(exported.text, /Exported "login" to .*\.explicador\/exports\/login\.html/);
+    assert.match(exported.text, /Exported "login" to .*\.explicador[\\/]exports[\\/]login\.html/);
     assert.match(exported.text, /the scene is stale/);
     const html = readFileSync(join(project, '.explicador/exports/login.html'), 'utf8');
     assert.match(html, /"status":"stale"/);
