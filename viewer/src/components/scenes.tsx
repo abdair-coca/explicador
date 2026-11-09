@@ -7,7 +7,7 @@ import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
 import { archLevel, linkId, withDrills, type ViewNode } from '../layout/levels';
 import { Diagram } from './Diagram';
 import { ArrowLeftIcon, ArrowRightIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
-import { selectedIn, useSelection } from './selection';
+import { askedIn, selectedIn, useSelection } from './selection';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -16,10 +16,18 @@ import { cn } from '@/lib/utils';
 export type DrillHandler = (blockId: string, nodeId: string, element: Element) => void;
 
 /** Click handler and highlight for a block's boxes, from the selection; none in presentation mode. */
-export function useBoxSelection(blockId: string): { onNodeClick?: (id: string, element: Element) => void; selected?: string | undefined } {
+export function useBoxSelection(blockId: string): {
+  onNodeClick?: (id: string, element: Element) => void;
+  selected?: string | undefined;
+  asked?: ReadonlyMap<string, boolean> | undefined;
+} {
   const selection = useSelection();
   if (!selection) return {};
-  return { onNodeClick: (id, element) => selection.select(blockId, id, element), selected: selectedIn(selection, blockId) };
+  return {
+    onNodeClick: (id, element) => selection.select(blockId, id, element),
+    selected: selectedIn(selection, blockId),
+    asked: askedIn(selection, blockId),
+  };
 }
 
 export function useLayout(nodes: ViewNode[], edges: EdgeInput[]): Layout | Error | undefined {
@@ -285,6 +293,7 @@ export function ArchScene({ block }: { block: ArchBlock }) {
               ariaLabel={`Architecture diagram: ${block.title}`}
               onNodeClick={clickNode}
               selected={boxes.selected}
+              asked={boxes.asked}
               isClickable={(node) => node.role === 'group' || boxes.onNodeClick !== undefined}
             />
           ) : (

@@ -19,8 +19,13 @@ You explain code with **scenes**: an EXL document (Markdown plus a few diagram t
 5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes.
 6. **Reply in the chat** with a short explanation (3–6 sentences) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
-8. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
-9. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
+8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
+   - `answer`: Markdown in the user's language, answer first, 2–6 sentences or a short list. Say so when you are unsure.
+   - `refs`: up to 3 line ranges (`path:start-end`, at most 40 lines) that prove the answer. The server copies the lines: never paste code into the answer.
+   - When the question deserves a diagram (a sequence, a lifecycle, several parts), first call `render_scene` with `background: true` under a new topic, then pass that topic as `scene`; the panel links to it and the user's view does not jump.
+   - Then reply in the chat with one sentence. Do not re-render the scene the question belongs to: that drops its questions.
+9. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
+10. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
 
 ## EXL in short
 

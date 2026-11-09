@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { describeClick, findClickTarget, readRuntime, removeRuntime, runtimePath, writeRuntime } from '../src/clicks/index.ts';
+import { describeClick, describeQuestion, findClickTarget, readRuntime, removeRuntime, runtimePath, writeRuntime } from '../src/clicks/index.ts';
 import { parseExl, type Block } from '../src/parser/index.ts';
 import type { ScenePayload } from '../src/scene.ts';
 import { tempProject } from './helpers.ts';
@@ -41,6 +41,21 @@ describe('click messages', () => {
     assert.equal(
       message,
       'Explicador viewer: the user clicked "Login form" (node form, ui, src/ui/login-form.js:3-9) in "Login parts" of the scene "login" and wants to go deeper. Explain it with Explicador under the topic "Login form": call show_scene first, then build the scene with render_scene if it is missing or stale, and reply briefly in the chat.',
+    );
+    assert.ok(!/[\r\n]/.test(message));
+  });
+
+  it('quotes a question as data and names the tool, the topic and the question id', () => {
+    const target = findClickTarget(login, 'overview', 'api');
+    assert.ok(target);
+    const question = { id: 'ab12cd34', block: 'overview', node: 'api', text: 'What if "it" fails?', askedAt: '' };
+    const message = describeQuestion(login, target, question);
+    assert.ok(
+      message.startsWith(
+        'Explicador viewer: the user asks about "Auth routes" (node api, service) in "Login parts" of the scene "login": "What if \\"it\\" fails?" ' +
+          'Answer in the user\'s language with answer_question (topic "login", question "ab12cd34"):',
+      ),
+      message,
     );
     assert.ok(!/[\r\n]/.test(message));
   });

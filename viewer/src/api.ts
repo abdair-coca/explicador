@@ -1,6 +1,6 @@
 // Talks to the bridge: GET /api/scene with the per-launch token, and an event stream for updates.
 import { useEffect, useState } from 'react';
-import type { ScenePayload } from '../../server/src/scene.ts';
+import type { Question, QuestionsPayload, ScenePayload } from '../../server/src/scene.ts';
 
 const token = new URLSearchParams(window.location.search).get('t') ?? '';
 
@@ -19,8 +19,11 @@ async function fetchScene(): Promise<ScenePayload | null> {
   return ((await response.json()) as { scene: ScenePayload | null }).scene;
 }
 
-export function useScene(): { scene: ScenePayload | null; connection: Connection } {
+const noQuestions: Question[] = [];
+
+export function useScene(): { scene: ScenePayload | null; questions: Question[]; connection: Connection } {
   const [scene, setScene] = useState<ScenePayload | null>(staticScene);
+  const [asked, setAsked] = useState<QuestionsPayload>();
   const [connection, setConnection] = useState<Connection>(staticScene ? 'static' : token ? 'connecting' : 'forbidden');
 
   useEffect(() => {
@@ -36,15 +39,20 @@ export function useScene(): { scene: ScenePayload | null; connection: Connection
         setConnection(error instanceof Error && error.message === 'forbidden' ? 'forbidden' : 'lost'),
       );
     });
+    // Questions travel apart from the scene, so an answer never restarts the scene's animations.
+    events.addEventListener('questions', (event) => {
+      setAsked(JSON.parse((event as MessageEvent<string>).data) as QuestionsPayload);
+    });
     events.onerror = () => setConnection(events.readyState === EventSource.CLOSED ? 'forbidden' : 'lost');
     return () => events.close();
   }, []);
 
-  return { scene, connection };
+  // The two events are independent: show questions only once they belong to the scene on screen.
+  return { scene, questions: scene && asked?.key === scene.key ? asked.questions : noQuestions, connection };
 }
 
 /** POST /api/<name>; the bridge checks the token and that the request comes from this page. */
-export async function post<T>(name: 'click' | 'open', body: Record<string, string>): Promise<T> {
+export async function post<T>(name: 'click' | 'open' | 'ask' | 'follow', body: Record<string, string>): Promise<T> {
   const response = await fetch(`/api/${name}`, {
     method: 'POST',
     headers: { 'x-token': token, 'content-type': 'application/json' },
@@ -53,6 +61,12 @@ export async function post<T>(name: 'click' | 'open', body: Record<string, strin
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return (await response.json()) as T;
 }
+
+export type AskReply =
+  | { status: 'sent'; id: string }
+  | { status: 'no-monitor' }
+  | { status: 'invalid'; message: string }
+  | { status: 'unknown' };
 
 export type ClickReply =
   | { status: 'opened'; topic: string }

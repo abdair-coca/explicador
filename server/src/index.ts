@@ -15,8 +15,10 @@ const cache = new SceneCache(root);
 const navigator = new Navigator(bridge, cache);
 bridge.action('click', (body) => navigator.click(body));
 bridge.action('open', (body) => navigator.open(body));
+bridge.action('ask', (body) => navigator.ask(body));
+bridge.action('follow', (body) => navigator.follow(body));
 
-// The click monitor of this same session finds the bridge through this file.
+// The monitor of this same session finds the bridge through this file.
 const sessionId = process.env.CLAUDE_CODE_SESSION_ID;
 const runtimeFile = sessionId
   ? writeRuntime(root, sessionId, { origin: bridge.pageOrigin, token: bridge.token, pid: process.pid })

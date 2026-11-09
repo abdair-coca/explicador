@@ -220,6 +220,23 @@ body {
   animation: panel-in var(--dur-base) var(--ease-out) both;
 }
 
+/* Questions: a mark on the boxes the user asked about, and three bouncing dots while Claude answers. */
+.scene-node .asked-mark circle { fill: var(--primary); stroke: var(--foreground); stroke-width: 2; }
+.scene-node .asked-mark text { fill: var(--foreground); font-size: 13px; font-weight: 900; }
+.scene-node .asked-mark { animation: pop-in var(--dur-base) var(--ease-pop) both; transform-box: fill-box; transform-origin: center; }
+.scene-node .asked-mark.waiting circle { animation: mark-wait 1.2s ease-in-out infinite; }
+@keyframes mark-wait {
+  0%, 100% { fill: var(--primary); }
+  50% { fill: #fff; }
+}
+@keyframes dot-bounce {
+  0%, 60%, 100% { transform: none; opacity: 0.45; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+.typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: var(--foreground); animation: dot-bounce 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: 150ms; }
+.typing-dot:nth-child(3) { animation-delay: 300ms; }
+
 /* Key code: Titi's dark surface with the yellow brand color for keywords. */
 .code-block { background: #1a1a2e; color: #e6eaf0; font-variant-ligatures: none; }
 .code-line-number { color: #8b95a5; }
@@ -238,6 +255,7 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .typing-dot { opacity: 0.7; }
   .reveal .scene-edge .line { stroke-dasharray: none; }
 }
 
@@ -252,7 +270,7 @@ body {
 .prose-exl ol { list-style: decimal; padding-left: 1.4em; }
 .prose-exl li::marker { color: var(--primary-dark); }
 .prose-exl a { color: var(--link); font-weight: 700; text-decoration: underline; }
-.prose-exl code { background: var(--subtle); border-radius: 6px; padding: 0.1em 0.4em; font-size: 0.86em; font-weight: 600; font-family: var(--font-mono); color: var(--foreground); }
+.prose-exl code { background: var(--subtle); border-radius: 6px; padding: 0.1em 0.4em; font-size: 0.86em; font-weight: 600; font-family: var(--font-mono); font-variant-ligatures: none; color: var(--foreground); }
 .prose-exl pre { background: var(--subtle); border: 1px solid var(--border); border-radius: 12px; padding: 0.9em 1.1em; overflow-x: auto; }
 .prose-exl pre code { background: none; padding: 0; }
 .prose-exl blockquote { border-left: 4px solid var(--primary); padding-left: 1em; color: var(--muted-foreground); }

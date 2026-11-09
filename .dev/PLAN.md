@@ -116,7 +116,13 @@ Defaults (approved with the plan):
   - EXL: optional body text in `<node>`, `<entity>` and `<status>` as the long description; `<code ref="path:start-end" node="id">why it matters</code>`, up to about 30 lines; the server reads the lines and hashes the file like any ref.
   - Exports show the panel read-only (no "Go deeper", no questions). `AGENTS.md` decision 6 is updated.
   - Criterion: parser and server tests (body, `<code>`, snippet reading, invalidation), panel behavior, export; user review.
-- [ ] **F8. Questions about a box.**
+- [x] **F8. Questions about a box.** Done 2026-11-09 except the user's review. Taken during the phase:
+  - `answer_question` takes the question id from the monitor line instead of the node, so several waiting questions pair exactly.
+  - Questions travel apart from the scene (`questions` event, `GET /api/questions`), so an answer does not restart the scene's animations; they live in the scene's cache file and are not in the scene payload, so exports carry none.
+  - "No automatic jump": `render_scene` takes `background: true` (cache without showing; the scene on screen is still refreshed) and `answer_question` takes that topic as `scene`; `POST /api/follow` opens it one level below the current scene.
+  - With no monitor connected a question is not saved and stays in the input. Answers: Markdown up to 4000 characters, up to 3 line-range refs of at most 40 lines (checked to exist, not hashed into the scene). At most 50 questions per scene; the oldest are dropped.
+  - Viewer: thread and input in the detail panel (the input sticks to the bottom), three suggested questions for a box with none, waiting dots that give up after 10 minutes, a "?" mark on boxes with questions (blinking while waiting), and a notice with "Show the answer" when the box is closed. `prose-exl` code no longer uses ligatures.
+  - Checked in Chrome against a stand-in monitor and agent (ask, wait, answer with code, notice, link to the drawn scene); not checked with a real Claude session, on a small screen, or by Playwright.
   - The panel input posts to `/api/ask` (token and Origin checks; one line, ≤500 characters); the monitor prints one line with the box and the question; Claude answers with a new MCP tool `answer_question` (topic, node, Markdown answer, optional code refs read by the server) and may also render a deeper scene.
   - Viewer: a waiting indicator, the answer pops in, and a link to the scene Claude drew, if any (no automatic jump).
   - Questions and answers are saved with the scene and shown again when it reopens; not available in exports.
@@ -180,4 +186,4 @@ Open points:
 | F5 | done (2026-11-09), reviewed by the user |
 | F6 | done (2026-11-09), user review pending |
 | F7 | done (2026-11-09), user review pending |
-| F8 | planned (approved 2026-11-09) |
+| F8 | done (2026-11-09), user review pending |

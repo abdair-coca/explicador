@@ -30,6 +30,8 @@ export interface DiagramProps {
   activeNodes?: ReadonlySet<string>;
   /** Node whose details are open in the side panel. */
   selected?: string | undefined;
+  /** Boxes the user asked about → whether an answer is still pending; they carry a question mark. */
+  asked?: ReadonlyMap<string, boolean> | undefined;
   activeEdge?: string;
   /** Label shown on the active edge (the step label), overriding the edge's own label. */
   activeLabel?: string;
@@ -108,6 +110,7 @@ export function Diagram(props: DiagramProps) {
                 delay={nodeDelay(node.node.id)}
                 active={activeNodes?.has(node.node.id) ?? false}
                 selected={props.selected === node.node.id}
+                asked={props.asked?.get(node.node.id)}
                 dimmed={focus && !activeNodes?.has(node.node.id) && props.selected !== node.node.id}
                 pulse={props.pulseNode === node.node.id && !reducedMotion}
                 {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
@@ -192,6 +195,8 @@ function Node(props: {
   delay: number;
   active: boolean;
   selected: boolean;
+  /** Defined when the user asked about this box; true while an answer is pending. */
+  asked?: boolean | undefined;
   dimmed: boolean;
   pulse: boolean;
   onClick?: (id: string, element: Element) => void;
@@ -234,7 +239,7 @@ function Node(props: {
           }
         : {})}
     >
-      <title>{[node.label, node.desc, ref, onClick ? action : ''].filter(Boolean).join('\n')}</title>
+      <title>{[node.label, node.desc, ref, onClick ? action : '', props.asked === undefined ? '' : props.asked ? 'Waiting for an answer' : 'Has answers'].filter(Boolean).join('\n')}</title>
       <g className="node-inner" style={{ animationDelay: `${props.delay}ms` }}>
         <g className="node-pop">
           {node.shape === 'start' ? (
@@ -257,6 +262,17 @@ function Node(props: {
                   <StateBody laid={laid} />
                 ) : (
                   <BoxBody laid={laid} />
+                )}
+                {props.asked !== undefined && (
+                  // On the top-left corner, clear of the drill mark. The inner group animates, so the position stays on the outer one.
+                  <g transform="translate(5 5)">
+                    <g className={cn('asked-mark', props.asked && 'waiting')}>
+                      <circle r={11} />
+                      <text y={4.5} textAnchor="middle">
+                        ?
+                      </text>
+                    </g>
+                  </g>
                 )}
               </g>
             </>

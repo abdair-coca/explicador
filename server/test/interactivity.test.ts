@@ -1,7 +1,7 @@
 // End to end: MCP server + click monitor of the same session + clicks from the page.
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { cpSync, existsSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { after, before, describe, it } from 'node:test';
@@ -60,12 +60,26 @@ describe('clicks reach the monitor of the same session', () => {
     await client.close();
   });
 
+  async function call(name: string, args: Record<string, unknown>): Promise<{ text: string; isError: boolean }> {
+    const result = (await client.callTool({ name, arguments: args })) as { content: { text: string }[]; isError?: boolean };
+    return { text: result.content[0]?.text ?? '', isError: result.isError === true };
+  }
+
   async function render(topic: string, exl: string): Promise<void> {
-    const result = (await client.callTool({ name: 'render_scene', arguments: { topic, exl } })) as {
-      content: { text: string }[];
-      isError?: boolean;
-    };
-    assert.ok(!result.isError, result.content[0]?.text ?? 'render failed');
+    const result = await call('render_scene', { topic, exl });
+    assert.ok(!result.isError, result.text || 'render failed');
+  }
+
+  interface Asked {
+    id: string;
+    node: string;
+    text: string;
+    answer?: { text: string; codes?: { lines?: string[] }[]; scene?: { key: string } };
+  }
+
+  async function questions(): Promise<{ key: string; questions: Asked[] }> {
+    const response = await fetch(`${origin}/api/questions`, { headers: { 'x-token': token } });
+    return (await response.json()) as { key: string; questions: Asked[] };
   }
 
   async function post(path: string, body: unknown, from = origin): Promise<{ status: number; json: Record<string, unknown> }> {
@@ -133,6 +147,82 @@ describe('clicks reach the monitor of the same session', () => {
     assert.equal(scene.key, 'auth-routes');
     assert.deepEqual(scene.trail.map((t) => t.key), ['login']);
     assert.equal(printed.length, before, 'a cached drill does not reach Claude');
+  });
+
+  let questionId = '';
+
+  it('sends a question about a box to the monitor as one line and keeps it waiting', async () => {
+    const before = printed.length;
+    const reply = await post('/api/ask', { block: 'routes-flow', node: 'routes', question: '  Why validate\nfirst?  ' });
+    assert.equal(reply.json.status, 'sent');
+    questionId = String(reply.json.id);
+    const line = await waitFor(() => printed[before]);
+    assert.match(
+      line,
+      /^Explicador viewer: the user asks about "handleLogin" \(node routes, function, src\/api\/auth-routes\.js:6-20\) in "handleLogin" of the scene "auth routes": "Why validate first\?" /,
+    );
+    assert.ok(line.includes(`answer_question (topic "auth routes", question "${questionId}")`));
+    await delay(200);
+    assert.equal(printed.length, before + 1);
+    const waiting = await questions();
+    assert.equal(waiting.key, 'auth-routes');
+    assert.deepEqual(
+      waiting.questions.map((q) => [q.id, q.node, q.text, q.answer]),
+      [[questionId, 'routes', 'Why validate first?', undefined]],
+    );
+  });
+
+  it('rejects empty and oversized questions without telling Claude', async () => {
+    const before = printed.length;
+    assert.equal((await post('/api/ask', { block: 'routes-flow', node: 'routes', question: '   ' })).json.status, 'invalid');
+    assert.equal((await post('/api/ask', { block: 'routes-flow', node: 'routes', question: 'x'.repeat(501) })).json.status, 'invalid');
+    assert.equal((await post('/api/ask', { block: 'routes-flow', node: 'ghost', question: 'Why?' })).json.status, 'unknown');
+    assert.equal((await post('/api/ask', { block: 'routes-flow', node: 'routes', question: 'Why?' }, 'http://evil.example')).status, 403);
+    await delay(200);
+    assert.equal(printed.length, before);
+    assert.equal((await questions()).questions.length, 1);
+  });
+
+  it('shows the answer with its code lines and a link to a scene drawn in the background', async () => {
+    const hidden = await call('render_scene', { topic: 'validation', exl: routesExl.replace('routes-flow', 'validation-flow'), background: true });
+    assert.match(hidden.text, /Cached "validation" .* without showing it/);
+    assert.equal((await current()).key, 'auth-routes', 'a background scene does not move the viewer');
+
+    const args = { topic: 'auth routes', question: questionId, answer: 'So the service never sees **bad input**.' };
+    assert.match((await call('answer_question', { ...args, refs: ['src/api/auth-routes.js'] })).text, /give a line range/);
+    assert.match((await call('answer_question', { ...args, refs: ['src/ghost.js:1-2'] })).text, /does not exist/);
+    assert.match((await call('answer_question', { ...args, scene: 'never drawn' })).text, /no cached scene for "never drawn"/);
+    assert.match((await call('answer_question', { ...args, question: 'nope' })).text, /no question "nope"/);
+    assert.equal((await questions()).questions[0]?.answer, undefined, 'a rejected answer changes nothing');
+
+    const answered = await call('answer_question', { ...args, refs: ['src/api/auth-routes.js:6-8'], scene: 'validation' });
+    assert.equal(answered.isError, false, answered.text);
+    const [question] = (await questions()).questions;
+    assert.equal(question?.answer?.text, 'So the service never sees **bad input**.');
+    assert.equal(question?.answer?.codes?.[0]?.lines?.length, 3);
+    assert.equal(question?.answer?.scene?.key, 'validation');
+
+    // Saved with the scene, without the copied lines.
+    const saved = JSON.parse(readFileSync(join(project, '.explicador/scenes/auth-routes.json'), 'utf8')) as { questions: Asked[] };
+    assert.deepEqual(saved.questions[0]?.answer?.codes, [{ ref: { path: 'src/api/auth-routes.js', start: 6, end: 8 } }]);
+  });
+
+  it('opens the linked scene one level down, and shows the questions again on the way back', async () => {
+    assert.deepEqual((await post('/api/follow', { question: 'nope' })).json, { status: 'unknown' });
+    assert.deepEqual((await post('/api/follow', { question: questionId })).json, { status: 'opened' });
+    const scene = await current();
+    assert.equal(scene.key, 'validation');
+    assert.deepEqual(scene.trail.map((t) => t.key), ['login', 'auth-routes']);
+    assert.deepEqual(await questions(), { key: 'validation', questions: [] });
+
+    assert.deepEqual((await post('/api/open', { key: 'auth-routes' })).json, { status: 'opened' });
+    assert.equal((await questions()).questions[0]?.id, questionId);
+  });
+
+  it('drops the questions when the scene is rendered again', async () => {
+    await render('auth routes', routesExl);
+    assert.deepEqual(await questions(), { key: 'auth-routes', questions: [] });
+    assert.match((await call('answer_question', { topic: 'auth routes', question: questionId, answer: 'Late.' })).text, /no question/);
   });
 
   it('rejects unknown nodes, foreign origins and missing tokens', async () => {

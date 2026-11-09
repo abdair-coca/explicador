@@ -1,9 +1,9 @@
-// Clicks in the viewer: the message Claude receives, built only from scene data the server holds,
+// Clicks and questions in the viewer: the message Claude receives, built only from scene data the server holds,
 // and the per-session runtime file through which the click monitor finds the bridge.
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { stateDir, writeFileAtomic } from '../project.ts';
-import type { Ref, SceneBlock, ScenePayload } from '../scene.ts';
+import type { Question, Ref, SceneBlock, ScenePayload } from '../scene.ts';
 
 /** Something the user can click: a node, an entity or a state. */
 export interface ClickItem {
@@ -44,16 +44,31 @@ export function clickItems(block: SceneBlock): ClickItem[] {
 
 /** One line for Claude. It describes the click; it does not restrict what Claude may do. */
 export function describeClick(scene: ScenePayload, target: ClickTarget): string {
+  return oneLine(
+    `Explicador viewer: the user clicked ${describeItem(scene, target)} and wants to go deeper. ` +
+      `Explain it with Explicador under the topic "${target.topic}": call show_scene first, ` +
+      'then build the scene with render_scene if it is missing or stale, and reply briefly in the chat.',
+  );
+}
+
+/** One line for Claude with a question typed in the detail panel. The text is the user's; it is quoted as data. */
+export function describeQuestion(scene: ScenePayload, target: ClickTarget, question: Question): string {
+  return oneLine(
+    `Explicador viewer: the user asks about ${describeItem(scene, target)}: ${JSON.stringify(question.text)} ` +
+      `Answer in the user's language with answer_question (topic "${scene.topic}", question "${question.id}"): ` +
+      'a short Markdown answer for the panel, with refs to the lines that prove it when they help. ' +
+      'If the question deserves a diagram, first call render_scene with background true under a new topic and pass that topic as scene. ' +
+      'Then reply in the chat with one sentence.',
+  );
+}
+
+/** `"Label" (node id, kind, ref) in "Block" of the scene "topic"`. */
+function describeItem(scene: ScenePayload, target: ClickTarget): string {
   const { node } = target;
   const ref = node.ref
     ? `, ${node.ref.path}${node.ref.start ? `:${node.ref.start}${node.ref.end ? `-${node.ref.end}` : ''}` : ''}`
     : '';
-  return oneLine(
-    `Explicador viewer: the user clicked "${node.label}" (node ${node.id}, ${node.kind}${ref}) ` +
-      `in "${target.block.title}" of the scene "${scene.topic}" and wants to go deeper. ` +
-      `Explain it with Explicador under the topic "${target.topic}": call show_scene first, ` +
-      'then build the scene with render_scene if it is missing or stale, and reply briefly in the chat.',
-  );
+  return `"${node.label}" (node ${node.id}, ${node.kind}${ref}) in "${target.block.title}" of the scene "${scene.topic}"`;
 }
 
 function oneLine(text: string): string {

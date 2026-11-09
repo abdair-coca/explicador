@@ -11,7 +11,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 4 (more views, done pending the user's review): `<data>` data models (entities, fields, relations with cardinality) and `<state>` machines with an optional narrated walk.
 - Phase 5 (Titi look, done pending the user's review): the viewer follows SocialNeo's Titi design system (cream and yellow, Nunito, tiles with a hard shadow, playful entrances), edge labels get their own room and stay legible, long chains wrap into rows, and boxes show a one-line `desc`.
 - Phase 6 (flows that make sense, done pending the user's review): steps and edges have a `kind` (calls solid, returns dashed, async dotted, with a legend); a flow step can only start where the story already is, so scenes cannot jump; the narration links the step before and after.
-- Phase 7 (detail panel, done pending the user's review): clicking a box opens a side panel with its description, a longer explanation and its key code (`<code>`, lines copied from the file by the server, highlighted), plus "Go deeper". Next: questions about a box (F8). Plan: `.dev/PLAN.md`.
+- Phase 7 (detail panel, done pending the user's review): clicking a box opens a side panel with its description, a longer explanation and its key code (`<code>`, lines copied from the file by the server, highlighted), plus "Go deeper".
+- Phase 8 (questions, done pending the user's review): the panel has a question box; Claude answers in the panel with the `answer_question` tool (Markdown, code lines copied by the server, an optional link to a scene it drew in the background). Questions are saved with the scene. Plan: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 
@@ -29,18 +30,20 @@ The first run reads the index and the code, then renders the scene and opens the
 
 **Present** turns the scene into full-screen slides (each prose block, each architecture, each flow step) that only advance when you press →, Space or PageDown; ← goes back, F toggles full screen, Esc leaves.
 
-**Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom, presentation and the detail panel (with its key code) work; "Go deeper" does not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
+**Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom, presentation and the detail panel (with its key code) work; "Go deeper" and questions do not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
 
-In the viewer, click a group to zoom into it, or any other box to open its detail panel: what it does, a longer explanation and its key code, read from the file. "Go deeper" in the panel asks Claude (through the plugin monitor) to explain that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back. Going deeper needs an interactive session; plugin monitors do not run under `claude -p`.
+In the viewer, click a group to zoom into it, or any other box to open its detail panel: what it does, a longer explanation and its key code, read from the file. "Go deeper" in the panel asks Claude (through the plugin monitor) to explain that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back.
 
-State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes) and `FINDINGS.md`.
+The box at the bottom of the panel asks Claude a question about that part (Enter sends; three suggestions get you started). The answer appears in the panel a few seconds later, with the lines of code that prove it and, when Claude drew one, a link to a deeper scene; the view never jumps on its own. Boxes you asked about carry a "?" mark, and questions stay with the scene until it is rendered again. Going deeper and asking need an interactive session; plugin monitors do not run under `claude -p`.
+
+State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes with their questions and answers) and `FINDINGS.md`.
 
 ## How it fits together
 
 - `.claude-plugin/plugin.json`: plugin manifest, including the MCP server (`node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`).
-- `monitors/monitors.json`: the click monitor (`server/dist/monitor.js`). It reads `.explicador/runtime/<session id>.json`, written by the MCP server of the same session, and prints one line per click, which Claude Code delivers to Claude.
+- `monitors/monitors.json`: the click monitor (`server/dist/monitor.js`). It reads `.explicador/runtime/<session id>.json`, written by the MCP server of the same session, and prints one line per click or question, which Claude Code delivers to Claude.
 - `skills/explicador/`: how Claude explains and writes EXL; `skills/explain/`: `/explicador:explain <topic>`.
-- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `export_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and feeds the monitor.
+- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `answer_question`, `export_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and questions and feeds the monitor.
 - `viewer/`: Vite + React + Tailwind; scenes are SVG laid out with ELK.js.
 - `docs/EXL.md`: the scene format. Views: `<arch>` (parts, with `<group>`), `<flow>` (steps), `<data>` (data model), `<state>` (state machine with a walk).
 - `examples/scenes/`: sample scenes for `examples/shop`; try them with `npm run preview -- examples/scenes/session-states.exl.md --project examples/shop`.
@@ -50,7 +53,7 @@ State lives in the analyzed project: `.explicador/index/` (file tree + imports),
 ```sh
 npm run typecheck
 npm run lint
-npm test                 # parser, cache, index, findings, clicks, export, levels, slides, end-to-end over stdio
+npm test                 # parser, cache, index, findings, clicks, questions, export, levels, slides, end-to-end over stdio
 npm run build
 ```
 

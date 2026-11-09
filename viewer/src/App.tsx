@@ -3,7 +3,7 @@ import Markdown from 'react-markdown';
 import type { ScenePayload } from '../../server/src/scene.ts';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
-import { exportUrl, post, staticScene, useScene, type ClickReply, type Connection } from './api';
+import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply, type Connection } from './api';
 import { DetailPanel } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
@@ -28,26 +28,68 @@ type Notice = { tone: 'info' | 'warning'; text: React.ReactNode } | undefined;
 type Transition = { direction: 'in'; fromKey: string; box: Box | undefined } | { direction: 'out'; toKey: string };
 
 export function App() {
-  const { scene, connection } = useScene();
+  const { scene, questions, connection } = useScene();
   const [notice, setNotice] = useState<Notice>();
   const [transition, setTransition] = useState<Transition>();
   const [presenting, setPresenting] = useState(false);
   const [selected, setSelected] = useState<Selected>();
+  /** Question the panel scrolls to when it opens from the "Claude answered" notice. */
+  const [focus, setFocus] = useState<string>();
   const main = useRef<HTMLElement>(null);
   const shown = useRef<{ version: number; key: string } | undefined>(undefined);
   /** The clicked box, so "Go deeper" can zoom out of it. */
   const anchor = useRef<Element | null>(null);
 
+  const asked = useMemo(() => {
+    const boxes = new Map<string, boolean>();
+    for (const q of questions) boxes.set(`${q.block}:${q.node}`, (boxes.get(`${q.block}:${q.node}`) ?? false) || !q.answer);
+    return boxes;
+  }, [questions]);
+
+  // An answer that arrives while its box is closed is announced, with a way to open it.
+  const waiting = useRef(new Set<string>());
+  const open = useRef(selected);
+  open.current = selected;
+  useEffect(() => {
+    for (const q of questions) {
+      if (!q.answer) waiting.current.add(q.id);
+      else if (waiting.current.delete(q.id) && !(open.current?.block === q.block && open.current.node === q.node)) {
+        setNotice({
+          tone: 'info',
+          text: (
+            <>
+              Claude answered “{q.text}”.{' '}
+              <button
+                type="button"
+                className="font-extrabold text-link hover:underline"
+                onClick={() => {
+                  anchor.current = document.querySelector(`[data-node-id="${CSS.escape(q.node)}"]`);
+                  setSelected({ block: q.block, node: q.node });
+                  setFocus(q.id);
+                  setNotice(undefined);
+                }}
+              >
+                Show the answer
+              </button>
+            </>
+          ),
+        });
+      }
+    }
+  }, [questions]);
+
   const selection = useMemo<Selection>(
     () => ({
+      asked,
       selected,
       select: (block, node, element) => {
         anchor.current = element;
+        setFocus(undefined);
         // Clicking the open box again closes its details.
         setSelected((current) => (current?.block === block && current.node === node ? undefined : { block, node }));
       },
     }),
-    [selected],
+    [selected, asked],
   );
 
   // Esc closes the details (presentation mode has its own keys).
@@ -103,6 +145,24 @@ export function App() {
           setTransition(undefined);
           setNotice({ tone: 'warning', text: 'This scene changed in the meantime; click again.' });
         }
+      },
+      () => {
+        setTransition(undefined);
+        setNotice({ tone: 'warning', text: 'Could not reach Claude Code. Is it still running?' });
+      },
+    );
+  };
+
+  /** Opens the scene Claude drew for an answer, zooming in from the box the question was about. */
+  const follow = (question: string): void => {
+    if (!scene) return;
+    const box = main.current && anchor.current?.isConnected ? boxWithin(anchor.current, main.current) : undefined;
+    setTransition({ direction: 'in', fromKey: scene.key, box });
+    post<{ status: string }>('follow', { question }).then(
+      (reply) => {
+        if (reply.status === 'opened') return;
+        setTransition(undefined);
+        setNotice({ tone: 'warning', text: 'That scene is no longer cached; ask Claude to draw it again.' });
       },
       () => {
         setTransition(undefined);
@@ -231,6 +291,10 @@ export function App() {
               selected={selected}
               onClose={() => setSelected(undefined)}
               onDeeper={offline ? undefined : () => drill(selected.block, selected.node, anchor.current ?? main.current ?? document.body)}
+              questions={questions}
+              onAsk={offline ? undefined : (text) => post<AskReply>('ask', { block: selected.block, node: selected.node, question: text })}
+              onFollow={follow}
+              focus={focus}
             />
           )}
         </div>
@@ -277,7 +341,7 @@ function Scene({ scene }: { scene: ScenePayload }) {
       <p className="flex items-center gap-2 pt-2 text-sm font-semibold text-muted-foreground">
         <InfoIcon size={16} />
         Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}
-        {offline ? 'Offline copy: click a box for its details; groups zoom in.' : 'Click a box for its details and to go deeper; groups zoom in.'}
+        {offline ? 'Offline copy: click a box for its details; groups zoom in.' : 'Click a box for its details, to ask Claude about it and to go deeper; groups zoom in.'}
       </p>
     </>
   );

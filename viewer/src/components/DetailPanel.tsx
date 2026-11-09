@@ -1,10 +1,11 @@
-// Side panel with the details of the selected box: what it does, its key code, and "Go deeper".
-// On small screens it is a bottom sheet; in exported files it is read-only.
-import { useMemo } from 'react';
+// Side panel with the details of the selected box: what it does, its key code, "Go deeper",
+// and the questions the user asked Claude about it. On small screens it is a bottom sheet;
+// in exported files it is read-only.
 import Markdown from 'react-markdown';
-import type { CodeSnippet, NodeKind, Ref, SceneBlock, ScenePayload } from '../../../server/src/scene.ts';
-import { highlight } from '../lib/highlight';
+import type { NodeKind, Question, Ref, SceneBlock, ScenePayload } from '../../../server/src/scene.ts';
+import { CodeCard } from './CodeCard';
 import { ArrowRightIcon, CloseIcon, kindIcon } from './icons';
+import { AskBox, QuestionThread, type AskHandler } from './Questions';
 import { formatRef } from './scenes';
 import type { Selected } from './selection';
 import { Button } from './ui/button';
@@ -40,19 +41,27 @@ export function DetailPanel(props: {
   onClose: () => void;
   /** Absent in exported files: there is no Claude to ask. */
   onDeeper?: (() => void) | undefined;
+  /** Questions about the current scene; the panel shows those of its box. */
+  questions?: Question[];
+  /** Absent in exported files, like `onDeeper`. */
+  onAsk?: AskHandler | undefined;
+  onFollow?: ((question: string) => void) | undefined;
+  /** Question to scroll to when the panel opens. */
+  focus?: string | undefined;
 }) {
   const block = props.scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === props.selected.block);
   const item = block && findItem(block, props.selected.node);
   if (!block || !item) return null;
   const codes = (block.codes ?? []).filter((c) => c.node === props.selected.node);
   const drill = block.drills.find((d) => d.node === props.selected.node)?.topic;
+  const questions = (props.questions ?? []).filter((q) => q.block === props.selected.block && q.node === props.selected.node);
 
   return (
     <aside
       aria-label={`Details: ${item.label}`}
       className={cn(
         // Bottom sheet on small screens, a sticky card beside the scene on large ones.
-        'animate-sheet-in fixed inset-x-0 bottom-0 z-30 max-h-[72vh] overflow-y-auto rounded-t-3xl border-t-2 border-border bg-card p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]',
+        'animate-sheet-in fixed inset-x-0 bottom-0 z-30 max-h-[72vh] scroll-pb-28 overflow-y-auto rounded-t-3xl border-t-2 border-border bg-card p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]',
         'lg:animate-panel-in lg:sticky lg:inset-auto lg:top-20 lg:z-auto lg:max-h-[calc(100vh-6rem)] lg:rounded-2xl lg:border lg:border-border-soft lg:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
       )}
     >
@@ -97,7 +106,7 @@ export function DetailPanel(props: {
 
         {!item.about && codes.length === 0 && (
           <p className="rounded-xl bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
-            No more detail for this box yet.{props.onDeeper ? ' Go deeper and Claude explains it.' : ''}
+            No more detail for this box yet.{props.onDeeper ? ' Ask a question below, or go deeper and Claude explains it.' : ''}
           </p>
         )}
 
@@ -113,37 +122,14 @@ export function DetailPanel(props: {
             <ArrowRightIcon size={16} />
           </Button>
         )}
+
+        {props.onAsk && (
+          <>
+            <QuestionThread questions={questions} onFollow={props.onFollow ?? (() => {})} focus={props.focus} />
+            <AskBox label={item.label} onAsk={props.onAsk} showSuggestions={questions.length === 0} />
+          </>
+        )}
       </div>
     </aside>
-  );
-}
-
-function CodeCard({ code }: { code: CodeSnippet }) {
-  const lines = useMemo(() => (code.lines ? highlight(code.lines, code.ref.path) : []), [code]);
-  const first = code.ref.start ?? 1;
-  return (
-    <figure className="overflow-hidden rounded-xl border border-border-soft">
-      <figcaption className="space-y-1 bg-subtle px-3 py-2.5">
-        <p className="text-sm font-bold leading-snug">{code.note}</p>
-        <code className="block break-all font-mono text-xs font-semibold text-muted-foreground">{formatRef(code.ref)}</code>
-      </figcaption>
-      {code.missing || !code.lines ? (
-        <p className="px-3 py-2.5 text-sm font-bold text-red-600">These lines are no longer in the file; ask Claude to refresh the scene.</p>
-      ) : (
-        <pre className="code-block py-3 font-mono text-[12.5px] leading-5">
-          <code>
-            {lines.map((tokens, i) => (
-              <span key={i} className="flex">
-                <span className="w-11 shrink-0 select-none pr-3 text-right code-line-number">{first + i}</span>
-                {/* Long lines wrap: the panel is narrow and sideways scrolling hides the end of the line. */}
-                <span className="min-w-0 whitespace-pre-wrap pr-3 [overflow-wrap:anywhere]">
-                  {tokens.length === 0 ? ' ' : tokens.map((t, j) => <span key={j} className={`tok-${t.kind}`}>{t.text}</span>)}
-                </span>
-              </span>
-            ))}
-          </code>
-        </pre>
-      )}
-    </figure>
   );
 }

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveInside, stateDir, writeFileAtomic } from '../project.ts';
-import type { FileChange } from '../scene.ts';
+import type { FileChange, Question } from '../scene.ts';
 
 export type { FileChange } from '../scene.ts';
 
@@ -16,6 +16,8 @@ export interface CachedScene {
   /** Project-relative path → SHA-256 of its content when the scene was saved. */
   files: Record<string, string>;
   savedAt: string;
+  /** Questions asked in the viewer about this scene; saving the scene again drops them. */
+  questions?: Question[];
 }
 
 export type Lookup =
@@ -87,6 +89,19 @@ export class SceneCache {
       .filter((name) => name.endsWith('.json'))
       .sort()
       .map((name) => this.lookup(name.slice(0, -'.json'.length)));
+  }
+
+  /** Replaces the questions of a cached scene; false when the scene is gone. */
+  saveQuestions(key: string, questions: Question[]): boolean {
+    const scene = this.read(key);
+    if (!scene) return false;
+    writeFileAtomic(this.path(key), `${JSON.stringify({ ...scene, questions }, null, 2)}\n`);
+    return true;
+  }
+
+  questions(key: string): Question[] | undefined {
+    const scene = this.read(key);
+    return scene && (scene.questions ?? []);
   }
 
   private changes(scene: CachedScene): FileChange[] {

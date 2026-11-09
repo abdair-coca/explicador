@@ -2,13 +2,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Bridge } from './bridge/index.ts';
-import { SceneCache, topicKey } from './cache/index.ts';
+import { hashFile, SceneCache, topicKey } from './cache/index.ts';
 import { buildStandalone, ExportError } from './export/index.ts';
 import { appendFinding } from './findings/index.ts';
 import { describeIndex, ensureIndex } from './index/index.ts';
 import type { Navigator } from './navigation.ts';
-import { formatErrors, parseExl } from './parser/index.ts';
-import { stateDir, writeFileAtomic } from './project.ts';
+import { formatErrors, limits, parseExl, parseRefString } from './parser/index.ts';
+import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
+import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
 
 export interface ToolDeps {
@@ -25,6 +26,9 @@ const text = (value: string, isError = false): ToolResult => ({
   ...(isError ? { isError } : {}),
 });
 
+const MAX_ANSWER_LENGTH = 4000;
+const MAX_ANSWER_REFS = 3;
+
 const topicSchema = z
   .string()
   .min(1)
@@ -37,6 +41,7 @@ export const instructions = [
   'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document',
   '(Markdown plus <arch>/<flow> tags; the explicador skill documents the format).',
   'export_scene writes a cached scene as one offline HTML file for sharing.',
+  'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
   'Record non-obvious facts worth keeping with add_finding.',
 ].join(' ');
 
@@ -116,9 +121,13 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       inputSchema: {
         topic: topicSchema,
         exl: z.string().min(1).max(200_000).describe('EXL: Markdown plus <arch> and <flow> tags.'),
+        background: z
+          .boolean()
+          .optional()
+          .describe('Cache the scene without showing it. Use it for a scene that supports an answer_question, so the user\'s view does not jump.'),
       },
     },
-    async ({ topic, exl }) => {
+    async ({ topic, exl, background }) => {
       if (!safeKey(topic)) return text(`Topic "${topic}" needs letters or digits.`, true);
       const parsed = parseExl(exl);
       if (!parsed.ok) return text(`EXL errors, nothing saved:\n${formatErrors(parsed.errors)}`, true);
@@ -130,11 +139,15 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           true,
         );
       }
-      navigator.show(saved.scene, 'fresh', []);
+      // The scene on screen is always refreshed, so the viewer never shows an older copy of it.
+      const hidden = background === true && bridge.current?.key !== saved.scene.key;
+      if (!hidden) navigator.show(saved.scene, 'fresh', []);
       const blocks = parsed.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => `<${b.type} id="${b.id}">`);
       return text(
         [
-          `Rendered "${topic}" (${blocks.join(', ')}) at ${bridge.url}`,
+          hidden
+            ? `Cached "${topic}" (${blocks.join(', ')}) without showing it. Pass scene "${topic}" to answer_question so the panel links to it.`
+            : `Rendered "${topic}" (${blocks.join(', ')}) at ${bridge.url}`,
           `Cached as .explicador/scenes/${saved.scene.key}.json, tracking ${parsed.refs.length} referenced files.`,
           bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
         ]
@@ -185,6 +198,68 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           .filter(Boolean)
           .join('\n'),
       );
+    },
+  );
+
+  mcp.registerTool(
+    'answer_question',
+    {
+      description:
+        'Answer a question the user typed in the viewer about a box. The answer appears in that box\'s panel and is saved with the scene. ' +
+        'Use the topic and question id from the "Explicador viewer: the user asks about" message.',
+      inputSchema: {
+        topic: topicSchema.describe('Topic of the scene the question belongs to, as given in the message.'),
+        question: z.string().min(1).max(32).describe('Question id, as given in the message.'),
+        answer: z
+          .string()
+          .min(1)
+          .max(MAX_ANSWER_LENGTH)
+          .describe('Markdown, in the user\'s language: answer first, in 2-6 sentences or a short list. Do not paste code; quote it with refs.'),
+        refs: z
+          .array(z.string())
+          .max(MAX_ANSWER_REFS)
+          .optional()
+          .describe(`Up to ${MAX_ANSWER_REFS} "path:start-end" line ranges (at most ${limits.codeLines} lines each) that prove the answer; the server copies the lines.`),
+        scene: z
+          .string()
+          .max(80)
+          .optional()
+          .describe('Topic of a deeper scene you rendered for this question (render_scene with background true); the panel links to it.'),
+      },
+    },
+    async ({ topic, question, answer, refs, scene }) => {
+      const key = safeKey(topic);
+      if (!key) return text(`Topic "${topic}" needs letters or digits.`, true);
+      const codes: { ref: Ref }[] = [];
+      const problems: string[] = [];
+      for (const value of refs ?? []) {
+        const ref = parseRefString(value);
+        if (typeof ref === 'string') problems.push(`- ${value}: ${ref}`);
+        else if (ref.start === undefined) problems.push(`- ${value}: give a line range, e.g. "${ref.path}:10-24"`);
+        else if ((ref.end ?? ref.start) - ref.start + 1 > limits.codeLines) problems.push(`- ${value}: more than ${limits.codeLines} lines`);
+        else if (hashFile(resolveInside(root, ref.path) ?? '') === undefined) problems.push(`- ${value}: the file does not exist in the project`);
+        else codes.push({ ref });
+      }
+      if (problems.length > 0) return text(`Answer not saved, fix these refs:\n${problems.join('\n')}`, true);
+      let linked: { topic: string; key: string } | undefined;
+      if (scene !== undefined) {
+        const sceneKey = safeKey(scene);
+        const lookup = sceneKey ? cache.lookup(scene) : undefined;
+        if (!lookup || lookup.status === 'missing') {
+          return text(`Answer not saved: no cached scene for "${scene}". Render it first (render_scene with background true) or omit scene.`, true);
+        }
+        linked = { topic: lookup.scene.topic, key: lookup.scene.key };
+      }
+      const result = navigator.answer(key, question, {
+        text: answer.trim(),
+        ...(codes.length > 0 ? { codes } : {}),
+        ...(linked ? { scene: linked } : {}),
+      });
+      if (result === 'no-scene') return text(`No cached scene for "${topic}"; the question is gone. Answer in the chat instead.`, true);
+      if (result === 'no-question') {
+        return text(`The scene "${topic}" has no question "${question}" (it was re-rendered since). Answer in the chat instead.`, true);
+      }
+      return text(`Answer shown in the panel of the scene "${topic}". Reply in the chat with one sentence.`);
     },
   );
 

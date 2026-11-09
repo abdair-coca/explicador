@@ -1,4 +1,4 @@
-// Local HTTP bridge between the MCP server, the viewer tab and the click monitor.
+// Local HTTP bridge between the MCP server, the viewer tab and the monitor that feeds clicks and questions to Claude.
 // 127.0.0.1 only, Host check against DNS rebinding, per-launch token on every API call,
 // and an Origin check on every POST from the page.
 import { spawn } from 'node:child_process';
@@ -9,7 +9,7 @@ import type { AddressInfo } from 'node:net';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStandalone, ExportError } from '../export/index.ts';
-import type { ScenePayload } from '../scene.ts';
+import type { Question, QuestionsPayload, ScenePayload } from '../scene.ts';
 
 export type { ScenePayload } from '../scene.ts';
 
@@ -55,6 +55,7 @@ export class Bridge {
   private readonly actions = new Map<string, Action>();
   private readonly keepalive: NodeJS.Timeout;
   private scene: ScenePayload | undefined;
+  private asked: Question[] = [];
   private version = 0;
   private origin = '';
 
@@ -114,13 +115,34 @@ export class Bridge {
   }
 
   /** Shows a scene in every open viewer tab; opens a tab when none is connected. */
-  publish(scene: SceneInput): ScenePayload {
+  publish(scene: SceneInput, questions: Question[] = []): ScenePayload {
     this.version += 1;
     this.scene = { ...scene, version: this.version };
-    const message = `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n`;
+    this.asked = questions;
+    const message = `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n${this.questionsEvent()}`;
     for (const res of this.viewerStreams) res.write(message);
     if (this.viewerStreams.size === 0) this.openUrl(this.url);
     return this.scene;
+  }
+
+  /** Questions about the current scene, as the viewer shows them. */
+  get questions(): Question[] {
+    return this.asked;
+  }
+
+  /**
+   * Updates the questions of the current scene. They travel apart from the scene, so a new
+   * question or answer does not restart the scene's animations.
+   */
+  setQuestions(questions: Question[]): void {
+    this.asked = questions;
+    const message = this.questionsEvent();
+    for (const res of this.viewerStreams) res.write(message);
+  }
+
+  private questionsEvent(): string {
+    const payload: QuestionsPayload = { key: this.scene?.key ?? '', questions: this.asked };
+    return `event: questions\ndata: ${JSON.stringify(payload)}\n\n`;
   }
 
   /** Sends one single-line message to every connected click monitor; returns how many got it. */
@@ -150,6 +172,7 @@ export class Bridge {
       const name = url.pathname.slice('/api/'.length);
       if (req.method === 'GET') {
         if (name === 'scene') return send(res, 200, { scene: this.scene ?? null });
+        if (name === 'questions') return send(res, 200, { key: this.scene?.key ?? '', questions: this.asked });
         if (name === 'events') return this.stream(req, res, this.viewerStreams, true);
         if (name === 'clicks') return this.stream(req, res, this.monitorStreams, false);
         if (name === 'export') return this.export(res);
@@ -198,7 +221,7 @@ export class Bridge {
       connection: 'keep-alive',
       ...securityHeaders,
     });
-    res.write(hello ? `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n` : ': connected\n\n');
+    res.write(hello ? `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n${this.questionsEvent()}` : ': connected\n\n');
     streams.add(res);
     req.on('close', () => streams.delete(res));
   }
