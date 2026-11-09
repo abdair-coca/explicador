@@ -37,3 +37,4 @@
 (filled in as parts finish; environment: Node 22.23.4 in the cloud session, npm 10.9.9)
 - Parser: typecheck 0, lint 0, `npm test` 17/17 pass (valid, invalid, incomplete suites); `npm run build -w server` emits `server/dist/`.
 - Cache: typecheck 0, lint 0, `npm test` 26/26 pass (fresh, modified, deleted, restored, unrelated change, missing refs, corrupted entry).
+- Index: typecheck 0, lint 0, `npm test` 33/33 pass (import grep for JS/TS, Python, Go, Rust, Java, C, Ruby; relative resolution; ignore rules; incremental rebuild).
