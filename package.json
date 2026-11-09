@@ -6,14 +6,15 @@
   "type": "module",
   "workspaces": [
     "server",
+    "viewer",
     "spikes/interactivity"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "dev": "npm run dev --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "oxlint",
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "preview": "node server/src/preview.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

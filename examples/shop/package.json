@@ -1,0 +1,10 @@
+{
+  "name": "explicador-example-shop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Small sample shop used to try Explicador. Run it with `node src/server.js`.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js"
+  }
+}

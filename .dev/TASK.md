@@ -39,3 +39,6 @@
 - Cache: typecheck 0, lint 0, `npm test` 26/26 pass (fresh, modified, deleted, restored, unrelated change, missing refs, corrupted entry).
 - Index: typecheck 0, lint 0, `npm test` 33/33 pass (import grep for JS/TS, Python, Go, Rust, Java, C, Ruby; relative resolution; ignore rules; incremental rebuild).
 - Findings: typecheck 0, lint 0, `npm test` 37/37 pass (create with header, keep hand-written content, skip duplicates, validation).
+- Server + viewer: typecheck 0 (server, viewer, spike), lint 0, `npm test` 43/43 pass, including the stdio end-to-end run on a copy of `examples/shop` (index → missing → render → fresh from cache with the EXL returned → edit `src/auth/sessions.js` → stale with the changed file; bridge refuses a bad or missing token; invalid EXL and missing refs save nothing; finding appended). `npm run build` builds `server/dist` and `viewer/dist`.
+- Viewer smoke check: `npm run preview -- examples/scenes/login.exl.md --project examples/shop` + Playwright Chromium. 13 scene nodes rendered, step 5 of 7 highlighted with its narration and ref, no console errors under the CSP, bad token → 403. Screenshot inspected by the agent only.
+

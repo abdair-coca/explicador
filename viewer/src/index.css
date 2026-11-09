@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+
+:root {
+  --background: oklch(0.985 0.002 260);
+  --foreground: oklch(0.22 0.02 260);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0.006 260);
+  --muted-foreground: oklch(0.5 0.02 260);
+  --border: oklch(0.9 0.01 260);
+  --primary: oklch(0.5 0.17 265);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: oklch(0.6 0.15 265);
+  --warning: oklch(0.93 0.08 85);
+  --warning-foreground: oklch(0.4 0.09 70);
+  --success: oklch(0.93 0.06 155);
+  --success-foreground: oklch(0.38 0.09 155);
+  --edge: oklch(0.7 0.02 260);
+  --active: oklch(0.62 0.2 30);
+  --node-fill: oklch(1 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.17 0.01 260);
+    --foreground: oklch(0.93 0.01 260);
+    --card: oklch(0.21 0.012 260);
+    --muted: oklch(0.25 0.012 260);
+    --muted-foreground: oklch(0.7 0.02 260);
+    --border: oklch(0.32 0.015 260);
+    --primary: oklch(0.7 0.14 265);
+    --primary-foreground: oklch(0.17 0.01 260);
+    --ring: oklch(0.7 0.14 265);
+    --warning: oklch(0.35 0.07 75);
+    --warning-foreground: oklch(0.92 0.08 85);
+    --success: oklch(0.33 0.06 155);
+    --success-foreground: oklch(0.9 0.07 155);
+    --edge: oklch(0.55 0.02 260);
+    --active: oklch(0.72 0.17 35);
+    --node-fill: oklch(0.23 0.012 260);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-active: var(--active);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Node kinds: one hue each, used for the accent bar and the kind caption. */
+.kind-actor { --kind: oklch(0.6 0.15 300); }
+.kind-ui { --kind: oklch(0.6 0.15 240); }
+.kind-service { --kind: oklch(0.58 0.15 265); }
+.kind-module { --kind: oklch(0.6 0.04 260); }
+.kind-function { --kind: oklch(0.62 0.13 190); }
+.kind-store { --kind: oklch(0.62 0.14 145); }
+.kind-external { --kind: oklch(0.65 0.13 70); }
+
+.scene-node rect.body {
+  fill: var(--node-fill);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition: stroke 200ms, stroke-width 200ms, filter 200ms;
+}
+.scene-node.external rect.body { stroke-dasharray: 5 4; }
+.scene-node rect.accent { fill: var(--kind); }
+.scene-node .kind-caption { fill: var(--kind); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.scene-node .label { fill: var(--foreground); font-size: 13px; font-weight: 500; }
+.scene-node.active rect.body { stroke: var(--active); stroke-width: 2.5; filter: drop-shadow(0 0 6px color-mix(in oklch, var(--active) 45%, transparent)); }
+.scene-node.dimmed { opacity: 0.45; }
+.scene-node { transition: opacity 250ms; }
+
+.scene-edge path { fill: none; stroke: var(--edge); stroke-width: 1.5; transition: stroke 200ms, stroke-width 200ms, opacity 250ms; }
+.scene-edge.active path { stroke: var(--active); stroke-width: 2.5; }
+.scene-edge.dimmed path { opacity: 0.35; }
+.scene-edge .edge-label { fill: var(--muted-foreground); font-size: 11px; }
+.scene-edge.active .edge-label { fill: var(--active); font-weight: 600; }
+.scene-edge .edge-label-bg { fill: var(--background); }
+
+.token { fill: var(--active); }
+
+/* Reveal: nodes rise in by layer, then edges draw. */
+@keyframes node-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes edge-draw {
+  from { stroke-dashoffset: var(--len); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-ring {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+.reveal .node-inner { animation: node-in 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-box: fill-box; transform-origin: center; }
+.reveal .scene-edge path { stroke-dasharray: var(--len); animation: edge-draw 600ms ease-out both; }
+.reveal .scene-edge .edge-label-group { animation: fade-in 300ms ease-out both; }
+.pulse { fill: none; stroke: var(--active); stroke-width: 2; animation: pulse-ring 900ms ease-out infinite; transform-box: fill-box; transform-origin: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal .node-inner, .reveal .scene-edge path, .reveal .scene-edge .edge-label-group, .pulse { animation: none; }
+  .reveal .scene-edge path { stroke-dasharray: none; }
+}
+
+/* Markdown prose between scenes. */
+.prose-exl { line-height: 1.65; }
+.prose-exl > * + * { margin-top: 0.75em; }
+.prose-exl h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
+.prose-exl h2 { font-size: 1.2rem; font-weight: 650; margin-top: 1.25em; }
+.prose-exl h3 { font-size: 1.05rem; font-weight: 600; margin-top: 1em; }
+.prose-exl ul { list-style: disc; padding-left: 1.4em; }
+.prose-exl ol { list-style: decimal; padding-left: 1.4em; }
+.prose-exl a { color: var(--primary); text-decoration: underline; }
+.prose-exl code { background: var(--muted); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.88em; }
+.prose-exl pre { background: var(--muted); border-radius: 8px; padding: 0.8em 1em; overflow-x: auto; }
+.prose-exl pre code { background: none; padding: 0; }
+.prose-exl blockquote { border-left: 3px solid var(--border); padding-left: 1em; color: var(--muted-foreground); }

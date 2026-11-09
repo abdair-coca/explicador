@@ -4,6 +4,9 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveInside, stateDir, writeFileAtomic } from '../project.ts';
+import type { FileChange } from '../scene.ts';
+
+export type { FileChange } from '../scene.ts';
 
 export interface CachedScene {
   version: 1;
@@ -13,11 +16,6 @@ export interface CachedScene {
   /** Project-relative path → SHA-256 of its content when the scene was saved. */
   files: Record<string, string>;
   savedAt: string;
-}
-
-export interface FileChange {
-  path: string;
-  change: 'modified' | 'deleted';
 }
 
 export type Lookup =
