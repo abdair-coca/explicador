@@ -4,9 +4,11 @@ import { readElement, ExlSyntaxError, type Element } from './reader.ts';
 import {
   cardinalities,
   fieldKeys,
+  linkKinds,
   nodeKinds,
   statusRoles,
   type Cardinality,
+  type LinkKind,
   type DataBlock,
   type Entity,
   type Field,
@@ -49,8 +51,8 @@ export const catalog: Record<string, TagSpec> = {
   walk: { attrs: {}, children: ['go'] },
   go: { attrs: { event: 'required' }, text: true },
   node: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional', ref: 'optional' } },
-  edge: { attrs: { from: 'required', to: 'required', label: 'optional' } },
-  step: { attrs: { from: 'required', to: 'optional', label: 'optional', ref: 'optional' }, text: true },
+  edge: { attrs: { from: 'required', to: 'required', label: 'optional', kind: 'optional' } },
+  step: { attrs: { from: 'required', to: 'optional', label: 'optional', kind: 'optional', ref: 'optional' }, text: true },
 };
 
 const topLevelTags = ['arch', 'flow', 'data', 'state'];
@@ -187,6 +189,8 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
 
   const nodeIds = new Set<string>();
   const groupIds = new Set<string>();
+  /** Where each step starts, for the continuity check. */
+  const stepStarts: { from: string; offset: number }[] = [];
   const claim = (id: string, child: Element): boolean => {
     if (!nodeIds.has(id) && !groupIds.has(id)) return true;
     report(child.offset, `Duplicate node id "${id}"`);
@@ -243,10 +247,15 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
     checkNodeRef(a.from, 'from', child, child.name === 'edge');
     checkNodeRef(a.to, 'to', child, child.name === 'edge');
     const label = a.label === undefined ? undefined : checkText(a.label, 'label', limits.labelLength, child, report);
+    const kind = readLinkKind(a.kind, child, report);
     if (child.name === 'edge') {
       if (!child.selfClosing) report(child.offset, '<edge> must be self-closing: <edge from="a" to="b" />');
-      edges.push({ from: a.from ?? '', to: a.to ?? '', ...(label ? { label } : {}) });
+      edges.push({ from: a.from ?? '', to: a.to ?? '', ...(label ? { label } : {}), ...(kind ? { kind } : {}) });
     } else {
+      if (kind === 'return' && !a.to) {
+        report(child.offset, 'A <step kind="return"> needs "to": the node the answer goes back to');
+      }
+      stepStarts.push({ from: a.from ?? '', offset: child.attrs.get('from')?.offset ?? child.offset });
       const narration = child.children
         .map((c) => {
           if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <step>`);
@@ -264,11 +273,13 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
         from: a.from ?? '',
         ...(a.to ? { to: a.to } : {}),
         ...(label ? { label } : {}),
+        ...(kind ? { kind } : {}),
         ...(ref ? { ref } : {}),
         narration,
       });
     }
   }
+  checkContinuity(stepStarts, steps, nodeIds, report);
 
   if (nodes.length === 0) report(element.offset, `<${element.name}> needs at least one <node>`);
   if (nodes.length + groups.length > limits.nodes) {
@@ -317,6 +328,33 @@ function readDesc(value: string | undefined, element: Element, report: Report): 
   if (value === undefined) return {};
   const desc = checkText(value, 'desc', limits.descLength, element, report);
   return desc ? { desc } : {};
+}
+
+/** `kind` of an edge or step; undefined for a call, the default. */
+function readLinkKind(value: string | undefined, element: Element, report: Report): Exclude<LinkKind, 'call'> | undefined {
+  if (value === undefined || value === 'call') return undefined;
+  if ((linkKinds as readonly string[]).includes(value)) return value as Exclude<LinkKind, 'call'>;
+  report(element.attrs.get('kind')?.offset ?? element.offset, `Unknown kind "${value}"; use ${linkKinds.join(', ')}`);
+  return undefined;
+}
+
+/**
+ * A flow is one story: after the first step, every step starts at a node an earlier step
+ * already reached, so the highlight never jumps to a part nobody has called yet.
+ */
+function checkContinuity(starts: { from: string; offset: number }[], steps: FlowStep[], nodeIds: Set<string>, report: Report): void {
+  const inPlay: string[] = [];
+  steps.forEach((step, i) => {
+    const start = starts[i];
+    if (i > 0 && start && nodeIds.has(step.from) && !inPlay.includes(step.from)) {
+      report(
+        start.offset,
+        `Step ${i + 1} starts at "${step.from}", which no earlier step reached. ` +
+          `Start it at a node already in the story (${inPlay.join(', ')}) or first add the step that reaches "${step.from}"`,
+      );
+    }
+    for (const id of [step.from, step.to]) if (id && !inPlay.includes(id)) inPlay.push(id);
+  });
 }
 
 function parseKind(value: string | undefined, element: Element, report: Report): NodeKind {

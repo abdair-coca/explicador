@@ -1,6 +1,6 @@
 // Zoom levels of an <arch>: what is visible at the top or inside one <group>.
 // Pure functions so they can be tested without a browser.
-import type { ArchBlock, DataBlock, Drill, Field, SceneNode, StateBlock } from '../../../server/src/scene.ts';
+import type { ArchBlock, DataBlock, Drill, Field, LinkKind, SceneNode, StateBlock } from '../../../server/src/scene.ts';
 
 export interface ViewNode extends SceneNode {
   /** `group`: a collapsed <group> (zooms in). `context`: a node outside the open group, shown faded. */
@@ -20,6 +20,13 @@ export interface ViewEdge {
   from: string;
   to: string;
   label?: string;
+  /** Absent for a call. */
+  kind?: LinkKind;
+}
+
+/** Edge id: one edge per ordered pair and kind, so a call and its return stay two edges. */
+export function linkId(from: string, to: string, kind?: LinkKind): string {
+  return kind && kind !== 'call' ? `${from}->${to}:${kind}` : `${from}->${to}`;
 }
 
 export interface Level {
@@ -103,10 +110,10 @@ export function archLevel(block: ArchBlock, groupId?: string): Level {
     if (from === undefined) from = context(edge.from);
     if (to === undefined) to = context(edge.to);
     if (from === to) continue;
-    const id = `${from}->${to}`;
+    const id = linkId(from, to, edge.kind);
     if (!labels.has(id)) labels.set(id, new Set());
     labels.get(id)?.add(edge.label);
-    edges.set(id, { id, from, to });
+    edges.set(id, { id, from, to, ...(edge.kind ? { kind: edge.kind } : {}) });
   }
   for (const [id, edge] of edges) {
     const set = labels.get(id);

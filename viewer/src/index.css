@@ -154,6 +154,10 @@ body {
 .scene-edge.active .halo { opacity: 0.85; }
 .scene-edge.active .line { stroke: var(--foreground); stroke-width: 2.5; }
 .scene-edge.dimmed { opacity: 0.35; }
+/* Line style by kind: a call is solid, the answer coming back is dashed, async messages are dotted. */
+.scene-edge.kind-return .line { stroke-dasharray: 7 6; }
+.scene-edge.kind-async .line { stroke-dasharray: 0.5 6; stroke-width: 2.75; }
+.scene-edge.active.kind-async .line { stroke-width: 3.25; }
 .edge-label-bg { fill: #fff; stroke: var(--border); stroke-width: 1.5; }
 .edge-label { fill: var(--edge-label); font-size: 13px; font-weight: 800; }
 .edge-label-group.active .edge-label-bg { fill: var(--primary); stroke: var(--primary-dark); }
@@ -190,6 +194,9 @@ body {
 }
 .reveal .node-inner { animation: pop-in var(--dur-base) var(--ease-pop) both; }
 .reveal .scene-edge .line { stroke-dasharray: var(--len); animation: edge-draw var(--dur-slow) var(--ease-out) both; }
+/* Dashed and dotted lines keep their pattern, so they fade in instead of drawing. */
+.reveal .scene-edge.kind-return .line { stroke-dasharray: 7 6; animation: fade-in var(--dur-slow) ease-out both; }
+.reveal .scene-edge.kind-async .line { stroke-dasharray: 0.5 6; animation: fade-in var(--dur-slow) ease-out both; }
 .reveal .edge-label-group { animation: fade-in var(--dur-base) ease-out both; }
 .animate-pop-in { animation: pop-in var(--dur-base) var(--ease-pop) both; }
 .animate-fade-up { animation: fade-up var(--dur-base) var(--ease-out) both; }

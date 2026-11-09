@@ -1,5 +1,6 @@
 // SVG rendering of a laid-out scene in the Titi style. Highlighting and the moving token are driven by props.
 import { useId } from 'react';
+import type { LinkKind } from '../../../server/src/scene.ts';
 import { staggerStep } from '../animation/reveal';
 import {
   BOX,
@@ -58,76 +59,107 @@ export function Diagram(props: DiagramProps) {
   const overlay = active && props.activeLabel ? props.activeLabel : undefined;
   const marker = (edge: LaidEdge): string | undefined =>
     props.arrows === false ? undefined : `url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`;
+  const kinds = new Set(layout.edges.map((e) => e.kind ?? 'call'));
 
   return (
-    <div className="overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
-        className="mx-auto block h-auto"
-        style={{ width: '100%', minWidth: layout.width * MIN_SCALE, maxWidth: Math.max(layout.width, 320) * MAX_SCALE }}
-        role="group"
-        aria-label={props.ariaLabel}
-      >
-        <defs>
-          <marker id={`${markerId}-arrow`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0 0 L10 5 L0 10 z" fill="var(--edge)" />
-          </marker>
-          <marker id={`${markerId}-arrow-active`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0 0 L10 5 L0 10 z" fill="var(--foreground)" />
-          </marker>
-        </defs>
-        <g key={revealKey} className="reveal">
-          {layout.edges.map((edge) => (
-            <g
-              key={edge.id}
-              className={cn('scene-edge', edge.id === activeEdge && 'active', focus && edge.id !== activeEdge && 'dimmed')}
-            >
-              <path className="halo" d={edge.path} />
-              <path
-                className="line"
-                d={edge.path}
-                markerEnd={marker(edge)}
-                style={{ ['--len' as string]: edge.length.toFixed(1), animationDelay: `${edgeDelay}ms` }}
-              />
-            </g>
-          ))}
-          {layout.nodes.map((node) => (
-            <Node
-              key={node.node.id}
-              laid={node}
-              delay={nodeDelay(node.node.id)}
-              active={activeNodes?.has(node.node.id) ?? false}
-              dimmed={focus && !activeNodes?.has(node.node.id)}
-              pulse={props.pulseNode === node.node.id && !reducedMotion}
-              {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
-                ? { onClick: props.onNodeClick }
-                : {})}
-            />
-          ))}
-          {layout.edges.map((edge) =>
-            edge.label && !(edge.id === activeEdge && overlay) ? (
-              <EdgeLabel
+    <div>
+      <div className="overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
+          className="mx-auto block h-auto"
+          style={{ width: '100%', minWidth: layout.width * MIN_SCALE, maxWidth: Math.max(layout.width, 320) * MAX_SCALE }}
+          role="group"
+          aria-label={props.ariaLabel}
+        >
+          <defs>
+            <marker id={`${markerId}-arrow`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--edge)" />
+            </marker>
+            <marker id={`${markerId}-arrow-active`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--foreground)" />
+            </marker>
+          </defs>
+          <g key={revealKey} className="reveal">
+            {layout.edges.map((edge) => (
+              <g
                 key={edge.id}
-                at={edge.labelAt ?? edge.mid}
-                label={edge.label}
-                active={edge.id === activeEdge}
-                dimmed={focus && edge.id !== activeEdge}
-                delay={labelDelay}
+                className={cn(
+                  'scene-edge',
+                  `kind-${edge.kind ?? 'call'}`,
+                  edge.id === activeEdge && 'active',
+                  focus && edge.id !== activeEdge && 'dimmed',
+                )}
+              >
+                <path className="halo" d={edge.path} />
+                <path
+                  className="line"
+                  d={edge.path}
+                  markerEnd={marker(edge)}
+                  style={{ ['--len' as string]: edge.length.toFixed(1), animationDelay: `${edgeDelay}ms` }}
+                />
+              </g>
+            ))}
+            {layout.nodes.map((node) => (
+              <Node
+                key={node.node.id}
+                laid={node}
+                delay={nodeDelay(node.node.id)}
+                active={activeNodes?.has(node.node.id) ?? false}
+                dimmed={focus && !activeNodes?.has(node.node.id)}
+                pulse={props.pulseNode === node.node.id && !reducedMotion}
+                {...(props.onNodeClick && node.node.role !== 'context' && (props.isClickable?.(node.node) ?? true)
+                  ? { onClick: props.onNodeClick }
+                  : {})}
               />
-            ) : null,
+            ))}
+            {layout.edges.map((edge) =>
+              edge.label && !(edge.id === activeEdge && overlay) ? (
+                <EdgeLabel
+                  key={edge.id}
+                  at={edge.labelAt ?? edge.mid}
+                  label={edge.label}
+                  active={edge.id === activeEdge}
+                  dimmed={focus && edge.id !== activeEdge}
+                  delay={labelDelay}
+                />
+              ) : null,
+            )}
+          </g>
+          {active && overlay && (
+            // Keyed by step so the label pops in again whenever the step changes.
+            <EdgeLabel key={`${active.id}-${props.tokenKey ?? 0}`} at={active.labelAt ?? active.mid} label={overlay} active pop />
           )}
-        </g>
-        {active && overlay && (
-          // Keyed by step so the label pops in again whenever the step changes.
-          <EdgeLabel key={`${active.id}-${props.tokenKey ?? 0}`} at={active.labelAt ?? active.mid} label={overlay} active pop />
-        )}
-        {active && !reducedMotion && (
-          <circle key={props.tokenKey} r="7" className="token">
-            <animateMotion dur="0.7s" fill="freeze" path={active.path} calcMode="spline" keyTimes="0;1" keySplines="0.33 1 0.68 1" />
-          </circle>
-        )}
-      </svg>
+          {active && !reducedMotion && (
+            <circle key={props.tokenKey} r="7" className="token">
+              <animateMotion dur="0.7s" fill="freeze" path={active.path} calcMode="spline" keyTimes="0;1" keySplines="0.33 1 0.68 1" />
+            </circle>
+          )}
+        </svg>
+      </div>
+      {(kinds.has('return') || kinds.has('async')) && <EdgeLegend kinds={kinds} />}
     </div>
+  );
+}
+
+const linkKinds: LinkKind[] = ['call', 'return', 'async'];
+const legendText: Record<LinkKind, string> = { call: 'call', return: 'answer back', async: 'async (queue, event)' };
+
+/** What the line styles mean; shown only when a diagram mixes them. */
+function EdgeLegend({ kinds }: { kinds: ReadonlySet<LinkKind> }) {
+  return (
+    <ul className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs font-bold text-muted-foreground" aria-label="Line styles">
+      {linkKinds
+        .filter((kind) => kind === 'call' || kinds.has(kind))
+        .map((kind) => (
+          <li key={kind} className="flex items-center gap-2">
+            <svg width="34" height="10" aria-hidden="true" className={`scene-edge kind-${kind}`}>
+              <path className="line" d="M2 5 H26" />
+              <path d="M26 1 L33 5 L26 9 z" fill="var(--edge)" />
+            </svg>
+            {legendText[kind]}
+          </li>
+        ))}
+    </ul>
   );
 }
 

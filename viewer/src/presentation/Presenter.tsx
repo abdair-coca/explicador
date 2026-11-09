@@ -1,7 +1,7 @@
 // Full-screen presentation of the current scene. Advances only when the presenter asks.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
-import type { ScenePayload } from '../../../server/src/scene.ts';
+import type { LinkKind, ScenePayload } from '../../../server/src/scene.ts';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon } from '../components/icons';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
@@ -96,7 +96,16 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   );
 }
 
-function StepSlide(props: { title: string; step: number; of: number; route: string; refText?: string | undefined; narration?: string | undefined; children: React.ReactNode }) {
+function StepSlide(props: {
+  title: string;
+  step: number;
+  of: number;
+  route: string;
+  kind?: LinkKind | undefined;
+  refText?: string | undefined;
+  narration?: string | undefined;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-6">
       <h2 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight">
@@ -104,6 +113,8 @@ function StepSlide(props: { title: string; step: number; of: number; route: stri
         <Badge variant="step">
           Step {props.step + 1} of {props.of}
         </Badge>
+        {props.kind === 'return' && <Badge variant="muted">Answer back</Badge>}
+        {props.kind === 'async' && <Badge variant="info">Async</Badge>}
       </h2>
       <div className="rounded-2xl border border-border-soft bg-card p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">{props.children}</div>
       {props.narration && (
@@ -140,6 +151,7 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
         step={slide.step}
         of={slide.of}
         route={stepRoute(block, slide.step)}
+        kind={step?.kind}
         refText={step?.ref ? formatRef(step.ref) : undefined}
         narration={step?.narration}
       >

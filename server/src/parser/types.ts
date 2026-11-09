@@ -37,10 +37,16 @@ export interface Drill {
   topic: string;
 }
 
+/** How a part talks to another: a call (the default), the answer coming back, or a message nobody waits for. */
+export const linkKinds = ['call', 'return', 'async'] as const;
+export type LinkKind = (typeof linkKinds)[number];
+
 export interface ArchEdge {
   from: string;
   to: string;
   label?: string;
+  /** Absent for a call. */
+  kind?: LinkKind;
 }
 
 export interface FlowStep {
@@ -48,6 +54,8 @@ export interface FlowStep {
   /** Absent when the step is an action inside `from`. */
   to?: string;
   label?: string;
+  /** Absent for a call. */
+  kind?: LinkKind;
   ref?: Ref;
   narration: string;
 }

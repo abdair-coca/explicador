@@ -1,6 +1,7 @@
 // Scene layout with ELK (layered, left to right). Boxes are sized from their measured text, and
 // edge labels get their own room in the layout so they never sit on a box.
 import ELK, { type ElkExtendedEdge, type ElkNode } from 'elkjs/lib/elk.bundled.js';
+import type { LinkKind } from '../../../server/src/scene.ts';
 import type { ViewNode } from './levels';
 
 export interface Point {
@@ -24,6 +25,8 @@ export interface LaidEdge {
   from: string;
   to: string;
   label?: string;
+  /** Absent for a call. */
+  kind?: LinkKind;
   path: string;
   length: number;
   mid: Point;
@@ -43,6 +46,7 @@ export interface EdgeInput {
   from: string;
   to: string;
   label?: string;
+  kind?: LinkKind;
   /** Label text to keep room for without drawing it (flow steps show their label only when active). */
   reserve?: string;
 }
@@ -284,6 +288,7 @@ function toLayout(result: ElkNode, sized: Sized[], edges: EdgeInput[]): Layout {
       from: e.from,
       to: e.to,
       ...(e.label ? { label: e.label } : {}),
+      ...(e.kind && e.kind !== 'call' ? { kind: e.kind } : {}),
       path: points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' '),
       length,
       mid: pointAt(points, length / 2),

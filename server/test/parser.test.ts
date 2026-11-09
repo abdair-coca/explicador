@@ -389,6 +389,73 @@ describe('parseExl: <state>', () => {
   });
 });
 
+describe('parseExl: link kinds and continuity', () => {
+  const flow = (steps: string[]): string =>
+    ['<flow title="F">', '  <node id="ui" label="UI" />', '  <node id="api" label="API" />', '  <node id="db" label="DB" />', '  <node id="ctx" label="Context" />', ...steps, '</flow>'].join('\n');
+
+  it('keeps return and async kinds and leaves calls without a kind', () => {
+    const result = parseExl(
+      [
+        '<arch title="A"><node id="a" label="A" /><node id="b" label="B" />',
+        '<edge from="a" to="b" label="job" kind="async" /><edge from="a" to="b" kind="call" /></arch>',
+        flow([
+          '  <step from="ui" to="api" label="POST">Sends it.</step>',
+          '  <step from="api" to="db" kind="call">Reads.</step>',
+          '  <step from="db" to="api" kind="return" label="rows">Rows come back.</step>',
+          '  <step from="api" to="ui" kind="return">Replies.</step>',
+          '  <step from="api" to="ctx" kind="async" label="event">Fires and forgets.</step>',
+        ]),
+      ].join('\n'),
+    );
+    assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+    if (!result.ok) return;
+    const [arch, steps] = result.scene.blocks;
+    assert.deepEqual((arch as ArchBlock).edges, [
+      { from: 'a', to: 'b', label: 'job', kind: 'async' },
+      { from: 'a', to: 'b' },
+    ]);
+    assert.deepEqual(
+      (steps as FlowBlock).steps.map((s) => s.kind),
+      [undefined, undefined, 'return', 'return', 'async'],
+    );
+  });
+
+  it('rejects unknown kinds and a return that goes nowhere', () => {
+    assert.deepEqual(
+      errorsOf(flow(['  <step from="ui" to="api" kind="reply">Sends.</step>', '  <step from="api" kind="return">Answers.</step>'])),
+      ['6:28 Unknown kind "reply"; use call, return, async', '7:3 A <step kind="return"> needs "to": the node the answer goes back to'],
+    );
+  });
+
+  it('rejects a step that starts at a node no earlier step reached', () => {
+    assert.deepEqual(
+      errorsOf(
+        flow([
+          '  <step from="ui" to="api">Sends.</step>',
+          '  <step from="api" to="db">Reads.</step>',
+          '  <step from="ctx" to="api">Teleports in.</step>',
+        ]),
+      ),
+      [
+        '8:9 Step 3 starts at "ctx", which no earlier step reached. Start it at a node already in the story (ui, api, db) or first add the step that reaches "ctx"',
+      ],
+    );
+  });
+
+  it('lets a step start anywhere the story already went, including actions and returns', () => {
+    const result = parseExl(
+      flow([
+        '  <step from="ui" to="api">Sends.</step>',
+        '  <step from="api">Validates.</step>',
+        '  <step from="api" to="ctx">Builds the context.</step>',
+        '  <step from="ctx" to="api" kind="return">Context back.</step>',
+        '  <step from="ui">Shows a spinner meanwhile.</step>',
+      ]),
+    );
+    assert.equal(result.ok, true, result.ok ? '' : formatErrors(result.errors));
+  });
+});
+
 describe('parseExl: descriptions', () => {
   it('keeps a one-line desc on nodes, groups, entities and states', () => {
     const result = parseExl(

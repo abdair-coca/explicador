@@ -47,7 +47,10 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   <step from="service" to="sessions" label="createSession" ref="src/auth/sessions.js:7-11">
     On success it creates a random session id that expires after one hour.
   </step>
-  <step from="routes" to="form" label="200 + sid cookie" ref="src/api/auth-routes.js:18-19">
+  <step from="service" to="routes" kind="return" label="session id + user" ref="src/auth/auth-service.js:11-13">
+    The service hands back the new session id and the user's name. A failed check returns only ok: false, and the route answers 401 with the same message for both mistakes.
+  </step>
+  <step from="routes" to="form" kind="return" label="200 + sid cookie" ref="src/api/auth-routes.js:18-19">
     The route sets the session as an HttpOnly, SameSite=Strict cookie and the form moves on to the cart.
   </step>
   <drill node="password" topic="password hashing" />

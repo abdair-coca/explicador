@@ -71,7 +71,17 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       }
       const changes = lookup.status === 'stale' ? lookup.changes : [];
       const shown = navigator.show(lookup.scene, lookup.status, changes);
-      if (!shown.ok) return text(`The cached scene for "${topic}" no longer parses; regenerate it.\n${shown.errors}`);
+      if (!shown.ok) {
+        // Older scenes can break newer rules (e.g. flow continuity): hand back the EXL so only those lines change.
+        return text(
+          [
+            `The cached scene for "${topic}" no longer passes validation. Fix these lines in the EXL below and call render_scene with the same topic:`,
+            shown.errors,
+            '',
+            lookup.scene.exl,
+          ].join('\n'),
+        );
+      }
       if (lookup.status === 'fresh') {
         return text(
           [

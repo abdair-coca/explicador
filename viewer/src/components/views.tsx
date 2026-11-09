@@ -7,6 +7,7 @@ import { Diagram } from './Diagram';
 import {
   formatRef,
   LayoutState,
+  neighbour,
   ReplayButton,
   SceneFrame,
   StepControls,
@@ -105,6 +106,8 @@ function StateWalk({ block, onDrill }: { block: StateBlock; onDrill?: DrillHandl
           route={walkRoute(block, playback.index)}
           refText={ref ? formatRef(ref) : undefined}
           narration={step.narration}
+          before={neighbour(playback, playback.index - 1, block.walk.length, (i) => walkRoute(block, i))}
+          after={neighbour(playback, playback.index + 1, block.walk.length, (i) => walkRoute(block, i))}
         />
       )}
       <StepProgress index={playback.index} labels={block.walk.map((s) => s.event)} onPick={playback.goTo} />

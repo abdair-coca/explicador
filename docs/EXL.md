@@ -20,8 +20,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<flow>` | `title` (required), `id` | `<node>`, `<step>`, `<drill>` |
 | `<group>` | `id`, `label` (required), `desc`, `kind` | `<node>` and nested `<group>`, only in `<arch>` |
 | `<node>` | `id`, `label` (required), `desc`, `kind`, `ref` | none (self-closing) |
-| `<edge>` | `from`, `to` (required), `label` | none (self-closing), only in `<arch>` |
-| `<step>` | `from` (required), `to`, `label`, `ref` | narration text (required), only in `<flow>` |
+| `<edge>` | `from`, `to` (required), `label`, `kind` | none (self-closing), only in `<arch>` |
+| `<step>` | `from` (required), `to`, `label`, `kind`, `ref` | narration text (required), only in `<flow>` |
 | `<drill>` | `node`, `topic` (required) | none (self-closing) |
 | `<data>` | `title` (required), `id` | `<entity>`, `<relation>`, `<drill>` |
 | `<entity>` | `id`, `label` (required), `desc`, `ref` | `<field>` rows (may be empty or self-closing) |
@@ -38,6 +38,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - `title`, `label`: one line, not empty. Titles up to 120 characters, labels up to 80.
 - `desc`: optional, one line of up to 80 characters saying what the part does ("Checks the password hash"). The viewer shows it inside the box, under the label, wrapped to at most three lines.
 - `from` / `to`: ids of nodes declared in the same block. An `<edge>` may also name a `<group>`; a `<step>` only nodes. A `<step>` without `to` is an action inside `from`.
+- `kind` on `<edge>` and `<step>` (not the node `kind`): `call` (default) when one part asks another, `return` when the answer comes back, `async` for a message nobody waits for (a queue, an event, a background job). A `return` step needs `to`.
+- Continuity: in a `<flow>`, every step after the first starts at a node an earlier step already reached (as `from` or `to`). A step that starts anywhere else is an error naming the nodes in play; add the step that reaches that node first.
 - Groups share the id namespace with nodes and need at least one node. Nodes inside a group still count as nodes of the block.
 - `<drill node topic>`: `node` names a `<node>` (not a group) of the same block, at most one drill per node; `topic` is one line of up to 80 characters, the topic under which the deeper scene is explained and cached.
 - Narration: plain text, whitespace collapsed, up to 600 characters. Write `&lt;` for a literal `<`.
@@ -52,7 +54,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 ## Semantics
 
 - `<arch>` is the static picture of the parts and how they connect. The viewer lays it out left to right with ELK, keeps room for every edge label, and reveals it box by box, then the edges. Each box shows its kind (a colored chip with an icon), its label and its `desc`.
-- `<flow>` is an ordered story. The viewer draws one edge per pair of nodes that talk, then plays the steps: the active nodes and edge are highlighted, a token travels along the edge, and the narration shows under the diagram. Play, pause, previous, next and jumping to a step are available. With reduced motion, playback does not start by itself and no token moves.
+- `<flow>` is an ordered story. The viewer draws one edge per pair of nodes and kind (a call and its return are two edges), then plays the steps: the active nodes and edge are highlighted, a token travels along the edge, and the narration shows under the diagram with links to the step before and after. Play, pause, previous, next and jumping to a step are available. With reduced motion, playback does not start by itself and no token moves.
+- Line styles: calls are solid, returns dashed, async messages dotted; a legend appears under any diagram that uses returns or async messages, and the step badge says "Answer back" or "Async".
 - `<group>` shows collapsed as one box with its member count; edges into its members attach to the box (merged per pair; a label is kept only when all merged edges share it). Clicking it zooms in without asking Claude: its members appear, with faded context boxes for the nodes outside that its edges reach, and breadcrumbs lead back out.
 - Clicking any other node asks to go deeper. If the node has a `<drill>` whose topic is cached and fresh, the viewer opens that scene with a zoom-in. Otherwise the click reaches Claude through the plugin monitor as one line naming the node, its ref, the scene and the topic (the drill topic, or the node label); the next scene Claude renders becomes the deeper level. Scenes reached this way show the scenes above them as breadcrumbs.
 - `<data>` draws each entity as a table (PK, FK and UQ badges, types on the right) and each relation as an undirected edge labelled with its cardinality, e.g. `owns (1 : 1)`.

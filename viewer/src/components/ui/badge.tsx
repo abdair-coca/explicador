@@ -12,6 +12,8 @@ const badgeVariants = cva(
         success: 'bg-success text-white',
         stale: 'bg-stale text-white',
         step: 'bg-primary text-primary-foreground',
+        muted: 'bg-muted text-foreground',
+        info: 'bg-link text-white',
       },
     },
     defaultVariants: { variant: 'dark' },

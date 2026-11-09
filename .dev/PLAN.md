@@ -100,12 +100,12 @@ Defaults (approved with the plan):
 - Flow continuity is a validation error, not a warning.
 - Questions and answers are saved with their scene and dropped when that scene is re-rendered.
 
-- [x] **F5. Titi look and legible boxes.** Done 2026-11-09 except the user's review. Taken during the phase: edge labels are laid out by ELK (each gets its own room, flow edges reserve room for their longest step label); diagrams never shrink below 85 % and layouts wider than about 1400 px wrap into rows (ELK `MULTI_EDGE`; `SINGLE_EDGE` crashed ELK); the content column widened to `max-w-7xl`; the bridge CSP allows `data:` fonts.
+- [x] **F5. Titi look and legible boxes.** Done 2026-11-09; reviewed by the user from screenshots ("Bello"). The user then asked for the Titi mascot and withdrew it the same day: no mascot. Taken during the phase: edge labels are laid out by ELK (each gets its own room, flow edges reserve room for their longest step label); diagrams never shrink below 85 % and layouts wider than about 1400 px wrap into rows (ELK `MULTI_EDGE`; `SINGLE_EDGE` crashed ELK); the content column widened to `max-w-7xl`; the bridge CSP allows `data:` fonts.
   - Viewer: Titi tokens (cream `#FFFBF0`, white surfaces, text `#1A1A2E`, yellow `#FFD93D`/`#FFC107`/`#FFF3B0`/`#E6B800`, role colors), Nunito, tiles for clickable boxes (white, rounded, `border-2` gray, hard shadow, hover lift with yellow border, press sink), node kinds as solid role chips with stroke SVG icons, edge labels ≥13 px bold on a white pill (the active one yellow), Titi buttons and inputs, yellow focus ring.
   - Motion: tokens 150/300/400 ms and the Titi bounce `cubic-bezier(0.34, 1.56, 0.64, 1)`; boxes pop in staggered, then edges draw; the active boxes pop on each step; zoom ≤400 ms; progress fills in ~700 ms; everything off with reduced motion.
   - EXL: optional `desc` (one line, ≤80 characters) on `<node>`, `<group>`, `<entity>` and `<status>`, shown inside the box; the skill asks for it.
   - Criterion: parser tests for `desc`, viewer tests updated, typecheck, lint and tests pass; the user reviews the SocialNeo scenes in preview mode.
-- [ ] **F6. Flows that make sense.**
+- [x] **F6. Flows that make sense.** Done 2026-11-09 except the user's review. Taken during the phase: `kind` is stored only when it is not `call`, so older scenes parse to the same data; a `return` step needs `to`; edges of different kinds between the same pair are separate (ids `a->b:return`); a cached scene that breaks the new rules comes back from `show_scene` with its errors and its EXL (SocialNeo's `estudiante` fails at step 7, `ctx → tutor`; `rag` and `reranker-de-cloudflare` still pass); the sample login flow now shows both returns.
   - EXL: `kind` on `<step>` and `<edge>`: `call` (default, solid), `return` (dashed), `async` (dotted, for queues and events).
   - Continuity: a step may start only at a node already in play (the first step's `from`, or any earlier `from`/`to`); otherwise the parser reports which step jumps and from where.
   - Viewer: the narration says where the step comes from and what follows.
@@ -177,7 +177,7 @@ Open points:
 | F2 | done (2026-11-09); user gave the go-ahead to continue |
 | F3 | done (2026-11-09); user gave the go-ahead to continue |
 | F4 | done (2026-11-09), user review pending |
-| F5 | done (2026-11-09), user review pending |
-| F6 | planned (approved 2026-11-09) |
+| F5 | done (2026-11-09), reviewed by the user |
+| F6 | done (2026-11-09), user review pending |
 | F7 | planned (approved 2026-11-09) |
 | F8 | planned (approved 2026-11-09) |

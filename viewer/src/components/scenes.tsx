@@ -1,12 +1,12 @@
 // <arch> and <flow> scenes: layout, reveal animation and step playback; shared scene chrome.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { ArchBlock, FlowBlock, Ref } from '../../../server/src/scene.ts';
+import type { ArchBlock, FlowBlock, LinkKind, Ref } from '../../../server/src/scene.ts';
 import { stepDuration, usePlayback, useReducedMotion, type Playback } from '../animation/playback';
 import { boxWithin, zoomIn, zoomOut, type Box } from '../animation/zoom';
 import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
-import { archLevel, withDrills, type ViewNode } from '../layout/levels';
+import { archLevel, linkId, withDrills, type ViewNode } from '../layout/levels';
 import { Diagram } from './Diagram';
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
+import { ArrowLeftIcon, ArrowRightIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -85,14 +85,35 @@ export function StepControls({ playback }: { playback: Playback }) {
   );
 }
 
-/** The current step: where it goes, its code ref and its narration. */
-export function StepNarration(props: { index: number; total: number; route: string; refText?: string | undefined; narration: string }) {
+/** A neighbouring step the narration links to. */
+export interface StepLink {
+  route: string;
+  go: () => void;
+}
+
+const kindBadge: Partial<Record<LinkKind, React.ReactNode>> = {
+  return: <Badge variant="muted">Answer back</Badge>,
+  async: <Badge variant="info">Async</Badge>,
+};
+
+/** The current step: where it goes, its kind, its code ref, its narration, and the steps around it. */
+export function StepNarration(props: {
+  index: number;
+  total: number;
+  route: string;
+  kind?: LinkKind | undefined;
+  refText?: string | undefined;
+  narration: string;
+  before?: StepLink | undefined;
+  after?: StepLink | undefined;
+}) {
   return (
     <div className="border-t border-border-soft px-5 py-4" aria-live="polite">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Badge variant="step">
           Step {props.index + 1} of {props.total}
         </Badge>
+        {props.kind && kindBadge[props.kind]}
         <span className="text-sm font-bold text-muted-foreground">{props.route}</span>
         {props.refText && (
           <code className="rounded-lg bg-subtle px-2 py-0.5 font-mono text-xs font-semibold text-foreground">{props.refText}</code>
@@ -101,8 +122,44 @@ export function StepNarration(props: { index: number; total: number; route: stri
       <p key={props.index} className="animate-fade-up max-w-3xl text-lg font-semibold leading-relaxed">
         {props.narration}
       </p>
+      {(props.before || props.after) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {props.before && (
+            <StepLinkButton onClick={props.before.go} label={`Step ${props.index}: ${props.before.route}`}>
+              <ArrowLeftIcon size={14} />
+              <span className="text-muted-foreground">Comes from</span>
+              {props.before.route}
+            </StepLinkButton>
+          )}
+          {props.after && (
+            <StepLinkButton onClick={props.after.go} label={`Step ${props.index + 2}: ${props.after.route}`}>
+              <span className="text-muted-foreground">Next</span>
+              {props.after.route}
+              <ArrowRightIcon size={14} />
+            </StepLinkButton>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function StepLinkButton(props: { onClick: () => void; label: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      aria-label={`Go to ${props.label}`}
+      className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-left text-sm font-bold text-foreground transition-all duration-150 hover:bg-primary-light active:scale-[0.96]"
+    >
+      {props.children}
+    </button>
+  );
+}
+
+/** Link to step `index` when it exists. */
+export function neighbour(playback: Playback, index: number, count: number, route: (index: number) => string): StepLink | undefined {
+  return index >= 0 && index < count ? { route: route(index), go: () => playback.goTo(index) } : undefined;
 }
 
 /** One segment per step; done steps fill yellow, the current one is darker. */
@@ -238,8 +295,8 @@ function flowEdges(block: FlowBlock): EdgeInput[] {
   const seen = new Map<string, EdgeInput>();
   for (const step of block.steps) {
     if (!step.to || step.to === step.from) continue;
-    const id = `${step.from}->${step.to}`;
-    const edge = seen.get(id) ?? { id, from: step.from, to: step.to };
+    const id = linkId(step.from, step.to, step.kind);
+    const edge = seen.get(id) ?? { id, from: step.from, to: step.to, ...(step.kind ? { kind: step.kind } : {}) };
     if (step.label && step.label.length > (edge.reserve?.length ?? 0)) edge.reserve = step.label;
     seen.set(id, edge);
   }
@@ -255,7 +312,7 @@ export function FlowDiagram(props: { block: FlowBlock; index: number; onDrill?: 
   const reducedMotion = useReducedMotion();
   const step = block.steps[index];
   const activeNodes = useMemo(() => new Set(step ? [step.from, step.to ?? step.from] : []), [step]);
-  const activeEdge = step?.to && step.to !== step.from ? `${step.from}->${step.to}` : undefined;
+  const activeEdge = step?.to && step.to !== step.from ? linkId(step.from, step.to, step.kind) : undefined;
   if (!layout || layout instanceof Error) return <LayoutState layout={layout} />;
   return (
     <Diagram
@@ -295,8 +352,11 @@ export function FlowScene({ block, onDrill }: { block: FlowBlock; onDrill?: Dril
           index={playback.index}
           total={block.steps.length}
           route={stepRoute(block, playback.index)}
+          kind={step.kind}
           refText={step.ref ? formatRef(step.ref) : undefined}
           narration={step.narration}
+          before={neighbour(playback, playback.index - 1, block.steps.length, (i) => stepRoute(block, i))}
+          after={neighbour(playback, playback.index + 1, block.steps.length, (i) => stepRoute(block, i))}
         />
       )}
       <StepProgress

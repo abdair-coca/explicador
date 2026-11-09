@@ -46,12 +46,15 @@ One short paragraph of context.
 </arch>
 
 <flow id="login" title="Logging in">
-  <node id="form" label="Login form" kind="ui" />
-  <node id="api" label="Auth routes" kind="service" />
-  <step from="form" to="api" label="POST /api/login" ref="src/ui/login-form.js:7-11">
-    The form sends the email and password as JSON.
+  <node id="form" label="Login form" desc="Sends the credentials" kind="ui" />
+  <node id="api" label="Auth routes" desc="Validate and reply" kind="service" />
+  <step from="form" to="api" label="credentials" ref="src/ui/login-form.js:7-11">
+    The form sends the email and password as JSON when the user submits.
   </step>
-  <step from="api" label="validate">It rejects empty fields with 400.</step>
+  <step from="api" label="validate">It rejects empty fields with 400, so the service never sees bad input.</step>
+  <step from="api" to="form" kind="return" label="session cookie" ref="src/api/auth-routes.js:18-19">
+    The route answers with an HttpOnly cookie, so the browser carries the session from now on.
+  </step>
 </flow>
 ```
 
@@ -60,7 +63,8 @@ One short paragraph of context.
 - `<drill node topic>` marks a node that deserves its own deeper scene, under that topic. Add one for the 1–3 nodes a reader will most likely want next.
 - `<data title>`: the data model, for "what is stored and how it relates": `<entity id label ref>` with `<field name type? key?>` rows (`key` = `pk`, `fk`, `unique`) and `<relation from to card label?>` (`card` = `1-1`, `1-n`, `n-1`, `n-n`).
 - `<state title>`: a lifecycle, for "what states can X be in": `<status id label role? ref?>` (exactly one `role="initial"`, optional `role="final"`), `<transition from to event ref?>`, and optionally one `<walk>` of `<go event="...">narration</go>` steps that follow transitions from the initial state, like a `<flow>`.
-- `<flow title>`: an ordered story: `<node>`s and `<step from to? label? ref?>narration</step>`. A step without `to` is an action inside `from`. Use it for "what happens when".
+- `<flow title>`: an ordered story: `<node>`s and `<step from to? label? kind? ref?>narration</step>`. A step without `to` is an action inside `from`. Use it for "what happens when".
+- `kind` on `<step>` and `<edge>`: `call` (default), `return` (the answer coming back; needs `to`), `async` (queues, events, background jobs). Calls are drawn solid, returns dashed, async dotted.
 - `<node id label desc? kind? ref?>`; `kind` is one of `actor`, `ui`, `service`, `module`, `function`, `store`, `external` (default `module`).
 - `desc` (on `<node>`, `<group>`, `<entity>`, `<status>`): one line, at most 80 characters, saying what the part does, shown inside the box. Give one to every box; start with a verb or name the responsibility ("Validates the session", "Ranks the 15 candidates"), never repeat the label.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
@@ -71,3 +75,12 @@ One short paragraph of context.
 - Pick the view that answers the question: `<arch>` for parts, `<flow>` for a sequence, `<data>` for stored data, `<state>` for a lifecycle. One or two per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
 - Labels are names a reader recognizes (file or concept), at most 80 characters; narration is one or two plain sentences per step.
 - Explain what the code does, not what it might do; if you are unsure, say so in the prose.
+
+## Flows that make sense
+
+- **One story.** After the first step, every step starts at a node the story already reached; the parser rejects jumps. If a part starts working, first show who calls it.
+- **Show what comes back** with `kind="return"` when it matters (rows, a token, the 5 sources), so the reader sees how data returns before the next step uses it. Skip trivial acknowledgements.
+- **Async** (`kind="async"`) for queues, events, timers and background jobs: nobody waits for them.
+- **Checks before the handler** (middleware, guards, feature flags) are steps through each check in order, or one action step inside the route; never a call from the route to the middleware.
+- **Labels name what travels**, in one to four words ("credentials", "JWT", "15 candidates"), on steps and on `<arch>` edges alike.
+- **Narration says what happens and why it matters**, in one or two sentences, without repeating the label.
