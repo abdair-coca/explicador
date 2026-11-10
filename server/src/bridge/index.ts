@@ -9,7 +9,7 @@ import type { AddressInfo } from 'node:net';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStandalone, ExportError } from '../export/index.ts';
-import type { Question, QuestionsPayload, ScenePayload } from '../scene.ts';
+import type { Question, QuestionsPayload, ScenePayload, Tour } from '../scene.ts';
 
 export type { ScenePayload } from '../scene.ts';
 
@@ -17,6 +17,9 @@ export type SceneInput = Omit<ScenePayload, 'version'>;
 
 /** Handler for POST /api/<name>; receives the parsed JSON body, returns the JSON reply. */
 export type Action = (body: Record<string, unknown>) => Record<string, unknown>;
+
+/** Handler for GET /api/<name>?...; receives the query, returns the status and JSON body of the reply. */
+export type Reader = (query: URLSearchParams) => { status: number; body: unknown };
 
 export interface BridgeOptions {
   /** Folder with the built viewer (`viewer/dist`). */
@@ -53,9 +56,11 @@ export class Bridge {
   private readonly viewerStreams = new Set<ServerResponse>();
   private readonly monitorStreams = new Set<ServerResponse>();
   private readonly actions = new Map<string, Action>();
+  private readonly readers = new Map<string, Reader>();
   private readonly keepalive: NodeJS.Timeout;
   private scene: ScenePayload | undefined;
   private asked: Question[] = [];
+  private tour: Tour | undefined;
   private version = 0;
   private origin = '';
 
@@ -114,6 +119,11 @@ export class Bridge {
     this.actions.set(name, handler);
   }
 
+  /** Registers GET /api/<name>. */
+  reader(name: string, handler: Reader): void {
+    this.readers.set(name, handler);
+  }
+
   /** Shows a scene in every open viewer tab; opens a tab when none is connected. */
   publish(scene: SceneInput, questions: Question[] = []): ScenePayload {
     this.version += 1;
@@ -143,6 +153,22 @@ export class Bridge {
   private questionsEvent(): string {
     const payload: QuestionsPayload = { key: this.scene?.key ?? '', questions: this.asked };
     return `event: questions\ndata: ${JSON.stringify(payload)}\n\n`;
+  }
+
+  /** The code tour the viewer last received, if any. */
+  get currentTour(): Tour | undefined {
+    return this.tour;
+  }
+
+  /** Starts a code tour in every open viewer tab; opens a tab when none is connected. */
+  publishTour(tour: Tour): void {
+    this.tour = tour;
+    for (const res of this.viewerStreams) res.write(this.tourEvent(tour));
+    if (this.viewerStreams.size === 0) this.openUrl(this.url);
+  }
+
+  private tourEvent(tour: Tour): string {
+    return `event: tour\ndata: ${JSON.stringify(tour)}\n\n`;
   }
 
   /** Sends one single-line message to every connected click monitor; returns how many got it. */
@@ -176,6 +202,11 @@ export class Bridge {
         if (name === 'events') return this.stream(req, res, this.viewerStreams, true);
         if (name === 'clicks') return this.stream(req, res, this.monitorStreams, false);
         if (name === 'export') return this.export(res);
+        const reader = this.readers.get(name);
+        if (reader) {
+          const reply = reader(url.searchParams);
+          return send(res, reply.status, reply.body);
+        }
         return send(res, 404, { error: 'not found' });
       }
       const action = this.actions.get(name);
@@ -221,7 +252,11 @@ export class Bridge {
       connection: 'keep-alive',
       ...securityHeaders,
     });
-    res.write(hello ? `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n${this.questionsEvent()}` : ': connected\n\n');
+    res.write(
+      hello
+        ? `event: scene\ndata: ${JSON.stringify({ version: this.version })}\n\n${this.questionsEvent()}${this.tour ? this.tourEvent(this.tour) : ''}`
+        : ': connected\n\n',
+    );
     streams.add(res);
     req.on('close', () => streams.delete(res));
   }

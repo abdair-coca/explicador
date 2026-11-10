@@ -58,6 +58,7 @@ export function describeQuestion(scene: ScenePayload, target: ClickTarget, quest
       `Answer in the user's language with answer_question (topic "${scene.topic}", question "${question.id}"): ` +
       'a short Markdown answer for the panel, with refs to the lines that prove it when they help. ' +
       'If the question deserves a diagram, first call render_scene with background true under a new topic and pass that topic as scene. ' +
+      'If it is about how code runs, add a tour (steps with ref and note) so the user can step through it in the code window. ' +
       'Then reply in the chat with one sentence.',
   );
 }

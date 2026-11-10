@@ -225,6 +225,89 @@ describe('clicks reach the monitor of the same session', () => {
     assert.match((await call('answer_question', { topic: 'auth routes', question: questionId, answer: 'Late.' })).text, /no question/);
   });
 
+  /** Reads the event stream until `marker` shows up (or the time runs out) and returns what arrived. */
+  async function readEvents(marker: string, trigger?: () => Promise<unknown>): Promise<string> {
+    const abort = new AbortController();
+    const response = await fetch(`${origin}/api/events?t=${token}`, { signal: abort.signal });
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let received = '';
+    const reading = (async () => {
+      while (!received.includes(marker)) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += decoder.decode(value);
+      }
+    })();
+    if (trigger) {
+      await delay(100);
+      await trigger();
+    }
+    await Promise.race([reading, delay(3000)]);
+    abort.abort();
+    await reading.catch(() => {});
+    return received;
+  }
+
+  const tourSteps = [
+    { ref: 'src/api/auth-routes.js:6-8', note: 'It **validates** the body first.' },
+    { ref: 'src/api/auth-routes.js:18-19', note: 'Then it sets the cookie.' },
+  ];
+
+  it('serves project files and the tree to the viewer, behind the token', async () => {
+    const get = (path: string, from = token) => fetch(`${origin}${path}`, { headers: from ? { 'x-token': from } : {} });
+    const file = await get('/api/file?path=src/api/auth-routes.js');
+    assert.equal(file.status, 200);
+    const body = (await file.json()) as { path: string; lines: string[] };
+    assert.equal(body.path, 'src/api/auth-routes.js');
+    assert.ok(body.lines.length >= 19);
+    assert.equal((await get('/api/file?path=.explicador/runtime/x.json')).status, 403);
+    assert.equal((await get('/api/file?path=..%2F..%2Fpackage.json')).status, 403);
+    assert.equal((await get('/api/file?path=src/ghost.js')).status, 404);
+    assert.equal((await get('/api/file')).status, 400);
+    assert.equal((await get('/api/file?path=src/api/auth-routes.js', '')).status, 403);
+    const tree = (await (await get('/api/tree')).json()) as { files: string[] };
+    assert.ok(tree.files.includes('src/api/auth-routes.js'));
+    assert.ok(!tree.files.some((path) => path.startsWith('.')));
+  });
+
+  it('opens a tour with explain_code, and replays it to a viewer that connects later', async () => {
+    const refused = await call('explain_code', { title: 'Bad', steps: [{ ref: 'src/ghost.js:1-2', note: 'x' }] });
+    assert.ok(refused.isError);
+    assert.match(refused.text, /step 1 .*does not exist/);
+
+    let started = { isError: true, text: '' };
+    const events = await readEvents('event: tour', async () => {
+      started = await call('explain_code', { title: 'How login is checked', steps: tourSteps });
+    });
+    assert.ok(!started.isError, started.text);
+    assert.match(started.text, /2 steps\) is open in the code window/);
+    const tour = JSON.parse(/event: tour\ndata: (.*)\n/.exec(events)?.[1] ?? 'null') as { id: string; title: string; steps: { ref: unknown; note: string }[] };
+    assert.equal(tour.title, 'How login is checked');
+    assert.deepEqual(tour.steps[0], { ref: { path: 'src/api/auth-routes.js', start: 6, end: 8 }, note: 'It **validates** the body first.' });
+
+    const later = await readEvents('event: tour');
+    assert.ok(later.includes(`"id":"${tour.id}"`), 'a viewer that connects afterwards gets the last tour');
+  });
+
+  it('keeps a tour in the answer to a question, and refuses an answer whose tour is wrong', async () => {
+    const asked = await post('/api/ask', { block: 'routes-flow', node: 'routes', question: 'Walk me through it' });
+    const id = String(asked.json.id);
+    const args = { topic: 'auth routes', question: id, answer: 'Here is the path.' };
+    const bad = await call('answer_question', { ...args, tour: { title: 'Bad', steps: [{ ref: 'src/api/auth-routes.js:99-120', note: 'x' }] } });
+    assert.ok(bad.isError);
+    assert.match(bad.text, /fix the tour/);
+    assert.equal((await questions()).questions.find((q) => q.id === id)?.answer, undefined);
+
+    const good = await call('answer_question', { ...args, tour: { title: 'Login path', steps: tourSteps } });
+    assert.ok(!good.isError, good.text);
+    const answer = (await questions()).questions.find((q) => q.id === id)?.answer as { tour?: { title: string; steps: unknown[] } } | undefined;
+    assert.equal(answer?.tour?.title, 'Login path');
+    assert.equal(answer?.tour?.steps.length, 2);
+    const saved = JSON.parse(readFileSync(join(project, '.explicador/scenes/auth-routes.json'), 'utf8')) as { questions: { answer?: { tour?: unknown } }[] };
+    assert.ok(saved.questions.some((q) => q.answer?.tour), 'the tour is saved with the scene');
+  });
+
   it('rejects unknown nodes, foreign origins and missing tokens', async () => {
     assert.deepEqual((await post('/api/click', { block: 'routes-flow', node: 'ghost' })).json, { status: 'unknown' });
     assert.equal((await post('/api/click', { block: 'routes-flow', node: 'routes' }, 'http://evil.example')).status, 403);

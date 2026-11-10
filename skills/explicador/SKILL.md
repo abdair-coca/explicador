@@ -23,9 +23,15 @@ You explain code with **scenes**: an EXL document (Markdown plus a few diagram t
    - `answer`: Markdown in the user's language, answer first, 2–6 sentences or a short list. Say so when you are unsure.
    - `refs`: up to 3 line ranges (`path:start-end`, at most 40 lines) that prove the answer. The server copies the lines: never paste code into the answer.
    - When the question deserves a diagram (a sequence, a lifecycle, several parts), first call `render_scene` with `background: true` under a new topic, then pass that topic as `scene`; the panel links to it and the user's view does not jump.
+   - `tour`: when the answer is about how code runs, add a tour (see step 9); the panel offers it as a button and never opens it by itself.
    - Then reply in the chat with one sentence. Do not re-render the scene the question belongs to: that drops its questions.
-9. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
-10. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
+9. **Code walkthroughs**: when the user asks you to explain code (a file, a function, "show me the code", "walk me through…"), read it and call `explain_code`. The viewer opens a VS Code-like code window, jumps to each step, highlights its lines, dims the rest and shows your note under them; the user can step, jump and autoplay.
+   - `steps`: 3–10 in reading order, each `ref` a line range (`path:start-end`, at most 80 lines, check the numbers) and a `note` of 1–3 sentences in the user's language that says what those lines do and why they matter. Split a long function into steps; do not narrate trivial lines.
+   - `title`: what the tour explains. The server checks every file and line; fix what it reports and call again.
+   - Then reply in the chat with 2–4 sentences summarizing it. Do not repeat the notes.
+   - The window also opens by itself on a box's lines when the user clicks it, so no tool call is needed for that.
+10. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
+11. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
 
 ## EXL in short
 

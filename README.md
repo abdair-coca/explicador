@@ -12,7 +12,8 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 5 (Titi look, done pending the user's review): the viewer follows SocialNeo's Titi design system (cream and yellow, Nunito, tiles with a hard shadow, playful entrances), edge labels get their own room and stay legible, long chains wrap into rows, and boxes show a one-line `desc`.
 - Phase 6 (flows that make sense, done pending the user's review): steps and edges have a `kind` (calls solid, returns dashed, async dotted, with a legend); a flow step can only start where the story already is, so scenes cannot jump; the narration links the step before and after.
 - Phase 7 (detail panel, done pending the user's review): clicking a box opens a side panel with its description, a longer explanation and its key code (`<code>`, lines copied from the file by the server, highlighted), plus "Go deeper".
-- Phase 8 (questions, done pending the user's review): the panel has a question box; Claude answers in the panel with the `answer_question` tool (Markdown, code lines copied by the server, an optional link to a scene it drew in the background). Questions are saved with the scene. Plan: `.dev/PLAN.md`.
+- Phase 8 (questions, done pending the user's review): the panel has a question box; Claude answers in the panel with the `answer_question` tool (Markdown, code lines copied by the server, an optional link to a scene it drew in the background). Questions are saved with the scene.
+- Phase 9 (code window, done pending the user's review): clicking a box also opens a VS Code-like read-only window under the diagram (tabs, file explorer, highlighted lines); Claude can walk you through code with the `explain_code` tool, a guided tour that highlights each part with a note, and an answer can carry a tour too. Plan: `.dev/PLAN.md`.
 
 ## Use it (from a checkout)
 
@@ -34,6 +35,10 @@ The first run reads the index and the code, then renders the scene and opens the
 
 In the viewer, click a group to zoom into it, or any other box to open its detail panel: what it does, a longer explanation and its key code, read from the file. "Go deeper" in the panel asks Claude (through the plugin monitor) to explain that part, and the viewer zooms into the new scene. Breadcrumbs at the top go back.
 
+**Code window.** Clicking a box with a `ref` also opens a read-only code window under the diagram, like VS Code's panel: tabs, a file explorer of the project, line numbers, colors, and the box's lines highlighted. Drag its top edge (or use the arrow keys on it) to resize; close it with the X and clicks stop opening it until you press **View code** in the panel. Below 1024 px it is a bottom sheet opened only from **View code**.
+
+Ask Claude in the chat to explain some code ("walk me through how the password is checked") and it starts a **tour**: the window jumps from step to step, highlights the lines, dims the rest and shows a note under them. ← and → move between steps, the dots jump, and the play button advances by itself. An answer to a panel question can come with a tour as well ("Walk through the code"). The window reads files from the project through the local bridge (see Architecture); it is not in exported files.
+
 The box at the bottom of the panel asks Claude a question about that part (Enter sends; three suggestions get you started). The answer appears in the panel a few seconds later, with the lines of code that prove it and, when Claude drew one, a link to a deeper scene; the view never jumps on its own. Boxes you asked about carry a "?" mark, and questions stay with the scene until it is rendered again. Going deeper and asking need an interactive session; plugin monitors do not run under `claude -p`.
 
 State lives in the analyzed project: `.explicador/index/` (file tree + imports), `.explicador/scenes/` (cached scenes with their questions and answers) and `FINDINGS.md`.
@@ -43,7 +48,7 @@ State lives in the analyzed project: `.explicador/index/` (file tree + imports),
 - `.claude-plugin/plugin.json`: plugin manifest, including the MCP server (`node ${CLAUDE_PLUGIN_ROOT}/server/dist/index.js`).
 - `monitors/monitors.json`: the click monitor (`server/dist/monitor.js`). It reads `.explicador/runtime/<session id>.json`, written by the MCP server of the same session, and prints one line per click or question, which Claude Code delivers to Claude.
 - `skills/explicador/`: how Claude explains and writes EXL; `skills/explain/`: `/explicador:explain <topic>`.
-- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `answer_question`, `export_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and questions and feeds the monitor.
+- `server/`: MCP tools `ensure_index`, `show_scene`, `render_scene`, `answer_question`, `explain_code`, `export_scene`, `add_finding`, plus a 127.0.0.1 bridge (Host check, per-launch token, Origin check on POST) that serves the viewer, takes clicks and questions, feeds the monitor and serves project files to the code window (`GET /api/file`, `/api/tree`: text files up to 512 KB inside the project, never hidden files or folders such as `.env` or `.git`, never through symbolic links out of it).
 - `viewer/`: Vite + React + Tailwind; scenes are SVG laid out with ELK.js.
 - `docs/EXL.md`: the scene format. Views: `<arch>` (parts, with `<group>`), `<flow>` (steps), `<data>` (data model), `<state>` (state machine with a walk).
 - `examples/scenes/`: sample scenes for `examples/shop`; try them with `npm run preview -- examples/scenes/session-states.exl.md --project examples/shop`.

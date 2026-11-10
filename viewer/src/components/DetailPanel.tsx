@@ -2,9 +2,9 @@
 // and the questions the user asked Claude about it. On small screens it is a bottom sheet;
 // in exported files it is read-only.
 import Markdown from 'react-markdown';
-import type { NodeKind, Question, Ref, SceneBlock, ScenePayload } from '../../../server/src/scene.ts';
+import type { NodeKind, Question, Ref, SceneBlock, ScenePayload, Tour } from '../../../server/src/scene.ts';
 import { CodeCard } from './CodeCard';
-import { ArrowRightIcon, CloseIcon, kindIcon } from './icons';
+import { ArrowRightIcon, CloseIcon, CodeIcon, kindIcon } from './icons';
 import { AskBox, QuestionThread, type AskHandler } from './Questions';
 import { formatRef } from './scenes';
 import type { Selected } from './selection';
@@ -22,7 +22,7 @@ interface Item {
   ref?: Ref | undefined;
 }
 
-function findItem(block: SceneBlock, id: string): Item | undefined {
+export function findItem(block: SceneBlock, id: string): Item | undefined {
   if (block.type === 'arch' || block.type === 'flow') {
     const node = block.nodes.find((n) => n.id === id);
     return node && { ...node, icon: kindIcon[node.kind], caption: node.kind };
@@ -48,6 +48,9 @@ export function DetailPanel(props: {
   onFollow?: ((question: string) => void) | undefined;
   /** Question to scroll to when the panel opens. */
   focus?: string | undefined;
+  /** Opens lines in the code window; absent in exported files. */
+  onOpenCode?: ((ref: Ref) => void) | undefined;
+  onTour?: ((tour: Tour) => void) | undefined;
 }) {
   const block = props.scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === props.selected.block);
   const item = block && findItem(block, props.selected.node);
@@ -99,7 +102,7 @@ export function DetailPanel(props: {
           <section className="space-y-3">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Key code</h3>
             {codes.map((code) => (
-              <CodeCard key={formatRef(code.ref)} code={code} />
+              <CodeCard key={formatRef(code.ref)} code={code} onOpen={props.onOpenCode} />
             ))}
           </section>
         )}
@@ -116,16 +119,26 @@ export function DetailPanel(props: {
           </p>
         )}
 
-        {props.onDeeper && (
-          <Button variant="primary" className="w-full" onClick={props.onDeeper}>
-            Go deeper
-            <ArrowRightIcon size={16} />
-          </Button>
+        {(props.onDeeper || (props.onOpenCode && item.ref)) && (
+          <div className="flex gap-2.5">
+            {props.onOpenCode && item.ref && (
+              <Button variant="secondary" className="flex-1" onClick={() => props.onOpenCode?.(item.ref as Ref)}>
+                <CodeIcon size={16} />
+                View code
+              </Button>
+            )}
+            {props.onDeeper && (
+              <Button variant="primary" className="flex-1" onClick={props.onDeeper}>
+                Go deeper
+                <ArrowRightIcon size={16} />
+              </Button>
+            )}
+          </div>
         )}
 
         {props.onAsk && (
           <>
-            <QuestionThread questions={questions} onFollow={props.onFollow ?? (() => {})} focus={props.focus} />
+            <QuestionThread questions={questions} onFollow={props.onFollow ?? (() => {})} onTour={props.onTour} onOpenCode={props.onOpenCode} focus={props.focus} />
             <AskBox label={item.label} onAsk={props.onAsk} showSuggestions={questions.length === 0} />
           </>
         )}

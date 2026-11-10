@@ -2,10 +2,10 @@
 // Claude answers through the answer_question tool; the answer arrives over the event stream.
 import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
-import type { Question } from '../../../server/src/scene.ts';
+import type { Question, Ref, Tour } from '../../../server/src/scene.ts';
 import type { AskReply } from '../api';
 import { CodeCard } from './CodeCard';
-import { ArrowRightIcon, SendIcon } from './icons';
+import { ArrowRightIcon, CodeIcon, SendIcon } from './icons';
 import { Button } from './ui/button';
 
 const MAX_LENGTH = 500;
@@ -19,6 +19,9 @@ export type AskHandler = (text: string) => Promise<AskReply>;
 export function QuestionThread(props: {
   questions: Question[];
   onFollow: (id: string) => void;
+  /** Absent in exported files and while there is no code window. */
+  onTour?: ((tour: Tour) => void) | undefined;
+  onOpenCode?: ((ref: Ref) => void) | undefined;
   /** Question to bring into view when the panel opens from the "Claude answered" notice. */
   focus?: string | undefined;
 }) {
@@ -55,7 +58,15 @@ export function QuestionThread(props: {
                 <div className="prose-exl prose-panel">
                   <Markdown>{question.answer.text}</Markdown>
                 </div>
-                {question.answer.codes?.map((code, j) => <CodeCard key={j} code={code} />)}
+                {question.answer.codes?.map((code, j) => <CodeCard key={j} code={code} onOpen={props.onOpenCode} />)}
+                {question.answer.tour && props.onTour && (
+                  <Button size="sm" variant="primary" className="h-auto min-h-9 w-full whitespace-normal py-1.5" onClick={() => props.onTour?.(question.answer?.tour as Tour)}>
+                    <CodeIcon size={16} className="shrink-0" />
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      Walk through the code · {question.answer.tour.steps.length} {question.answer.tour.steps.length === 1 ? 'step' : 'steps'}
+                    </span>
+                  </Button>
+                )}
                 {question.answer.scene && (
                   <Button size="sm" className="h-auto min-h-9 w-full whitespace-normal py-1.5" onClick={() => props.onFollow(question.id)}>
                     <span className="min-w-0 [overflow-wrap:anywhere]">See it drawn: {question.answer.scene.topic}</span>

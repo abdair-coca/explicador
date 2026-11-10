@@ -47,7 +47,7 @@ export function ensureIndex(root: string): IndexResult {
   const dir = stateDir(root, 'index');
   const metaPath = join(dir, 'meta.json');
   const previous = readMeta(metaPath);
-  const { paths, truncated } = walk(root);
+  const { paths, truncated } = listProjectFiles(root);
 
   const files: Record<string, FileEntry> = {};
   let changed = 0;
@@ -110,7 +110,8 @@ function clip(text: string, max: number, path: string): string {
   return `${text.slice(0, cut > 0 ? cut : max)}\n… (truncated; read ${path} for the rest)`;
 }
 
-function walk(root: string): { paths: string[]; truncated: boolean } {
+/** The project's files, sorted, as relative paths with forward slashes. */
+export function listProjectFiles(root: string): { paths: string[]; truncated: boolean } {
   const ignore = gitignoreNames(root);
   const paths: string[] = [];
   let truncated = false;

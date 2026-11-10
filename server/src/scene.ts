@@ -22,10 +22,27 @@ export interface AnswerCode {
   missing?: boolean;
 }
 
+/** One stop of a code tour: a range of lines and what to say about it. */
+export interface TourStep {
+  /** Always a line range. */
+  ref: Ref;
+  /** Markdown, shown under the highlighted lines. */
+  note: string;
+}
+
+/** A guided walk through code. The viewer opens each file itself; the steps carry no lines. */
+export interface Tour {
+  id: string;
+  title: string;
+  steps: TourStep[];
+}
+
 export interface Answer {
   /** Markdown. */
   text: string;
   codes?: AnswerCode[];
+  /** A code tour for this answer; the panel offers it, the window plays it. */
+  tour?: Tour;
   /** A deeper scene the agent drew for this question; the viewer links to it. */
   scene?: TrailEntry;
   answeredAt: string;

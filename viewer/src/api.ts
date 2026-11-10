@@ -1,6 +1,6 @@
 // Talks to the bridge: GET /api/scene with the per-launch token, and an event stream for updates.
 import { useEffect, useState } from 'react';
-import type { Question, QuestionsPayload, ScenePayload } from '../../server/src/scene.ts';
+import type { Question, QuestionsPayload, ScenePayload, Tour } from '../../server/src/scene.ts';
 
 const token = new URLSearchParams(window.location.search).get('t') ?? '';
 
@@ -21,9 +21,10 @@ async function fetchScene(): Promise<ScenePayload | null> {
 
 const noQuestions: Question[] = [];
 
-export function useScene(): { scene: ScenePayload | null; questions: Question[]; connection: Connection } {
+export function useScene(): { scene: ScenePayload | null; questions: Question[]; tour: Tour | undefined; connection: Connection } {
   const [scene, setScene] = useState<ScenePayload | null>(staticScene);
   const [asked, setAsked] = useState<QuestionsPayload>();
+  const [tour, setTour] = useState<Tour>();
   const [connection, setConnection] = useState<Connection>(staticScene ? 'static' : token ? 'connecting' : 'forbidden');
 
   useEffect(() => {
@@ -43,12 +44,16 @@ export function useScene(): { scene: ScenePayload | null; questions: Question[];
     events.addEventListener('questions', (event) => {
       setAsked(JSON.parse((event as MessageEvent<string>).data) as QuestionsPayload);
     });
+    // A code tour Claude started in the chat; the code window plays it.
+    events.addEventListener('tour', (event) => {
+      setTour(JSON.parse((event as MessageEvent<string>).data) as Tour);
+    });
     events.onerror = () => setConnection(events.readyState === EventSource.CLOSED ? 'forbidden' : 'lost');
     return () => events.close();
   }, []);
 
   // The two events are independent: show questions only once they belong to the scene on screen.
-  return { scene, questions: scene && asked?.key === scene.key ? asked.questions : noQuestions, connection };
+  return { scene, questions: scene && asked?.key === scene.key ? asked.questions : noQuestions, tour, connection };
 }
 
 /** POST /api/<name>; the bridge checks the token and that the request comes from this page. */
@@ -73,3 +78,29 @@ export type ClickReply =
   | { status: 'sent'; topic: string; monitors: number }
   | { status: 'no-monitor'; topic: string; message: string }
   | { status: 'unknown' };
+
+export type FileReply = { ok: true; lines: string[] } | { ok: false; error: 'missing' | 'denied' | 'binary' | 'too-large' | 'unreachable' };
+
+const fileErrors = new Set(['missing', 'denied', 'binary', 'too-large']);
+
+/** GET /api/file: a text file of the project, for the code window. */
+export async function fetchFile(path: string): Promise<FileReply> {
+  try {
+    const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`, { headers: { 'x-token': token }, cache: 'no-store' });
+    const body = (await response.json()) as { lines?: string[]; error?: string };
+    if (response.ok && body.lines) return { ok: true, lines: body.lines };
+    return { ok: false, error: body.error && fileErrors.has(body.error) ? (body.error as 'missing') : 'unreachable' };
+  } catch {
+    return { ok: false, error: 'unreachable' };
+  }
+}
+
+/** GET /api/tree: the project's files, for the explorer. */
+export async function fetchTree(): Promise<{ files: string[]; truncated: boolean } | undefined> {
+  try {
+    const response = await fetch('/api/tree', { headers: { 'x-token': token }, cache: 'no-store' });
+    return response.ok ? ((await response.json()) as { files: string[]; truncated: boolean }) : undefined;
+  } catch {
+    return undefined;
+  }
+}

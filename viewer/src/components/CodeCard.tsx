@@ -2,16 +2,30 @@
 import { useMemo } from 'react';
 import type { Ref } from '../../../server/src/scene.ts';
 import { highlight } from '../lib/highlight';
+import { CodeIcon } from './icons';
 import { formatRef } from './scenes';
 
-export function CodeCard({ code }: { code: { ref: Ref; note?: string; lines?: string[]; missing?: boolean } }) {
+export function CodeCard({ code, onOpen }: { code: { ref: Ref; note?: string; lines?: string[]; missing?: boolean }; onOpen?: ((ref: Ref) => void) | undefined }) {
   const lines = useMemo(() => (code.lines ? highlight(code.lines, code.ref.path) : []), [code]);
   const first = code.ref.start ?? 1;
   return (
     <figure className="overflow-hidden rounded-xl border border-border-soft">
-      <figcaption className="space-y-1 bg-subtle px-3 py-2.5">
-        {code.note && <p className="text-sm font-bold leading-snug">{code.note}</p>}
-        <code className="block break-all font-mono text-xs font-semibold text-muted-foreground">{formatRef(code.ref)}</code>
+      <figcaption className="flex items-start gap-2 bg-subtle px-3 py-2.5">
+        <div className="min-w-0 flex-1 space-y-1">
+          {code.note && <p className="text-sm font-bold leading-snug">{code.note}</p>}
+          <code className="block break-all font-mono text-xs font-semibold text-muted-foreground">{formatRef(code.ref)}</code>
+        </div>
+        {onOpen && !code.missing && (
+          <button
+            type="button"
+            onClick={() => onOpen(code.ref)}
+            title="Open in the code window"
+            aria-label={`Open ${formatRef(code.ref)} in the code window`}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-primary-light hover:text-foreground active:scale-[0.92]"
+          >
+            <CodeIcon size={16} />
+          </button>
+        )}
       </figcaption>
       {code.missing || !code.lines ? (
         <p className="px-3 py-2.5 text-sm font-bold text-red-600">These lines are no longer in the file; ask Claude to refresh the scene.</p>

@@ -1,10 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
-import type { ScenePayload } from '../../server/src/scene.ts';
+import type { Ref, ScenePayload, Tour } from '../../server/src/scene.ts';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply, type Connection } from './api';
-import { DetailPanel } from './components/DetailPanel';
+import { CodeDock } from './code/CodeDock';
+import { readPref, useMedia, writePref } from './code/hooks';
+import { codeReducer, initialCode } from './code/state';
+import { DetailPanel, findItem } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
 import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
 import { SelectionContext, type Selected, type Selection } from './components/selection';
@@ -28,7 +31,7 @@ type Notice = { tone: 'info' | 'warning'; text: React.ReactNode } | undefined;
 type Transition = { direction: 'in'; fromKey: string; box: Box | undefined } | { direction: 'out'; toKey: string };
 
 export function App() {
-  const { scene, questions, connection } = useScene();
+  const { scene, questions, tour, connection } = useScene();
   const [notice, setNotice] = useState<Notice>();
   const [transition, setTransition] = useState<Transition>();
   const [presenting, setPresenting] = useState(false);
@@ -36,6 +39,12 @@ export function App() {
   /** Question the panel scrolls to when it opens from the "Claude answered" notice. */
   const [focus, setFocus] = useState<string>();
   const main = useRef<HTMLElement>(null);
+  const [code, dispatch] = useReducer(codeReducer, initialCode);
+  /** Clicking a box opens the code window on it, until the user closes the window. */
+  const [autoCode, setAutoCode] = useState(() => readPref('code-auto', true));
+  const wide = useMedia('(min-width: 1024px)');
+  const latest = useRef({ scene, autoCode, wide, touring: code.tour !== undefined });
+  latest.current = { scene, autoCode, wide, touring: code.tour !== undefined };
   const shown = useRef<{ version: number; key: string } | undefined>(undefined);
   /** The clicked box, so "Go deeper" can zoom out of it. */
   const anchor = useRef<Element | null>(null);
@@ -86,11 +95,39 @@ export function App() {
         anchor.current = element;
         setFocus(undefined);
         // Clicking the open box again closes its details.
-        setSelected((current) => (current?.block === block && current.node === node ? undefined : { block, node }));
+        const closing = open.current?.block === block && open.current.node === node;
+        setSelected(closing ? undefined : { block, node });
+        // Beside its details, show the box's code. Small screens keep the sheet for the details; a tour keeps its own lines.
+        const { scene: current, autoCode: auto, wide: roomy, touring } = latest.current;
+        if (closing || offline || !auto || !roomy || touring) return;
+        const found = current?.blocks.find((b) => b.type !== 'markdown' && b.id === block);
+        const ref = found && found.type !== 'markdown' ? findItem(found, node)?.ref : undefined;
+        if (ref) dispatch({ type: 'show', ref });
       },
     }),
     [selected, asked],
   );
+
+  // A tour Claude started in the chat plays in the code window.
+  const lastTour = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!tour || tour.id === lastTour.current) return;
+    lastTour.current = tour.id;
+    dispatch({ type: 'tour', tour });
+  }, [tour]);
+
+  /** The user asked for code (View code, a code card): the window opens and clicks on boxes keep showing code. */
+  const openCode = (ref: Ref): void => {
+    setAutoCode(true);
+    writePref('code-auto', true);
+    dispatch({ type: 'show', ref });
+  };
+  const startTour = (walk: Tour): void => dispatch({ type: 'tour', tour: walk });
+  const closeCode = (): void => {
+    dispatch({ type: 'close' });
+    setAutoCode(false);
+    writePref('code-auto', false);
+  };
 
   // Esc closes the details (presentation mode has its own keys).
   useEffect(() => {
@@ -282,9 +319,12 @@ export function App() {
             scene && selected ? 'max-w-[1720px] lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6' : 'max-w-7xl',
           )}
         >
-          <main ref={main} className="min-w-0 space-y-7">
-            {scene ? <Scene scene={scene} /> : <Empty />}
-          </main>
+          <div className="min-w-0">
+            <main ref={main} className="space-y-7">
+              {scene ? <Scene scene={scene} /> : <Empty />}
+            </main>
+            {!offline && code.open && <CodeDock state={code} dispatch={dispatch} onClose={closeCode} keysOff={presenting} />}
+          </div>
           {scene && selected && (
             <DetailPanel
               scene={scene}
@@ -295,6 +335,8 @@ export function App() {
               onAsk={offline ? undefined : (text) => post<AskReply>('ask', { block: selected.block, node: selected.node, question: text })}
               onFollow={follow}
               focus={focus}
+              onOpenCode={offline ? undefined : openCode}
+              onTour={offline ? undefined : startTour}
             />
           )}
         </div>

@@ -128,6 +128,16 @@ Defaults (approved with the plan):
   - Questions and answers are saved with the scene and shown again when it reopens; not available in exports.
   - Criterion: end-to-end test (ask → monitor line → `answer_question` → viewer update), persistence; user review.
 
+### F9: code window (requested by the user on 2026-11-09, after F8)
+
+The user asked that clicking a box also opens a VS Code-like window with the code, and that Claude can explain code from the chat, highlighting each part. Choices made through a quiz the same day: panel docked under the diagram; read-only viewer with tabs and an explorer; guided tour as the way to highlight; triggers are any chat request, a tour inside an answer, and a "View code" button. This extends product decision 6 (`AGENTS.md` updated).
+
+- [x] **F9. Code window.** Done 2026-11-09 except the user's review. Taken during the phase:
+  - Server: `GET /api/file?path=` (text files up to 512 KB; refuses paths with a dot segment such as `.env`/`.git`/`.explicador`, paths outside the project and links out of it, binary files) and `GET /api/tree` (the index's file list), behind the bridge's token and Host check. New MCP tool `explain_code` (title, 1–12 steps of `ref` line range ≤ 80 lines + note ≤ 600 characters, all checked against the files) and `answer_question` takes `tour`. A tour travels as an SSE `tour` event (replayed to a tab that connects later); a tour in an answer is saved with the question and never opens by itself.
+  - Viewer (`viewer/src/code/`): dock with tabs (max 8), explorer, breadcrumb, status bar, resizable (drag or arrow keys, remembered), highlighted lines, rows off screen are not laid out. Tour bar: dots, previous/next, autoplay (time grows with the note's length), ← → keys, "End tour"; the other lines dim and the note sits under the highlighted lines. Clicking a box with a `ref` opens the window on it at `lg` and up; closing the window stops that until "View code" is pressed (remembered in this browser). Code cards and answers have an "open in the code window" button. Not in exported files.
+  - Checked in Chrome against a stand-in agent (click, View code, tabs, explorer, tour steps across files, autoplay, keys, answer with tour); not checked on a real small screen (the browser window could not be shrunk), with a real Claude session, or by Playwright.
+  - Criterion: server tests (file reading and refusals, tour validation, `explain_code` over the stream, tour in an answer), viewer tests (tree, window and tour state), typecheck, lint; user review.
+
 ## Decisions pending user review
 
 Taken during the unattended F1 session (2026-11-09) as the most conservative option consistent with this plan. Each can be reverted.
@@ -187,3 +197,4 @@ Open points:
 | F6 | done (2026-11-09), user review pending |
 | F7 | done (2026-11-09), user review pending |
 | F8 | done (2026-11-09), user review pending |
+| F9 | done (2026-11-09), user review pending |

@@ -10,7 +10,7 @@ Change these only after the user approves:
 3. Scenes are cached in `.explicador/scenes/` and invalidated by hashes of the files they reference.
 4. The viewer runs in a local browser tab.
 5. Two animation types: step-by-step flow playback and zoom between levels.
-6. Clicking an element opens its detail panel (description, key code); its "Go deeper" button asks the agent to go deeper and its question box asks the agent about the element, both delivered by a plugin monitor (`docs/decisions/interactivity.md`). It works without launch flags.
+6. Clicking an element opens its detail panel (description, key code); its "Go deeper" button asks the agent to go deeper and its question box asks the agent about the element, both delivered by a plugin monitor (`docs/decisions/interactivity.md`); a read-only code window beside it shows the element's code and plays the agent's code tours. It works without launch flags.
 7. Findings are appended to `FINDINGS.md` at the analyzed project's root.
 8. Agent output is EXL: Markdown plus a closed catalog of JSX-like tags, with no embedded JavaScript.
 

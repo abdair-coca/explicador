@@ -56,3 +56,9 @@ export const kindIcon: Record<NodeKind | 'entity' | 'state', string[]> = {
   entity: ['M3 5h18v14H3Z', 'M3 10h18', 'M9 10v9'],
   state: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
 };
+
+export const FolderIcon = icon(['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z']);
+export const FileIcon = icon(['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z', 'M14 3v5h5']);
+export const ChevronRightIcon = icon(['m9 6 6 6-6 6']);
+export const CodeIcon = icon(['m8 8-4 4 4 4', 'm16 8 4 4-4 4', 'm14 5-4 14']);
+export const SidebarIcon = icon(['M3 4h18v16H3Z', 'M9 4v16']);

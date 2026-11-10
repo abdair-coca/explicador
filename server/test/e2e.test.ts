@@ -43,7 +43,7 @@ describe('MCP server over stdio', () => {
 
   it('lists the tools', async () => {
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map((t) => t.name).sort(), ['add_finding', 'answer_question', 'ensure_index', 'export_scene', 'render_scene', 'show_scene']);
+    assert.deepEqual(tools.map((t) => t.name).sort(), ['add_finding', 'answer_question', 'ensure_index', 'explain_code', 'export_scene', 'render_scene', 'show_scene']);
   });
 
   it('builds the index with the import graph', async () => {

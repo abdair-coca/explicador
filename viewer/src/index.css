@@ -282,3 +282,21 @@ body {
 .prose-slide { font-size: 1.45rem; }
 .prose-slide h1 { font-size: 2.8rem; }
 .prose-slide h2 { font-size: 2rem; }
+
+/* Code window: a read-only editor on Titi's dark surface. Rows are a fixed height so scrolling to a line is exact,
+   and rows off screen are not laid out, which keeps big files cheap. */
+.code-editor { background: #1a1a2e; color: #e6eaf0; font-variant-ligatures: none; tab-size: 4; }
+.code-row { height: 20px; line-height: 20px; content-visibility: auto; contain-intrinsic-size: auto 20px; }
+.code-gutter { color: #6b7585; }
+.code-row.marked { background: rgba(255, 217, 61, 0.16); box-shadow: inset 3px 0 0 var(--primary); animation: mark-in 600ms ease-out both; }
+.code-row.marked .code-gutter { color: var(--primary); }
+.code-editor.tour .code-row { transition: opacity var(--dur-base) ease-out; }
+.code-editor.tour .code-row:not(.marked) { opacity: 0.4; }
+@keyframes mark-in {
+  from { background: rgba(255, 217, 61, 0.55); }
+}
+@keyframes tour-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.tour-progress { transform-origin: left; animation: tour-progress linear both; }

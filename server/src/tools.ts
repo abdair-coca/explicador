@@ -11,6 +11,7 @@ import { formatErrors, limits, parseExl, parseRefString } from './parser/index.t
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
 import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
+import { buildTour, tourLimits } from './tours.ts';
 
 export interface ToolDeps {
   root: string;
@@ -29,6 +30,20 @@ const text = (value: string, isError = false): ToolResult => ({
 const MAX_ANSWER_LENGTH = 4000;
 const MAX_ANSWER_REFS = 3;
 
+const tourSchema = z.object({
+  title: z.string().min(1).max(tourLimits.title).describe("What the tour explains, in the user's language."),
+  steps: z
+    .array(
+      z.object({
+        ref: z.string().describe(`"path:start-end": the lines this step highlights (at most ${tourLimits.lines}). Check the numbers.`),
+        note: z.string().min(1).max(tourLimits.note).describe("Markdown, in the user's language: what these lines do and why, in 1-3 sentences."),
+      }),
+    )
+    .min(1)
+    .max(tourLimits.steps)
+    .describe('In reading order. The window opens each file, highlights the lines and shows the note under them.'),
+});
+
 const topicSchema = z
   .string()
   .min(1)
@@ -42,6 +57,7 @@ export const instructions = [
   '(Markdown plus <arch>/<flow> tags; the explicador skill documents the format).',
   'export_scene writes a cached scene as one offline HTML file for sharing.',
   'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
+  'To walk the user through code (a file, a function, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
   'Record non-obvious facts worth keeping with add_finding.',
 ].join(' ');
 
@@ -225,9 +241,12 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           .max(80)
           .optional()
           .describe('Topic of a deeper scene you rendered for this question (render_scene with background true); the panel links to it.'),
+        tour: tourSchema
+          .optional()
+          .describe('A code tour when the answer is about how code runs; the panel offers it and the code window plays it. It never opens by itself.'),
       },
     },
-    async ({ topic, question, answer, refs, scene }) => {
+    async ({ topic, question, answer, refs, scene, tour }) => {
       const key = safeKey(topic);
       if (!key) return text(`Topic "${topic}" needs letters or digits.`, true);
       const codes: { ref: Ref }[] = [];
@@ -241,6 +260,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
         else codes.push({ ref });
       }
       if (problems.length > 0) return text(`Answer not saved, fix these refs:\n${problems.join('\n')}`, true);
+      const built = tour && buildTour(root, tour);
+      if (built && !built.ok) return text(`Answer not saved, fix the tour:\n${built.problems.join('\n')}`, true);
       let linked: { topic: string; key: string } | undefined;
       if (scene !== undefined) {
         const sceneKey = safeKey(scene);
@@ -254,12 +275,38 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
         text: answer.trim(),
         ...(codes.length > 0 ? { codes } : {}),
         ...(linked ? { scene: linked } : {}),
+        ...(built?.ok ? { tour: built.tour } : {}),
       });
       if (result === 'no-scene') return text(`No cached scene for "${topic}"; the question is gone. Answer in the chat instead.`, true);
       if (result === 'no-question') {
         return text(`The scene "${topic}" has no question "${question}" (it was re-rendered since). Answer in the chat instead.`, true);
       }
       return text(`Answer shown in the panel of the scene "${topic}". Reply in the chat with one sentence.`);
+    },
+  );
+
+  mcp.registerTool(
+    'explain_code',
+    {
+      description:
+        'Walk the user through code in the viewer: it opens a VS Code-like code window, jumps to each step, highlights its lines, dims the rest ' +
+        'and shows your note under them, with Previous/Next and autoplay. Use it when the user asks to explain code, a file or a function. ' +
+        'The server checks that every file and line exists. Reply in the chat with a short summary; the notes carry the detail.',
+      inputSchema: tourSchema.shape,
+    },
+    async (input) => {
+      const built = buildTour(root, input);
+      if (!built.ok) return text(`Tour not shown, fix these steps:\n${built.problems.join('\n')}`, true);
+      bridge.publishTour(built.tour);
+      return text(
+        [
+          `Tour "${built.tour.title}" (${built.tour.steps.length} steps) is open in the code window at ${bridge.url}`,
+          'Reply in the chat with 2-4 sentences summarizing it; do not repeat the notes.',
+          bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      );
     },
   );
 
