@@ -1,8 +1,9 @@
 // Full-screen presentation of the current scene. Advances only when the presenter asks.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Prose } from '../components/Prose';
 import type { LinkKind, ScenePayload } from '../../../server/src/scene.ts';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon } from '../components/icons';
+import { DiagramFitContext } from '../components/Diagram';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -10,11 +11,48 @@ import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/vi
 import { cn } from '@/lib/utils';
 import { buildSlides, keyAction, type Slide } from './slides';
 
+/** A diagram never gets smaller than this to make a slide fit; past it, the slide scrolls. */
+const MIN_FIT = 180;
+
+/**
+ * Shrinks the slide's diagram (through `--fit-h` on `stage`) by as much as the slide overflows the stage, so title,
+ * diagram and narration show together. Runs again whenever the slide or the stage change size (the diagram's layout
+ * arrives a moment after the slide, and the window can be resized or go full screen).
+ */
+function useFitToStage(stage: React.RefObject<HTMLElement | null>, slideKey: number): void {
+  useLayoutEffect(() => {
+    const element = stage.current;
+    const slide = element?.firstElementChild;
+    if (!element || !(slide instanceof HTMLElement)) return;
+    element.style.removeProperty('--fit-h');
+    const fit = (): void => {
+      const diagrams = [...slide.querySelectorAll<SVGSVGElement>('svg[role="group"]')];
+      const diagram = diagrams.sort((a, b) => b.clientHeight - a.clientHeight)[0];
+      if (!diagram) return;
+      const style = getComputedStyle(element);
+      const room = element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      // Layout sizes only: the slide's entrance animation scales it, and that must not count.
+      const overflow = slide.offsetHeight - room;
+      // Two pixels of slack absorb fractional heights, which would otherwise leave a 1 px scrollbar.
+      const next = Math.max(MIN_FIT, Math.floor(diagram.clientHeight - overflow) - 2);
+      const current = parseFloat(element.style.getPropertyValue('--fit-h'));
+      if (!Number.isFinite(current) || Math.abs(current - next) > 1) element.style.setProperty('--fit-h', `${next}px`);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    observer.observe(slide);
+    return () => observer.disconnect();
+  }, [stage, slideKey]);
+}
+
 export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () => void }) {
   const slides = useMemo(() => buildSlides(scene.blocks), [scene.blocks]);
   const [index, setIndex] = useState(0);
   const root = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLElement>(null);
   const slide = slides[Math.min(index, slides.length - 1)];
+  useFitToStage(stage, index);
 
   const go = useCallback((next: number) => setIndex(Math.max(0, Math.min(slides.length - 1, next))), [slides.length]);
   const toggleFullscreen = useCallback(() => {
@@ -69,9 +107,11 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
           <CloseIcon size={16} />
         </Button>
       </header>
-      <main className="flex min-h-0 flex-1 items-center justify-center overflow-auto px-6 py-8">
-        <div key={index} className="animate-pop-in w-full max-w-7xl">
-          {slide && <SlideView scene={scene} slide={slide} />}
+      {/* Auto margins center the slide when it fits and let it start at the top when it does not:
+          align-items/justify-content center would push its top out of reach of the scrollbar. */}
+      <main ref={stage} className="flex min-h-0 flex-1 flex-col overflow-auto px-6 py-6">
+        <div key={index} className="animate-pop-in m-auto w-full max-w-7xl">
+          <DiagramFitContext.Provider value={true}>{slide && <SlideView scene={scene} slide={slide} />}</DiagramFitContext.Provider>
         </div>
       </main>
       <footer className="flex items-center gap-4 border-t border-border-soft bg-card px-6 py-3">

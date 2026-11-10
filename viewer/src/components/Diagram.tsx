@@ -1,5 +1,5 @@
 // SVG rendering of a laid-out scene in the Titi style. Highlighting and the moving token are driven by props.
-import { useId } from 'react';
+import { createContext, useContext, useId } from 'react';
 import type { LinkKind } from '../../../server/src/scene.ts';
 import { staggerStep } from '../animation/reveal';
 import {
@@ -22,6 +22,12 @@ import { cn } from '@/lib/utils';
 /** The diagram never shrinks below this scale to fit; it scrolls sideways instead, so text stays legible. */
 const MIN_SCALE = 0.85;
 const MAX_SCALE = 1.15;
+
+/**
+ * Inside a presentation slide, diagrams shrink to fit the screen's height instead of keeping a minimum width:
+ * a slide must show whole. The presenter sets the height they may take in `--fit-h`.
+ */
+export const DiagramFitContext = createContext(false);
 
 export interface DiagramProps {
   layout: Layout;
@@ -64,6 +70,8 @@ export function Diagram(props: DiagramProps) {
   const marker = (edge: LaidEdge): string | undefined =>
     props.arrows === false ? undefined : `url(#${markerId}-arrow${edge.id === activeEdge ? '-active' : ''})`;
   const kinds = new Set(layout.edges.map((e) => e.kind ?? 'call'));
+  const fit = useContext(DiagramFitContext);
+  const maxWidth = Math.max(layout.width, 320) * MAX_SCALE;
 
   return (
     <div>
@@ -71,7 +79,11 @@ export function Diagram(props: DiagramProps) {
         <svg
           viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
           className="mx-auto block h-auto"
-          style={{ width: '100%', minWidth: layout.width * MIN_SCALE, maxWidth: Math.max(layout.width, 320) * MAX_SCALE }}
+          style={
+            fit
+              ? { width: '100%', maxWidth, maxHeight: 'var(--fit-h, none)' }
+              : { width: '100%', minWidth: layout.width * MIN_SCALE, maxWidth }
+          }
           role="group"
           aria-label={props.ariaLabel}
         >
