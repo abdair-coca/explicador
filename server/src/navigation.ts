@@ -3,7 +3,8 @@
 import { randomBytes } from 'node:crypto';
 import type { Bridge } from './bridge/index.ts';
 import { topicKey, type CachedScene, type SceneCache } from './cache/index.ts';
-import { describeClick, describeQuestion, findClickTarget } from './clicks/index.ts';
+import { describeClick, describeExplain, describeExplainFile, describeQuestion, findClickTarget } from './clicks/index.ts';
+import { readProjectFile } from './files.ts';
 import { parseExl, formatErrors } from './parser/index.ts';
 import type { Answer, FileChange, Question, TrailEntry } from './scene.ts';
 import { withAnswerLines, withSnippets } from './snippets.ts';
@@ -26,6 +27,8 @@ export type AskReply =
   | { status: 'no-monitor' }
   | { status: 'invalid'; message: string }
   | { status: 'unknown' };
+
+export type ExplainReply = { status: 'sent' } | { status: 'no-monitor' } | { status: 'unknown' };
 
 export type AnswerResult = 'answered' | 'no-scene' | 'no-question';
 
@@ -132,6 +135,27 @@ export class Navigator {
     this.saveQuestions(current.key, [...stored, question].slice(-MAX_QUESTIONS));
     this.bridge.sendToMonitors(describeQuestion(current, target, question));
     return { status: 'sent', id: question.id };
+  }
+
+  /**
+   * POST /api/explain {block, node} or {path, start?, end?}: asks the agent for a code tour of a box, or of the
+   * file and lines open in the code window. The tour arrives through explain_code.
+   */
+  explain(body: Record<string, unknown>): ExplainReply {
+    let message: string | undefined;
+    if (typeof body.path === 'string') {
+      const start = typeof body.start === 'number' && Number.isInteger(body.start) && body.start > 0 ? body.start : undefined;
+      const end = start !== undefined && typeof body.end === 'number' && Number.isInteger(body.end) && body.end >= start ? body.end : undefined;
+      if (readProjectFile(this.cache.root, body.path).ok) {
+        message = describeExplainFile({ path: body.path, ...(start !== undefined ? { start } : {}), ...(end !== undefined ? { end } : {}) });
+      }
+    } else {
+      const current = this.bridge.current;
+      const target = current && findClickTarget(current, body.block, body.node);
+      if (current && target) message = describeExplain(current, target);
+    }
+    if (message === undefined) return { status: 'unknown' };
+    return this.bridge.sendToMonitors(message) === 0 ? { status: 'no-monitor' } : { status: 'sent' };
   }
 
   /** The agent's answer to a question of the scene cached under `key` (the answer_question tool). */

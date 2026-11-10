@@ -1,9 +1,11 @@
 // Side panel with the details of the selected box: what it does, its key code, "Go deeper",
 // and the questions the user asked Claude about it. On small screens it is a bottom sheet;
 // in exported files it is read-only.
-import Markdown from 'react-markdown';
+import { Prose } from './Prose';
 import type { NodeKind, Question, Ref, SceneBlock, ScenePayload, Tour } from '../../../server/src/scene.ts';
 import { CodeCard } from './CodeCard';
+import type { ExplainReply } from '../api';
+import { ExplainButton } from './ExplainButton';
 import { ArrowRightIcon, CloseIcon, CodeIcon, kindIcon } from './icons';
 import { AskBox, QuestionThread, type AskHandler } from './Questions';
 import { formatRef } from './scenes';
@@ -51,6 +53,10 @@ export function DetailPanel(props: {
   /** Opens lines in the code window; absent in exported files. */
   onOpenCode?: ((ref: Ref) => void) | undefined;
   onTour?: ((tour: Tour) => void) | undefined;
+  /** Asks Claude for a tour of this box's code; absent in exported files. */
+  onExplain?: (() => Promise<ExplainReply>) | undefined;
+  /** Id of the latest tour, so a pending request stops waiting when it arrives. */
+  tourId?: string | undefined;
 }) {
   const block = props.scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === props.selected.block);
   const item = block && findItem(block, props.selected.node);
@@ -93,7 +99,7 @@ export function DetailPanel(props: {
           <section className="space-y-2">
             <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">What it does</h3>
             <div className="prose-exl prose-panel">
-              <Markdown>{item.about}</Markdown>
+              <Prose>{item.about}</Prose>
             </div>
           </section>
         )}
@@ -117,6 +123,16 @@ export function DetailPanel(props: {
           <p className="text-sm font-semibold text-muted-foreground">
             Deeper scene: <span className="font-extrabold text-foreground">{drill}</span>
           </p>
+        )}
+
+        {props.onExplain && item.ref && (
+          <ExplainButton
+            doneKey={props.tourId}
+            ask={props.onExplain}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary-dark bg-primary-light/60 px-5 text-sm font-bold transition-all duration-150 hover:bg-primary-light active:scale-[0.98] disabled:opacity-80"
+          >
+            Explain this code step by step
+          </ExplainButton>
         )}
 
         {(props.onDeeper || (props.onOpenCode && item.ref)) && (

@@ -1,18 +1,28 @@
 // Key code: the lines each <code> points to, copied from the analyzed project when a scene is shown,
 // so the viewer shows the real code and the agent never writes it out.
 import { readFileSync } from 'node:fs';
+import { isNotebookPath, readProjectFile } from './files.ts';
+import { quoteCells } from './notebook.ts';
+import type { Block, NotebookCell, Question, Ref } from './scene.ts';
 import { resolveInside } from './project.ts';
-import type { Block, Question, Ref } from './scene.ts';
 
 /** Longer lines (minified code) are cut so one snippet cannot flood the viewer. */
 const MAX_LINE = 400;
 
-type Lines = { lines: string[] } | { missing: true };
+type Lines = { lines: string[] } | { cells: NotebookCell[] } | { missing: true };
 
 /** Reads the lines of a ref, opening each file once. */
 function lineReader(root: string): (ref: Ref) => Lines {
   const files = new Map<string, string[] | undefined>();
+  const notebooks = new Map<string, ReturnType<typeof readProjectFile>>();
   return (ref) => {
+    if (isNotebookPath(ref.path)) {
+      // A notebook's range counts cells; the quote carries their source only, never their outputs.
+      if (!notebooks.has(ref.path)) notebooks.set(ref.path, readProjectFile(root, ref.path));
+      const file = notebooks.get(ref.path);
+      const cells = file?.ok && 'notebook' in file ? quoteCells(file.notebook, ref.start ?? 1, ref.end ?? ref.start ?? 1) : [];
+      return cells.length > 0 ? { cells } : { missing: true };
+    }
     if (!files.has(ref.path)) {
       const full = resolveInside(root, ref.path);
       let lines: string[] | undefined;

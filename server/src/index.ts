@@ -18,6 +18,7 @@ bridge.action('click', (body) => navigator.click(body));
 bridge.action('open', (body) => navigator.open(body));
 bridge.action('ask', (body) => navigator.ask(body));
 bridge.action('follow', (body) => navigator.follow(body));
+bridge.action('explain', (body) => navigator.explain(body));
 bridge.reader('file', (query) => serveFile(root, query.get('path')));
 bridge.reader('tree', () => serveTree(root));
 

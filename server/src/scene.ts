@@ -1,5 +1,5 @@
 // Types shared with the viewer. Type-only: no Node imports here, the viewer imports this file.
-import type { Block, Ref } from './parser/types.ts';
+import type { Block, NotebookCell, Ref } from './parser/types.ts';
 
 export type * from './parser/types.ts';
 
@@ -19,6 +19,8 @@ export interface AnswerCode {
   /** Always a line range. */
   ref: Ref;
   lines?: string[];
+  /** For a notebook, the quoted cells (source only) instead of lines. */
+  cells?: NotebookCell[];
   missing?: boolean;
 }
 

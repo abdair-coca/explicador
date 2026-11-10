@@ -5,10 +5,13 @@ import type { Bridge } from './bridge/index.ts';
 import { hashFile, SceneCache, topicKey } from './cache/index.ts';
 import { buildStandalone, ExportError } from './export/index.ts';
 import { appendFinding } from './findings/index.ts';
+import { isNotebookPath, readProjectFile } from './files.ts';
 import { describeIndex, ensureIndex } from './index/index.ts';
+import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
 import { formatErrors, limits, parseExl, parseRefString } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
+import { boxesWithoutRange } from './ranges.ts';
 import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
 import { buildTour, tourLimits } from './tours.ts';
@@ -57,7 +60,8 @@ export const instructions = [
   '(Markdown plus <arch>/<flow> tags; the explicador skill documents the format).',
   'export_scene writes a cached scene as one offline HTML file for sharing.',
   'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
-  'To walk the user through code (a file, a function, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
+  'To walk the user through code (a file, a function, a whole flow across files, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
+  'Jupyter notebooks (.ipynb): read them with read_notebook, never as raw JSON; refs to them are cell numbers.',
   'Record non-obvious facts worth keeping with add_finding.',
 ].join(' ');
 
@@ -159,6 +163,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       const hidden = background === true && bridge.current?.key !== saved.scene.key;
       if (!hidden) navigator.show(saved.scene, 'fresh', []);
       const blocks = parsed.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => `<${b.type} id="${b.id}">`);
+      const unfocused = boxesWithoutRange(root, parsed.scene.blocks);
       return text(
         [
           hidden
@@ -166,6 +171,10 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
             : `Rendered "${topic}" (${blocks.join(', ')}) at ${bridge.url}`,
           `Cached as .explicador/scenes/${saved.scene.key}.json, tracking ${parsed.refs.length} referenced files.`,
           bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
+          unfocused.length > 0
+            ? `Warning: these boxes point at a whole file, so the code window cannot focus their code: ${unfocused.slice(0, 12).join(', ')}${unfocused.length > 12 ? ', …' : ''}. ` +
+              'Give each a line range (path:start-end; for a notebook, cell numbers) and render again.'
+            : '',
         ]
           .filter(Boolean)
           .join('\n'),
@@ -307,6 +316,35 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           .filter(Boolean)
           .join('\n'),
       );
+    },
+  );
+
+  mcp.registerTool(
+    'read_notebook',
+    {
+      description:
+        'Read a Jupyter notebook (.ipynb) as numbered cells instead of raw JSON. Without cells: an outline (first 200 characters of each cell and its outputs). ' +
+        'With cells "3-5": those cells whole. Refs to notebooks (scenes, tours, answers) are cell numbers: "path.ipynb:3-5".',
+      inputSchema: {
+        path: z.string().min(1).describe('Path of the .ipynb file, relative to the project root, forward slashes.'),
+        cells: z.string().regex(/^[0-9]+(-[0-9]+)?$/).optional().describe('Cell range such as "4" or "3-5" (at most 12 cells).'),
+      },
+    },
+    async ({ path, cells }) => {
+      if (!isNotebookPath(path)) return text(`"${path}" is not a notebook (.ipynb); read it as a normal file.`, true);
+      const file = readProjectFile(root, path);
+      if (!file.ok || !('notebook' in file)) {
+        return text(`Cannot read the notebook: ${file.ok ? 'not a notebook' : file.reason === 'invalid' ? 'not a valid nbformat 4 notebook' : file.reason}.`, true);
+      }
+      let range: { start: number; end: number } | undefined;
+      if (cells) {
+        const [a, b] = cells.split('-').map(Number);
+        range = { start: a ?? 1, end: b ?? a ?? 1 };
+        if (range.start < 1 || range.end < range.start || range.end - range.start >= 12) {
+          return text('Ask for 1 to 12 cells at a time, e.g. "3-5".', true);
+        }
+      }
+      return text(describeNotebook(path, file.notebook, range));
     },
   );
 

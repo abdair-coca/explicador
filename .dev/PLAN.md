@@ -138,6 +138,21 @@ The user asked that clicking a box also opens a VS Code-like window with the cod
   - Checked in Chrome against a stand-in agent (click, View code, tabs, explorer, tour steps across files, autoplay, keys, answer with tour); not checked on a real small screen (the browser window could not be shrunk), with a real Claude session, or by Playwright.
   - Criterion: server tests (file reading and refusals, tour validation, `explain_code` over the stream, tour in an answer), viewer tests (tree, window and tour state), typecheck, lint; user review.
 
+### F10: focus, explain buttons, flows with code and notebooks (requested by the user on 2026-11-09, after trying F9)
+
+The user tried the plugin on a real project and asked: every box focuses its own code; an "Explain code" button; tours of whole flows, not one box; notebooks (`.ipynb`) that render as cells (they showed as raw JSON); the code window covering everything below the top bar; better open/close animations; and, later in the session, running notebook cells and a fix for Markdown tables (shown as plain text). Choices through a quiz: notebook refs are cells; full cells with outputs; flows get a local instant tour plus Claude for depth; line ranges asked in the skill and warned about by the server; the code follows the flow. Running cells is **F11**, not F10.
+
+- [x] **F10.** Done 2026-11-09 except the user's review. Taken during the phase:
+  - Notebooks: `server/src/notebook.ts` reduces nbformat 4 to numbered cells; outputs kept: text (ANSI removed), errors, HTML without scripts/iframes (shown in an iframe with `sandbox="allow-same-origin"`, no scripts), PNG/JPEG up to 400 KB each and 4 MB per notebook; the rest is "omitted". Notebook files up to 8 MB. HTML-only Markdown cells (banners) go in the same sandboxed frame; mixed Markdown/HTML cells drop their raw HTML. Refs count cells in scenes, `<code>`, answers and tours; `read_notebook` gives Claude the cells (outline or a range of up to 12). Quoted cells carry their source only.
+  - Focus: `render_scene` warns (does not fail) about boxes whose ref has no range, except files of up to 30 lines or notebooks of up to 2 cells; the skill asks for ranges. With the window open, a playing flow moves the code to the active step (its `ref`, else the box it reaches, else the one it starts from).
+  - Explain: "Explain with code" on flows and architectures builds a tour locally from refs and narration (no Claude). "Explain code" in the panel and in the code window posts `/api/explain` (a box, or a file with optional lines), which the monitor delivers as one line asking for `explain_code`; the button shows "Asked Claude…" until the tour arrives.
+  - Window: a fixed layer from under the top bar to the bottom, stopping before the detail panel when it is open at `lg` and up (the old resizable height is gone); it rises with a fade and sinks away before unmounting; Esc closes it first, then the panel.
+  - Markdown tables (`| a | b |` with a separator row) were drawn as plain text because react-markdown has no table support without a plugin. `viewer/src/lib/tables.ts` cuts pipe tables out of the text and `Prose` draws them, with no new dependency; used in scenes, panel, answers, tour notes, notebooks and presentations.
+  - Checked in Chrome against a stand-in agent with a sample notebook (cells, outputs, banner, table, image, tour across a notebook and a script, flow tour button, window next to the panel, code following the flow, Explain button, Esc animation); not checked with a real Claude session, on a small screen, or by Playwright.
+  - Criterion: server tests (notebook parsing, files, tours and quotes in cells, ranges warning, `read_notebook`, `/api/explain`), viewer tests (tables, tours from scenes), typecheck, lint; user review.
+
+- [ ] **F11. Run notebook cells** (planned; approved by the user on 2026-11-09). Jupyter kernel through `python -m ipykernel` if installed (no new dependency for Explicador); a Run button per cell, only on an explicit click and with a warning the first time in each session; 60 s limit, Stop and restart; results shown in the code window and never written to the `.ipynb`; it needs a design pass on security (the bridge would start processes), so it gets its own task, tests and review.
+
 ## Decisions pending user review
 
 Taken during the unattended F1 session (2026-11-09) as the most conservative option consistent with this plan. Each can be reverted.
@@ -198,3 +213,5 @@ Open points:
 | F7 | done (2026-11-09), user review pending |
 | F8 | done (2026-11-09), user review pending |
 | F9 | done (2026-11-09), user review pending |
+| F10 | done (2026-11-09), user review pending |
+| F11 | planned (approved 2026-11-09) |

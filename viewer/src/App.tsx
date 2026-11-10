@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
+import { Prose } from './components/Prose';
 import type { Ref, ScenePayload, Tour } from '../../server/src/scene.ts';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
-import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply, type Connection } from './api';
+import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply, type Connection, type ExplainReply } from './api';
 import { CodeDock } from './code/CodeDock';
-import { readPref, useMedia, writePref } from './code/hooks';
+import { readPref, useMedia, usePresence, writePref } from './code/hooks';
 import { codeReducer, initialCode } from './code/state';
 import { DetailPanel, findItem } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
@@ -43,8 +43,10 @@ export function App() {
   /** Clicking a box opens the code window on it, until the user closes the window. */
   const [autoCode, setAutoCode] = useState(() => readPref('code-auto', true));
   const wide = useMedia('(min-width: 1024px)');
-  const latest = useRef({ scene, autoCode, wide, touring: code.tour !== undefined });
-  latest.current = { scene, autoCode, wide, touring: code.tour !== undefined };
+  const latest = useRef({ scene, autoCode, wide, touring: code.tour !== undefined, codeOpen: code.open });
+  latest.current = { scene, autoCode, wide, touring: code.tour !== undefined, codeOpen: code.open };
+  // The code window stays mounted while it sinks away.
+  const dock = usePresence(code.open && !offline, 220);
   const shown = useRef<{ version: number; key: string } | undefined>(undefined);
   /** The clicked box, so "Go deeper" can zoom out of it. */
   const anchor = useRef<Element | null>(null);
@@ -104,6 +106,16 @@ export function App() {
         const ref = found && found.type !== 'markdown' ? findItem(found, node)?.ref : undefined;
         if (ref) dispatch({ type: 'show', ref });
       },
+      ...(offline
+        ? {}
+        : {
+            startTour: (walk: Tour) => dispatch({ type: 'tour', tour: walk }),
+            // A playing flow takes the open code window along with it; a tour keeps its own lines.
+            followStep: (ref: Ref | undefined) => {
+              const { codeOpen, touring } = latest.current;
+              if (ref && codeOpen && !touring) dispatch({ type: 'show', ref });
+            },
+          }),
     }),
     [selected, asked],
   );
@@ -129,15 +141,17 @@ export function App() {
     writePref('code-auto', false);
   };
 
-  // Esc closes the details (presentation mode has its own keys).
+  // Esc closes the code window first, then the details (presentation mode has its own keys).
   useEffect(() => {
-    if (!selected || presenting) return;
+    if ((!selected && !code.open) || presenting) return;
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setSelected(undefined);
+      if (event.key !== 'Escape') return;
+      if (latest.current.codeOpen) closeCode();
+      else setSelected(undefined);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected, presenting]);
+  }, [selected, code.open, presenting]);
 
   // When a new scene arrives, zoom if it answers the user's last click or breadcrumb; otherwise its blocks pop in.
   useLayoutEffect(() => {
@@ -323,7 +337,6 @@ export function App() {
             <main ref={main} className="space-y-7">
               {scene ? <Scene scene={scene} /> : <Empty />}
             </main>
-            {!offline && code.open && <CodeDock state={code} dispatch={dispatch} onClose={closeCode} keysOff={presenting} />}
           </div>
           {scene && selected && (
             <DetailPanel
@@ -337,9 +350,22 @@ export function App() {
               focus={focus}
               onOpenCode={offline ? undefined : openCode}
               onTour={offline ? undefined : startTour}
+              onExplain={offline ? undefined : () => post<ExplainReply>('explain', { block: selected.block, node: selected.node })}
+              tourId={tour?.id}
             />
           )}
         </div>
+        {dock.mounted && (
+          <CodeDock
+            state={code}
+            dispatch={dispatch}
+            onClose={closeCode}
+            closing={dock.closing}
+            panelOpen={Boolean(scene && selected)}
+            keysOff={presenting}
+            onExplain={(ref) => post<ExplainReply>('explain', { path: ref.path, ...(ref.start !== undefined ? { start: ref.start } : {}), ...(ref.end !== undefined ? { end: ref.end } : {}) })}
+          />
+        )}
       </SelectionContext.Provider>
       {scene && presenting && <Presenter key={scene.version} scene={scene} onExit={() => setPresenting(false)} />}
     </div>
@@ -376,7 +402,7 @@ function Scene({ scene }: { scene: ScenePayload }) {
         if (block.type === 'state') return <StateScene key={key} block={block} />;
         return (
           <div key={key} className="prose-exl max-w-3xl">
-            <Markdown>{block.text}</Markdown>
+            <Prose>{block.text}</Prose>
           </div>
         );
       })}

@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import type { Tour } from '../../server/src/scene.ts';
 import { codeReducer, initialCode, MAX_TABS, rangeOf, stepDelay, type CodeAction, type CodeState } from '../src/code/state.ts';
 import { buildTree, folderChain } from '../src/code/tree.ts';
+import { tourFromArch, tourFromFlow } from '../src/code/tourFrom.ts';
 
 const run = (actions: CodeAction[], from: CodeState = initialCode): CodeState => actions.reduce(codeReducer, from);
 
@@ -145,5 +146,46 @@ describe('code tour state', () => {
     assert.equal(stepDelay('Hi'), 4000);
     assert.ok(stepDelay('x'.repeat(100)) > stepDelay('x'.repeat(50)));
     assert.equal(stepDelay('x'.repeat(5000)), 12_000);
+  });
+});
+
+describe('tours built from a scene', () => {
+  const nodes = [
+    { id: 'form', label: 'Form', kind: 'ui' as const, ref: { path: 'ui/form.js', start: 1, end: 9 } },
+    { id: 'api', label: 'API', kind: 'service' as const, desc: 'Validates.', about: 'Long **text**.', ref: { path: 'api/routes.js', start: 6, end: 14 } },
+    { id: 'db', label: 'DB', kind: 'store' as const },
+  ];
+
+  it('a flow becomes one stop per step that points at code, falling back to the box it reaches, then the one it starts from', () => {
+    const tour = tourFromFlow({
+      type: 'flow',
+      id: 'login',
+      title: 'Login',
+      nodes,
+      drills: [],
+      steps: [
+        { from: 'form', to: 'api', label: 'credentials', ref: { path: 'ui/form.js', start: 3, end: 5 }, narration: 'Posts them.' },
+        { from: 'form', to: 'api', narration: 'Arrives.' },
+        { from: 'api', to: 'db', narration: 'The store has no code.' },
+        { from: 'db', narration: 'Nothing to show.' },
+      ],
+    });
+    assert.deepEqual(tour?.steps, [
+      { ref: { path: 'ui/form.js', start: 3, end: 5 }, note: '**credentials** · Posts them.' },
+      { ref: { path: 'api/routes.js', start: 6, end: 14 }, note: 'Arrives.' },
+      // The store has no code, so the step shows the code of the box it starts from.
+      { ref: { path: 'api/routes.js', start: 6, end: 14 }, note: 'The store has no code.' },
+    ]);
+    assert.equal(tour?.title, 'Login');
+  });
+
+  it('an architecture becomes one stop per box with code, with its description and long text', () => {
+    const tour = tourFromArch({ type: 'arch', id: 'overview', title: 'Parts', nodes, groups: [], edges: [], drills: [] });
+    assert.deepEqual(tour?.steps.map((s) => s.note), ['**Form**', '**API** · Validates.\n\nLong **text**.']);
+  });
+
+  it('gives nothing when no step or box points at code', () => {
+    assert.equal(tourFromFlow({ type: 'flow', id: 'f', title: 'F', nodes: [{ id: 'a', label: 'A', kind: 'module' }], drills: [], steps: [{ from: 'a', narration: 'x' }] }), undefined);
+    assert.equal(tourFromArch({ type: 'arch', id: 'a', title: 'A', nodes: [], groups: [], edges: [], drills: [] }), undefined);
   });
 });

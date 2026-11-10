@@ -63,6 +63,22 @@ export function describeQuestion(scene: ScenePayload, target: ClickTarget, quest
   );
 }
 
+const EXPLAIN_HOW =
+  "Read the code and call explain_code with a tour in the user's language: 3-10 steps in reading order, each with a ref (a line range 'path:start-end'; " +
+  "for a notebook, cell numbers 'path.ipynb:3-5', see read_notebook) and a note of 1-3 sentences saying what it does and why. " +
+  'Follow the flow across files when the code calls other code. Then reply in the chat with one sentence.';
+
+/** One line for Claude: the user pressed "Explain code" on a box. */
+export function describeExplain(scene: ScenePayload, target: ClickTarget): string {
+  return oneLine(`Explicador viewer: the user asks you to explain the code of ${describeItem(scene, target)} step by step. ${EXPLAIN_HOW}`);
+}
+
+/** One line for Claude: the user pressed "Explain code" in the code window, on the file or lines they are reading. */
+export function describeExplainFile(ref: Ref): string {
+  const where = `${ref.path}${ref.start ? `:${ref.start}${ref.end ? `-${ref.end}` : ''}` : ''}`;
+  return oneLine(`Explicador viewer: the user asks you to explain the code they are reading in the code window: ${where}. ${EXPLAIN_HOW}`);
+}
+
 /** `"Label" (node id, kind, ref) in "Block" of the scene "topic"`. */
 function describeItem(scene: ScenePayload, target: ClickTarget): string {
   const { node } = target;

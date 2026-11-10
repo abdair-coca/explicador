@@ -1,7 +1,7 @@
 // Questions about the open box: the thread of questions and answers, and the box to ask a new one.
 // Claude answers through the answer_question tool; the answer arrives over the event stream.
 import { useEffect, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
+import { Prose } from './Prose';
 import type { Question, Ref, Tour } from '../../../server/src/scene.ts';
 import type { AskReply } from '../api';
 import { CodeCard } from './CodeCard';
@@ -56,7 +56,7 @@ export function QuestionThread(props: {
             {question.answer ? (
               <div className="animate-pop-in origin-top-left space-y-3 rounded-2xl rounded-tl-md border-2 border-border bg-card px-3.5 py-3">
                 <div className="prose-exl prose-panel">
-                  <Markdown>{question.answer.text}</Markdown>
+                  <Prose>{question.answer.text}</Prose>
                 </div>
                 {question.answer.codes?.map((code, j) => <CodeCard key={j} code={code} onOpen={props.onOpenCode} />)}
                 {question.answer.tour && props.onTour && (

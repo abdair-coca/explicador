@@ -1,6 +1,7 @@
 // The box whose details are open in the side panel. Scenes read it to highlight the box and to
 // open the panel on click; presentation mode has no provider, so boxes there only zoom groups.
 import { createContext, useContext } from 'react';
+import type { Ref, Tour } from '../../../server/src/scene.ts';
 
 export interface Selected {
   block: string;
@@ -12,6 +13,10 @@ export interface Selection {
   select(block: string, node: string, element: Element): void;
   /** Boxes the user asked about, as `block:node` → whether an answer is still pending. */
   asked: ReadonlyMap<string, boolean>;
+  /** Plays a tour in the code window; absent where there is no window (exports, presentation). */
+  startTour?: (tour: Tour) => void;
+  /** Tells the code window which lines the playing flow is at; it moves only if it is open. */
+  followStep?: (ref: Ref | undefined) => void;
 }
 
 export const SelectionContext = createContext<Selection | undefined>(undefined);

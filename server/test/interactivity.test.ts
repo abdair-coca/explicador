@@ -1,7 +1,7 @@
 // End to end: MCP server + click monitor of the same session + clicks from the page.
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { cpSync, existsSync, readFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { after, before, describe, it } from 'node:test';
@@ -306,6 +306,46 @@ describe('clicks reach the monitor of the same session', () => {
     assert.equal(answer?.tour?.steps.length, 2);
     const saved = JSON.parse(readFileSync(join(project, '.explicador/scenes/auth-routes.json'), 'utf8')) as { questions: { answer?: { tour?: unknown } }[] };
     assert.ok(saved.questions.some((q) => q.answer?.tour), 'the tour is saved with the scene');
+  });
+
+  it('reads a notebook as numbered cells, and warns about boxes that point at a whole notebook', async () => {
+    const cell = (type: string, source: string) => ({ cell_type: type, metadata: {}, source, ...(type === 'code' ? { execution_count: null, outputs: [] } : {}) });
+    writeFileSync(
+      join(project, 'analysis.ipynb'),
+      JSON.stringify({ nbformat: 4, nbformat_minor: 5, metadata: {}, cells: [cell('markdown', '# Plan'), cell('code', 'x = 1'), cell('code', 'y = x + 1'), cell('code', 'print(y)')] }),
+    );
+    const outline = await call('read_notebook', { path: 'analysis.ipynb' });
+    assert.match(outline.text, /4 cells\. Refs use cell numbers/);
+    assert.match(outline.text, /\[2\] code: x = 1/);
+    assert.match((await call('read_notebook', { path: 'analysis.ipynb', cells: '3' })).text, /--- \[3\] code\ny = x \+ 1/);
+    assert.ok((await call('read_notebook', { path: 'src/api/auth-routes.js' })).isError);
+    assert.ok((await call('read_notebook', { path: 'analysis.ipynb', cells: '1-40' })).isError);
+
+    const exl = (ref: string) => `<arch id="nb" title="Notebook">\n<node id="n" label="Analysis" ref="${ref}" />\n</arch>`;
+    const whole = await call('render_scene', { topic: 'notebook whole', exl: exl('analysis.ipynb') });
+    assert.ok(!whole.isError, whole.text);
+    assert.match(whole.text, /Warning: these boxes point at a whole file.*Analysis \(analysis\.ipynb\)/);
+    const ranged = await call('render_scene', { topic: 'notebook cells', exl: exl('analysis.ipynb:2-3') });
+    assert.ok(!ranged.isError && !ranged.text.includes('Warning'), ranged.text);
+    await render('auth routes', routesExl);
+  });
+
+  it('turns "Explain code" into one line for Claude, for a box or for the file being read', async () => {
+    const before = printed.length;
+    assert.deepEqual((await post('/api/explain', { block: 'routes-flow', node: 'routes' })).json, { status: 'sent' });
+    const line = await waitFor(() => printed[before]);
+    assert.match(line, /^Explicador viewer: the user asks you to explain the code of "handleLogin" \(node routes, function, src\/api\/auth-routes\.js:6-20\)/);
+    assert.match(line, /call explain_code/);
+
+    assert.deepEqual((await post('/api/explain', { path: 'src/api/auth-routes.js', start: 6, end: 8 })).json, { status: 'sent' });
+    assert.match(await waitFor(() => printed[before + 1]), /reading in the code window: src\/api\/auth-routes\.js:6-8\. /);
+
+    assert.deepEqual((await post('/api/explain', { path: '.env' })).json, { status: 'unknown' });
+    assert.deepEqual((await post('/api/explain', { path: 'src/ghost.js' })).json, { status: 'unknown' });
+    assert.deepEqual((await post('/api/explain', { block: 'routes-flow', node: 'ghost' })).json, { status: 'unknown' });
+    assert.equal((await post('/api/explain', { block: 'routes-flow', node: 'routes' }, 'http://evil.example')).status, 403);
+    await delay(200);
+    assert.equal(printed.length, before + 2);
   });
 
   it('rejects unknown nodes, foreign origins and missing tokens', async () => {

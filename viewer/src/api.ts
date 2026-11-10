@@ -1,6 +1,6 @@
 // Talks to the bridge: GET /api/scene with the per-launch token, and an event stream for updates.
 import { useEffect, useState } from 'react';
-import type { Question, QuestionsPayload, ScenePayload, Tour } from '../../server/src/scene.ts';
+import type { Notebook, Question, QuestionsPayload, ScenePayload, Tour } from '../../server/src/scene.ts';
 
 const token = new URLSearchParams(window.location.search).get('t') ?? '';
 
@@ -57,7 +57,7 @@ export function useScene(): { scene: ScenePayload | null; questions: Question[];
 }
 
 /** POST /api/<name>; the bridge checks the token and that the request comes from this page. */
-export async function post<T>(name: 'click' | 'open' | 'ask' | 'follow', body: Record<string, string>): Promise<T> {
+export async function post<T>(name: 'click' | 'open' | 'ask' | 'follow' | 'explain', body: Record<string, string | number>): Promise<T> {
   const response = await fetch(`/api/${name}`, {
     method: 'POST',
     headers: { 'x-token': token, 'content-type': 'application/json' },
@@ -79,15 +79,21 @@ export type ClickReply =
   | { status: 'no-monitor'; topic: string; message: string }
   | { status: 'unknown' };
 
-export type FileReply = { ok: true; lines: string[] } | { ok: false; error: 'missing' | 'denied' | 'binary' | 'too-large' | 'unreachable' };
+export type FileReply =
+  | { ok: true; lines: string[] }
+  | { ok: true; notebook: Notebook }
+  | { ok: false; error: 'missing' | 'denied' | 'binary' | 'too-large' | 'invalid' | 'unreachable' };
 
-const fileErrors = new Set(['missing', 'denied', 'binary', 'too-large']);
+const fileErrors = new Set(['missing', 'denied', 'binary', 'too-large', 'invalid']);
+
+export type ExplainReply = { status: 'sent' } | { status: 'no-monitor' } | { status: 'unknown' };
 
 /** GET /api/file: a text file of the project, for the code window. */
 export async function fetchFile(path: string): Promise<FileReply> {
   try {
     const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`, { headers: { 'x-token': token }, cache: 'no-store' });
-    const body = (await response.json()) as { lines?: string[]; error?: string };
+    const body = (await response.json()) as { lines?: string[]; notebook?: Notebook; error?: string };
+    if (response.ok && body.notebook) return { ok: true, notebook: body.notebook };
     if (response.ok && body.lines) return { ok: true, lines: body.lines };
     return { ok: false, error: body.error && fileErrors.has(body.error) ? (body.error as 'missing') : 'unreachable' };
   } catch {

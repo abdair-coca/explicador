@@ -1,6 +1,6 @@
 // Code tours: the steps Claude sends are checked against the real files, so the window never points at lines that are not there.
 import { randomBytes } from 'node:crypto';
-import { readProjectFile } from './files.ts';
+import { isNotebookPath, readProjectFile, sizeOf } from './files.ts';
 import { parseRefString } from './parser/index.ts';
 import type { Tour } from './scene.ts';
 
@@ -40,23 +40,23 @@ export function buildTour(root: string, input: TourInput): TourResult {
       return;
     }
     if (ref.start === undefined) {
-      problems.push(`${label} (${step.ref}): give a line range, e.g. "${ref.path}:10-24"`);
+      problems.push(`${label} (${step.ref}): give a ${isNotebookPath(ref.path) ? 'cell' : 'line'} range, e.g. "${ref.path}:${isNotebookPath(ref.path) ? '3-5' : '10-24'}"`);
       return;
     }
     const end = ref.end ?? ref.start;
     if (end - ref.start + 1 > tourLimits.lines) {
-      problems.push(`${label} (${step.ref}): more than ${tourLimits.lines} lines; split it into steps`);
+      problems.push(`${label} (${step.ref}): more than ${tourLimits.lines} ${isNotebookPath(ref.path) ? 'cells' : 'lines'}; split it into steps`);
       return;
     }
     if (!lengths.has(ref.path)) {
       const file = readProjectFile(root, ref.path);
-      lengths.set(ref.path, file.ok ? file.lines.length : file.reason);
+      lengths.set(ref.path, file.ok ? sizeOf(file) : file.reason);
     }
     const total = lengths.get(ref.path);
     if (typeof total === 'string') {
       problems.push(`${label} (${step.ref}): ${reasons[total] ?? 'the file cannot be shown'}`);
     } else if (total !== undefined && end > total) {
-      problems.push(`${label} (${step.ref}): the file has ${total} lines`);
+      problems.push(`${label} (${step.ref}): the ${isNotebookPath(ref.path) ? `notebook has ${total} cells` : `file has ${total} lines`}`);
     } else {
       steps.push({ ref: { path: ref.path, start: ref.start, end }, note });
     }
@@ -70,5 +70,6 @@ const reasons: Record<string, string> = {
   missing: 'the file does not exist in the project',
   denied: 'this path cannot be shown (outside the project, or a hidden file or folder)',
   binary: 'binary files cannot be shown',
+  invalid: 'this notebook cannot be read (only nbformat 4 is supported)',
   'too-large': 'the file is too large to show',
 };

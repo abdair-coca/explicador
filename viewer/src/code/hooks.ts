@@ -19,7 +19,7 @@ export function useFile(path: string | undefined): FileReply | 'loading' {
     void fetchFile(path).then((reply) => {
       const before = cache.get(path);
       cache.set(path, reply);
-      const same = before && before.ok && reply.ok && before.lines.length === reply.lines.length && before.lines.every((line, i) => line === reply.lines[i]);
+      const same = before !== undefined && JSON.stringify(before) === JSON.stringify(reply);
       if (current && !same) bump((n) => n + 1);
     });
     return () => {
@@ -68,4 +68,21 @@ export function useMedia(query: string): boolean {
     return () => list.removeEventListener('change', update);
   }, [query]);
   return matches;
+}
+
+/**
+ * Keeps something mounted for `ms` after it stops being wanted, so its exit animation can play.
+ * `closing` is true during that time.
+ */
+export function usePresence(open: boolean, ms: number): { mounted: boolean; closing: boolean } {
+  const [mounted, setMounted] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    const timer = setTimeout(() => setMounted(false), ms);
+    return () => clearTimeout(timer);
+  }, [open, ms]);
+  return { mounted: open || mounted, closing: !open && mounted };
 }

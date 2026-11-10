@@ -5,8 +5,9 @@ import { stepDuration, usePlayback, useReducedMotion, type Playback } from '../a
 import { boxWithin, zoomIn, zoomOut, type Box } from '../animation/zoom';
 import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
 import { archLevel, linkId, withDrills, type ViewNode } from '../layout/levels';
+import { tourFromArch, tourFromFlow } from '../code/tourFrom';
 import { Diagram } from './Diagram';
-import { ArrowLeftIcon, ArrowRightIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
+import { ArrowLeftIcon, ArrowRightIcon, CodeIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
 import { askedIn, selectedIn, useSelection } from './selection';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -84,6 +85,18 @@ export function ReplayButton({ onClick }: { onClick: () => void }) {
 }
 
 /** Previous, play or pause, next. */
+/** "Explain with code": plays a tour built from the scene itself in the code window; absent where there is no window. */
+function TourButton({ tour }: { tour: ReturnType<typeof tourFromFlow> }) {
+  const start = useSelection()?.startTour;
+  if (!start || !tour) return null;
+  return (
+    <Button size="sm" onClick={() => start(tour)} title={`Walk through the code of this scene: ${tour.steps.length} stops`}>
+      <CodeIcon size={16} />
+      Explain with code
+    </Button>
+  );
+}
+
 export function StepControls({ playback }: { playback: Playback }) {
   return (
     <>
@@ -216,6 +229,7 @@ export function ArchScene({ block }: { block: ArchBlock }) {
   const level = useMemo(() => archLevel(block, open), [block, open]);
   const layout = useLayout(level.nodes, level.edges);
   const stage = useRef<HTMLDivElement>(null);
+  const archTour = useMemo(() => tourFromArch(block), [block]);
 
   useLayoutEffect(() => {
     const element = stage.current;
@@ -280,6 +294,7 @@ export function ArchScene({ block }: { block: ArchBlock }) {
               Zoom out
             </Button>
           )}
+          <TourButton tour={archTour} />
           <ReplayButton onClick={() => setReplay((r) => r + 1)} />
         </>
       }
@@ -361,9 +376,30 @@ export function FlowScene({ block }: { block: FlowBlock }) {
   const durations = useMemo(() => block.steps.map((s) => stepDuration(s.narration)), [block]);
   const playback = usePlayback(durations, !reducedMotion);
   const step = block.steps[playback.index];
+  const flowTour = useMemo(() => tourFromFlow(block), [block]);
+  const selection = useSelection();
+
+  // With the code window open, it follows the step that is playing.
+  const follow = useRef(selection?.followStep);
+  follow.current = selection?.followStep;
+  const stepRef = step && (step.ref ?? block.nodes.find((n) => n.id === step.to)?.ref ?? block.nodes.find((n) => n.id === step.from)?.ref);
+  const refKey = stepRef ? `${stepRef.path}:${stepRef.start ?? ''}-${stepRef.end ?? ''}` : '';
+  useEffect(() => {
+    // Keyed by the lines: two steps at the same lines do not move the window twice.
+    if (stepRef) follow.current?.(stepRef);
+  }, [refKey]);
 
   return (
-    <SceneFrame kind="Flow" title={block.title} actions={<StepControls playback={playback} />}>
+    <SceneFrame
+      kind="Flow"
+      title={block.title}
+      actions={
+        <>
+          <TourButton tour={flowTour} />
+          <StepControls playback={playback} />
+        </>
+      }
+    >
       <div className="p-4">
         <FlowDiagram block={block} index={playback.index} />
       </div>

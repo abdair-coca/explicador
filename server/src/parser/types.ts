@@ -33,6 +33,30 @@ export interface SceneGroup {
   parent?: string;
 }
 
+/** One output of a notebook cell, reduced to what the viewer can show safely. */
+export type NotebookOutput =
+  | { kind: 'text'; stream: 'stdout' | 'stderr' | 'result' | 'error'; text: string }
+  | { kind: 'image'; mime: 'image/png' | 'image/jpeg'; data: string }
+  /** HTML without scripts; the viewer shows it in a sandboxed frame. */
+  | { kind: 'html'; html: string }
+  /** Something too big or not showable; `label` says what it was. */
+  | { kind: 'omitted'; label: string };
+
+/** A cell of a Jupyter notebook. `n` is its 1-based position: the number refs use. */
+export interface NotebookCell {
+  n: number;
+  type: 'markdown' | 'code' | 'raw';
+  source: string;
+  /** Execution count of a code cell, if it was run. */
+  count?: number;
+  outputs?: NotebookOutput[];
+}
+
+export interface Notebook {
+  language: string;
+  cells: NotebookCell[];
+}
+
 /** Key lines of code for a node, chosen by the agent and copied from the file by the server. */
 export interface CodeSnippet {
   node: string;
@@ -42,6 +66,8 @@ export interface CodeSnippet {
   note: string;
   /** The lines, filled in by the server from the file when the scene is shown. */
   lines?: string[];
+  /** For a notebook ref (cell numbers), the cells with their source instead of lines. */
+  cells?: NotebookCell[];
   /** Set by the server when the file or the lines are gone. */
   missing?: boolean;
 }

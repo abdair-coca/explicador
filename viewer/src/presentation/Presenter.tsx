@@ -1,6 +1,6 @@
 // Full-screen presentation of the current scene. Advances only when the presenter asks.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
+import { Prose } from '../components/Prose';
 import type { LinkKind, ScenePayload } from '../../../server/src/scene.ts';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon } from '../components/icons';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
@@ -138,7 +138,7 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
   if (slide.kind === 'markdown' && block.type === 'markdown') {
     return (
       <div className="prose-exl prose-slide mx-auto max-w-3xl">
-        <Markdown>{block.text}</Markdown>
+        <Prose>{block.text}</Prose>
       </div>
     );
   }

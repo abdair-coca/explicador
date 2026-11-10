@@ -300,3 +300,35 @@ body {
   to { transform: scaleX(1); }
 }
 .tour-progress { transform-origin: left; animation: tour-progress linear both; }
+
+/* Markdown tables (drawn by Prose). */
+.prose-table { overflow-x: auto; border: 2px solid var(--border); border-radius: 12px; background: var(--card); }
+.prose-table table { width: 100%; border-collapse: collapse; font-size: 0.92em; line-height: 1.45; }
+.prose-table th { background: var(--subtle); color: var(--foreground); font-weight: 800; white-space: nowrap; }
+.prose-table th, .prose-table td { padding: 0.55em 0.9em; border-bottom: 1px solid var(--border); text-align: left; }
+.prose-table tbody tr:last-child td { border-bottom: 0; }
+.prose-table tbody tr:hover td { background: color-mix(in oklab, var(--primary-light) 45%, white); }
+.prose-table td { font-variant-numeric: tabular-nums; }
+
+.animate-fade-in { animation: fade-in var(--dur-fast) ease-out both; }
+
+/* Notebook cells: the ones in focus stand out, the rest dim while a tour plays. */
+.nb-cell { transition: opacity var(--dur-base) ease-out; }
+.nb-cell.marked { animation: cell-in 500ms ease-out both; }
+.nb-cell.marked > div:last-child > div:first-child,
+.nb-cell.marked > div:last-child > pre:first-child { box-shadow: 0 0 0 3px var(--primary), 0 6px 18px rgba(230, 184, 0, 0.25); }
+.notebook.tour .nb-cell:not(.marked) { opacity: 0.4; }
+@keyframes cell-in { from { transform: translateX(-6px); opacity: 0.5; } }
+
+/* The code window rises into place with a soft fade and sinks away again before it unmounts. */
+@keyframes dock-in {
+  from { opacity: 0; transform: translateY(36px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dock-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(28px) scale(0.99); }
+}
+.animate-dock-in { animation: dock-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-dock-out { animation: dock-out 200ms cubic-bezier(0.55, 0, 0.9, 0.4) both; pointer-events: none; }
+.nb-cell .prose-exl > :first-child { margin-top: 0; }

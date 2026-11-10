@@ -1,11 +1,12 @@
 // Lines of code copied from the analyzed project by the server, highlighted, with their ref.
 import { useMemo } from 'react';
-import type { Ref } from '../../../server/src/scene.ts';
+import type { NotebookCell, Ref } from '../../../server/src/scene.ts';
+import { CellView } from '../code/NotebookView';
 import { highlight } from '../lib/highlight';
 import { CodeIcon } from './icons';
 import { formatRef } from './scenes';
 
-export function CodeCard({ code, onOpen }: { code: { ref: Ref; note?: string; lines?: string[]; missing?: boolean }; onOpen?: ((ref: Ref) => void) | undefined }) {
+export function CodeCard({ code, onOpen }: { code: { ref: Ref; note?: string; lines?: string[]; cells?: NotebookCell[]; missing?: boolean }; onOpen?: ((ref: Ref) => void) | undefined }) {
   const lines = useMemo(() => (code.lines ? highlight(code.lines, code.ref.path) : []), [code]);
   const first = code.ref.start ?? 1;
   return (
@@ -27,7 +28,13 @@ export function CodeCard({ code, onOpen }: { code: { ref: Ref; note?: string; li
           </button>
         )}
       </figcaption>
-      {code.missing || !code.lines ? (
+      {code.cells && !code.missing ? (
+        <div className="space-y-2.5 bg-background px-2.5 py-3">
+          {code.cells.map((cell) => (
+            <CellView key={cell.n} cell={cell} language="python" compact />
+          ))}
+        </div>
+      ) : code.missing || !code.lines ? (
         <p className="px-3 py-2.5 text-sm font-bold text-red-600">These lines are no longer in the file; ask Claude to refresh the scene.</p>
       ) : (
         <pre className="code-block py-3 font-mono text-[12.5px] leading-5">

@@ -1,6 +1,10 @@
-// The code window: docked under the scene like VS Code's panel. Tabs, an explorer, a read-only editor,
-// a status bar, and the bar that plays a guided tour. Below `lg` it is a bottom sheet.
-import { useEffect, useRef, useState, type Dispatch } from 'react';
+// The code window: a layer that covers the page from under the top bar down, like an IDE. Tabs, an explorer,
+// a read-only editor (or notebook), a status bar, and the bar that plays a guided tour. When the detail panel is
+// open at `lg` and up, the window stops before it so both stay visible.
+import { useEffect, useState, type Dispatch } from 'react';
+import type { Ref } from '../../../server/src/scene.ts';
+import type { ExplainReply } from '../api';
+import { ExplainButton } from '../components/ExplainButton';
 import { CloseIcon, CodeIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, SidebarIcon } from '../components/icons';
 import { cn } from '@/lib/utils';
 import { Editor } from './Editor';
@@ -8,15 +12,36 @@ import { Explorer } from './Explorer';
 import { prefetch, readPref, useFile, useTree, writePref } from './hooks';
 import { stepDelay, type CodeAction, type CodeState } from './state';
 
-const MIN_HEIGHT = 220;
-const TOUR_HEIGHT = 460;
+/** Detail panel column: 24 px page gutter + 400 px card (see App) and a 16 px gap between window and panel. */
+const PANEL_SPACE = 24 + 400 + 16;
+const PAGE_MAX = 1720;
 
-function defaultHeight(): number {
-  return Math.round(Math.min(Math.max(window.innerHeight * 0.55, 300), 520));
+/** Pixels of the right edge the window leaves free for the detail panel. */
+export function panelInset(viewportWidth: number): number {
+  return Math.max(0, (viewportWidth - PAGE_MAX) / 2) + PANEL_SPACE;
 }
 
-function clampHeight(height: number): number {
-  return Math.round(Math.min(Math.max(height, MIN_HEIGHT), Math.max(MIN_HEIGHT, window.innerHeight - 140)));
+/** Height of the top bar, so the window starts right under it. */
+function useHeaderHeight(): number {
+  const [height, setHeight] = useState(() => document.querySelector('header')?.getBoundingClientRect().height ?? 61);
+  useEffect(() => {
+    const header = document.querySelector('header');
+    if (!header) return;
+    const observer = new ResizeObserver(() => setHeight(header.getBoundingClientRect().height));
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+  return height;
+}
+
+function useViewportWidth(): number {
+  const [width, setWidth] = useState(() => document.documentElement.clientWidth);
+  useEffect(() => {
+    const update = (): void => setWidth(document.documentElement.clientWidth);
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return width;
 }
 
 const barButton =
@@ -27,23 +52,25 @@ export function CodeDock(props: {
   dispatch: Dispatch<CodeAction>;
   /** The user closed the window (as opposed to a tour or a click replacing what it shows). */
   onClose: () => void;
+  /** Plays the exit animation; the window unmounts when it ends. */
+  closing: boolean;
+  /** The detail panel is open beside the window. */
+  panelOpen: boolean;
   /** Presentation mode owns the arrow keys. */
   keysOff: boolean;
+  /** Ask Claude to explain the file (or lines) being read. */
+  onExplain: (ref: Ref) => Promise<ExplainReply>;
 }) {
   const { state, dispatch } = props;
-  const [height, setHeight] = useState(() => clampHeight(readPref('code-height', defaultHeight())));
   const [explorer, setExplorer] = useState(() => readPref('code-explorer', window.innerWidth >= 1024));
-  const drag = useRef<{ y: number; height: number } | undefined>(undefined);
+  const headerHeight = useHeaderHeight();
+  const viewport = useViewportWidth();
   const tree = useTree(explorer);
   const file = useFile(state.active);
   const tour = state.tour;
   const step = tour?.steps[state.step];
   const last = tour ? state.step >= tour.steps.length - 1 : false;
-
-  // A tour needs room for the lines and the note under them.
-  useEffect(() => {
-    if (tour) setHeight((current) => (current < TOUR_HEIGHT ? clampHeight(TOUR_HEIGHT) : current));
-  }, [tour?.id]);
+  const inset = props.panelOpen && viewport >= 1024 ? panelInset(viewport) : 0;
 
   // The next file of a tour is ready before the user gets there.
   useEffect(() => {
@@ -68,19 +95,13 @@ export function CodeDock(props: {
       if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const target = event.target instanceof HTMLElement ? event.target : undefined;
-      if (target?.closest('input, textarea, select, [contenteditable], .code-editor')) return;
+      if (target?.closest('input, textarea, select, [contenteditable], .code-editor, .notebook')) return;
       event.preventDefault();
       dispatch({ type: 'step', index: state.step + (event.key === 'ArrowRight' ? 1 : -1) });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [tour, state.step, props.keysOff, dispatch]);
-
-  const resize = (value: number): void => {
-    const next = clampHeight(value);
-    setHeight(next);
-    writePref('code-height', next);
-  };
 
   const togglePlay = (): void => {
     if (state.playing) dispatch({ type: 'play', playing: false });
@@ -91,50 +112,24 @@ export function CodeDock(props: {
     }
   };
 
+  const notebook = file !== 'loading' && file.ok && 'notebook' in file;
+  const unit = notebook ? 'cells' : 'lines';
   const segments = state.active?.split('/') ?? [];
-  const lines = file !== 'loading' && file.ok ? file.lines.length : undefined;
+  const total = file !== 'loading' && file.ok ? ('notebook' in file ? file.notebook.cells.length : file.lines.length) : undefined;
   const extension = state.active?.includes('.') ? state.active.split('.').pop()?.toUpperCase() : undefined;
+  const focusText = state.focus ? (state.focus.start === state.focus.end ? `${state.focus.start}` : `${state.focus.start}–${state.focus.end}`) : undefined;
 
   return (
     <section
       aria-label="Code"
-      style={{ height: `min(${height}px, 85vh)` }}
+      style={{ top: headerHeight, right: inset }}
       className={cn(
-        'animate-sheet-in flex flex-col overflow-hidden border-2 border-b-0 border-border bg-[#1a1a2e] text-[#e6eaf0] shadow-[0_-8px_24px_rgba(0,0,0,0.16)]',
-        // A sheet over everything on small screens; stuck to the bottom of the scene column on large ones.
-        'fixed inset-x-0 bottom-0 z-40 rounded-t-3xl',
-        'lg:sticky lg:inset-x-auto lg:bottom-0 lg:z-20 lg:mt-7 lg:rounded-t-2xl',
+        'fixed bottom-0 left-0 z-40 flex flex-col overflow-hidden bg-[#1a1a2e] text-[#e6eaf0] shadow-[0_-8px_32px_rgba(0,0,0,0.22)] [overscroll-behavior:contain]',
+        'transition-[right] duration-300 ease-out',
+        inset > 0 && 'lg:rounded-tr-2xl',
+        props.closing ? 'animate-dock-out' : 'animate-dock-in',
       )}
     >
-      <div
-        role="separator"
-        aria-orientation="horizontal"
-        aria-label="Resize the code window"
-        aria-valuemin={MIN_HEIGHT}
-        aria-valuenow={height}
-        tabIndex={0}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          drag.current = { y: event.clientY, height };
-        }}
-        onPointerMove={(event) => {
-          if (drag.current) setHeight(clampHeight(drag.current.height + drag.current.y - event.clientY));
-        }}
-        onPointerUp={() => {
-          if (drag.current) writePref('code-height', height);
-          drag.current = undefined;
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'ArrowUp') resize(height + 32);
-          else if (event.key === 'ArrowDown') resize(height - 32);
-          else return;
-          event.preventDefault();
-        }}
-        className="group grid h-3 shrink-0 cursor-row-resize touch-none place-items-center bg-[#12121f] outline-none"
-      >
-        <span className="h-1 w-12 rounded-full bg-white/20 transition-colors group-hover:bg-primary group-focus-visible:bg-primary" />
-      </div>
-
       <div className="flex shrink-0 items-stretch bg-[#12121f]">
         <button
           type="button"
@@ -158,11 +153,11 @@ export function CodeDock(props: {
                 role="tab"
                 aria-selected={active}
                 className={cn(
-                  'group/tab flex shrink-0 items-center gap-1 border-t-[3px] pl-3 pr-1 text-[13px] font-semibold transition-colors duration-150',
+                  'group/tab animate-fade-in flex shrink-0 items-center gap-1 border-t-[3px] pl-3 pr-1 text-[13px] font-semibold transition-colors duration-150',
                   active ? 'border-primary bg-[#1a1a2e] text-white' : 'border-transparent text-[#a3acb9] hover:bg-white/5 hover:text-white',
                 )}
               >
-                <button type="button" title={path} className="max-w-48 truncate py-2 outline-none" onClick={() => dispatch({ type: 'activate', path })}>
+                <button type="button" title={path} className="max-w-48 truncate py-2.5 outline-none" onClick={() => dispatch({ type: 'activate', path })}>
                   {path.split('/').at(-1)}
                 </button>
                 <button
@@ -180,13 +175,13 @@ export function CodeDock(props: {
             );
           })}
         </div>
-        <button type="button" className={cn(barButton, 'm-1')} aria-label="Close the code window" title="Close" onClick={props.onClose}>
+        <button type="button" className={cn(barButton, 'm-1')} aria-label="Close the code window" title="Close (Esc)" onClick={props.onClose}>
           <CloseIcon size={16} />
         </button>
       </div>
 
       {tour && step && (
-        <div className="relative shrink-0 bg-primary text-primary-foreground">
+        <div key={tour.id} className="animate-fade-up relative shrink-0 bg-primary text-primary-foreground">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3.5 py-2">
             <CodeIcon size={16} className="shrink-0" />
             <p className="min-w-0 flex-1 basis-40 truncate text-sm font-extrabold">{tour.title}</p>
@@ -240,20 +235,29 @@ export function CodeDock(props: {
         <div className="flex min-w-0 flex-1 flex-col">
           {state.active ? (
             <>
-              <div className="flex shrink-0 flex-wrap items-center gap-x-1.5 border-b border-white/10 px-4 py-1.5 text-xs font-semibold text-[#a3acb9]">
+              <div className="flex shrink-0 flex-wrap items-center gap-x-1.5 gap-y-1 border-b border-white/10 px-4 py-1.5 text-xs font-semibold text-[#a3acb9]">
                 {segments.map((segment, i) => (
                   <span key={i} className="flex items-center gap-1.5">
                     {i > 0 && <span aria-hidden="true">›</span>}
                     <span className={i === segments.length - 1 ? 'font-extrabold text-white' : undefined}>{segment}</span>
                   </span>
                 ))}
-                {state.focus && (
+                {focusText && (
                   <span className="ml-1 rounded-md bg-primary/20 px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary">
-                    {state.focus.start === state.focus.end ? `line ${state.focus.start}` : `lines ${state.focus.start}–${state.focus.end}`}
+                    {notebook ? 'cell' : 'line'}
+                    {focusText.includes('–') ? 's' : ''} {focusText}
                   </span>
                 )}
+                <ExplainButton
+                  doneKey={tour?.id}
+                  className="ml-auto flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-extrabold text-white transition-all duration-150 hover:bg-primary hover:text-primary-foreground active:scale-[0.96] disabled:opacity-80"
+                  ask={() => props.onExplain({ path: state.active ?? '', ...(state.focus ? { start: state.focus.start, end: state.focus.end } : {}) })}
+                >
+                  Explain code
+                </ExplainButton>
               </div>
               <Editor
+                key={state.active}
                 path={state.active}
                 file={file}
                 focus={state.focus}
@@ -267,8 +271,8 @@ export function CodeDock(props: {
           <div className="flex shrink-0 items-center gap-3 bg-[#12121f] px-4 py-1 text-[11px] font-bold text-[#8b95a5]">
             <span>Read only</span>
             <span className="ml-auto flex items-center gap-3">
-              {state.focus && <span>Ln {state.focus.start === state.focus.end ? state.focus.start : `${state.focus.start}–${state.focus.end}`}</span>}
-              {lines !== undefined && <span>{lines} lines</span>}
+              {focusText && <span>{notebook ? 'Cell' : 'Ln'} {focusText}</span>}
+              {total !== undefined && <span>{total} {unit}</span>}
               {extension && <span>{extension}</span>}
             </span>
           </div>
