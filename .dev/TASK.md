@@ -13,7 +13,7 @@ Handoff (2026-11-10): started in a local session; continues unattended in a clou
 
 ## Left to do
 
-A. **Chart** (`viewer/src/lesson/Chart.tsx`, wire into `BlockView`).
+A. ✅ **Chart** (done 2026-11-11: `lesson/chart.ts` pure geometry, `lesson/Chart.tsx`; tests `viewer/test/chart.test.ts`) (`viewer/src/lesson/Chart.tsx`, wire into `BlockView`).
    - SVG drawn at the container's measured pixel width (ResizeObserver), no viewBox scaling, so text stays crisp at any width.
    - Colors `var(--series-1..4)` in fixed order. `highlight` naming a series grays the others (`var(--series-muted)`); naming a row label dims the other rows' marks to 0.35.
    - `bars`: rows on x, grouped series bars at most 24 px thick with a 2 px gap, 4 px rounded data end and square base, domain from `barTicks` (always includes 0), hairline grid (`.chart-grid`), zero line (`.chart-axis`), y ticks with `formatTick`; value at each bar tip when there are at most 8 bars, else only the highlighted series; x labels cut to the band width, full label in the tooltip.
@@ -47,7 +47,11 @@ H. **Example and checks.** `examples/notebook/reviews.ipynb`: a small synthetic 
 - Baseline before the phase: typecheck 0, lint 0, server 115/115, viewer 36/36.
 - Python edits on Windows wrote CRLF; files must stay LF (`.gitattributes`).
 - An empty attribute (`unit=""`) is an error like any other attribute.
+- Cloud (Linux): run `npm run build` before `npm test`; two interactivity tests fail with "the viewer is not built" otherwise. `files.test.ts` expected `C:/Windows/win.ini` to be denied, which only holds on Windows (on Linux it is a missing relative path); the test now expects `missing` off Windows, the code is unchanged (noted in PLAN pending decisions).
+- Grouped bars: neighbouring value labels are wider than a 24 px bar; they are stacked a line apart, or only the highlighted series is labelled (the table view has every value).
 
 ## Validation
+
+- 2026-11-11 A (cloud, Linux, Node 22.23): typecheck 0, lint 0, build OK, server 132/132, viewer 63/63. Charts checked in Chromium (Playwright) at 1440 and 390 px with a scratch scene (grouped bars with highlight, diverging hbars, two-series line, one-series bars): no console errors, labels do not collide, keyboard focus shows the tooltip.
 
 - 2026-11-10 (handoff): `npm run typecheck` 0 errors; `npm run lint` 0 warnings; `npm test` server 132/132, viewer 50/50; `npm run build` OK. Lesson blocks parse and the server attaches chapter cells; in the viewer, stats, journey and trace draw; chart, matrix, quiz and the lesson layout are not drawn yet.

@@ -196,6 +196,7 @@ The user asked to push the work and continue it in a cloud session without their
 Pending user decisions:
 - Check a lesson of the user's real notebook (INF672 exam) on their machine, and the F12 review.
 - Viewer chrome in the user's language (it is English, like the rest of the viewer).
+- `readProjectFile` denies drive paths (`C:/…`) only on Windows; on Linux and macOS such a path is a relative folder named `C:` inside the project (harmless, but different). The test now expects that; deny drive paths everywhere? (2026-11-11, file access rules are off-limits in unattended mode.)
 
 ## Decisions pending user review
 

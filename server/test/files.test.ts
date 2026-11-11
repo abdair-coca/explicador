@@ -26,9 +26,11 @@ describe('readProjectFile', () => {
   });
 
   it('refuses hidden files and folders, paths outside the project and odd paths', () => {
-    for (const path of ['.env', '.git/config', 'src/.hidden/x.js', '../outside.txt', 'src/../../x', '/etc/passwd', 'C:/Windows/win.ini', 'src\\a.js', '', 'src/a.js\0']) {
+    for (const path of ['.env', '.git/config', 'src/.hidden/x.js', '../outside.txt', 'src/../../x', '/etc/passwd', 'src\\a.js', '', 'src/a.js\0']) {
       assert.deepEqual(readProjectFile(root, path), { ok: false, reason: 'denied' }, JSON.stringify(path));
     }
+    // A drive path is absolute only on Windows; elsewhere it names a (missing) folder "C:" inside the project.
+    assert.deepEqual(readProjectFile(root, 'C:/Windows/win.ini'), { ok: false, reason: process.platform === 'win32' ? 'denied' : 'missing' });
   });
 
   it('refuses binary, huge and missing files, and directories', () => {
