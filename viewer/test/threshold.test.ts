@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { ThresholdBlock } from '../../server/src/scene.ts';
-import { changedFrom, confusionAt, dotsOf, matrixAt, metricsAt } from '../src/lesson/threshold.ts';
+import { changedFrom, confusionAt, dotsOf, matrixAt, metricsAt } from '../src/lesson/thresholdMetrics.ts';
 
 // The test probabilities printed by cell 21 of examples/notebook/reviews.ipynb.
 const block: ThresholdBlock = {

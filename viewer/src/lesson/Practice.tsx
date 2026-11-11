@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { cn } from '@/lib/utils';
 import type { LessonPlan } from './chapters';
 import { LessonContext, type Lesson } from './context';
-import { firstAnswer, practiceOrder, practiceScore, type FirstAnswers } from './practice';
+import { firstAnswer, practiceOrder, practiceScore, type FirstAnswers } from './practiceSession';
 import { emptyProgress, isDone, record, type CheckState, type Progress } from './progress';
 import { QuizView } from './Quiz';
 

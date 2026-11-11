@@ -11,7 +11,7 @@ import {
   lineGeometry,
   nearestIndex,
   withUnit,
-} from '../src/lesson/chart.ts';
+} from '../src/lesson/chartGeometry.ts';
 import { heatOf, isNumeric } from '../src/lesson/heat.ts';
 
 const chart = (over: Partial<ChartBlock>): ChartBlock => ({

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { CalcBlock } from '../../server/src/scene.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
-import { calcModel, sigmoid, sigmoidCurve, signed, waterfall } from '../src/lesson/calc.ts';
+import { calcModel, sigmoid, sigmoidCurve, signed, waterfall } from '../src/lesson/calcMath.ts';
 
 // The parts and the score printed by cell 19 of examples/notebook/reviews.ipynb.
 const block: CalcBlock = {

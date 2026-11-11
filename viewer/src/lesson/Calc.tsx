@@ -6,7 +6,7 @@ import { stepDuration, usePlayback, useReducedMotion } from '../animation/playba
 import { SceneFrame, StepControls, StepProgress } from '../components/scenes';
 import { cn } from '@/lib/utils';
 import { useWidth } from './Chart';
-import { calcModel, sigmoidCurve, waterfall, type CalcModel } from './calc';
+import { calcModel, sigmoidCurve, waterfall, type CalcModel } from './calcMath';
 import { useFirstVisible, useFollowCode } from './hooks';
 
 /** What step `index` says: the part it adds, the score, the probability or the decision. */

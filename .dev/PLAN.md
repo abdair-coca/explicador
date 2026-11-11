@@ -206,6 +206,7 @@ The user asked to push the work and continue it in a cloud session without their
 Notes for later sessions:
 - On Linux run `npm run build` before `npm test`: two interactivity tests fail with "the viewer is not built" otherwise.
 - Example notebook: regenerate by executing it with `jupyter nbconvert --to notebook --execute --inplace` (scikit-learn, pandas, nbconvert, ipykernel installed in the sandbox only) and drop the cells' `execution` timing metadata; a server test checks that every number of the example lesson appears in its outputs.
+- Windows and macOS ignore case in file names, so no two viewer source files may differ only in case. On 2026-11-11, `Calc.tsx` next to `calc.ts` (also Chart, Practice and Threshold) made `./Calc` open `calc.ts` and broke the Windows build while Linux passed. The logic modules are now `calcMath.ts`, `chartGeometry.ts`, `practiceSession.ts` and `thresholdMetrics.ts`, and `viewer/test/filenames.test.ts` checks the rule on every OS.
 
 Session summary (2026-11-11, unattended cloud session):
 - Done: F12 letters A–H (charts, matrices, quizzes and flashcards, chapter cells, lesson layout with rail and progress, presentation slides, docs and skill recipe, example notebook and lesson), F12 closed; then backlog fixes for journey wrapping, accessibility of lesson blocks, the old-notebook-scene hint in `show_scene`, and the phone top bar. Every commit pushed to `main` with typecheck, lint, build and tests green (server 136, viewer 65).

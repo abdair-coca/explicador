@@ -10,7 +10,7 @@ import { matrixFocuses } from '../src/lesson/focuses.ts';
 import { formatLike, splitNumbers, textAt } from '../src/lesson/numbers.ts';
 import { chapterDone, emptyProgress, lessonSummary, markSeen, record } from '../src/lesson/progress.ts';
 import { barTicks, formatTick, lineTicks, linear, niceTicks } from '../src/lesson/scale.ts';
-import { firstAnswer, practiceOrder, practiceScore } from '../src/lesson/practice.ts';
+import { firstAnswer, practiceOrder, practiceScore } from '../src/lesson/practiceSession.ts';
 import { getProgress, subscribeProgress, updateProgress } from '../src/lesson/store.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
 

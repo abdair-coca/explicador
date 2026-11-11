@@ -6,7 +6,7 @@ import { ReplayButton, SceneFrame } from '../components/scenes';
 import { TableIcon } from '../components/icons';
 import { Button } from '../components/ui/button';
 import { cn } from '@/lib/utils';
-import { chartGeometry, entranceDelay, nearestIndex, seriesColor, seriesOf, withUnit, type ChartGeometry, type Mark } from './chart';
+import { chartGeometry, entranceDelay, nearestIndex, seriesColor, seriesOf, withUnit, type ChartGeometry, type Mark } from './chartGeometry';
 
 const kindName: Record<ChartBlock['chartType'], string> = { bars: 'Bar chart', hbars: 'Bar chart', line: 'Line chart' };
 

@@ -3,7 +3,7 @@
 // Lessons add a title slide per chapter, one slide per journey stage and trace value, one per chart, quiz and
 // stats block, one per matrix followed by one per highlight it offers, and one per step of a calculation, and one per threshold (interactive).
 import type { Block } from '../../../server/src/scene.ts';
-import { calcModel } from '../lesson/calc.ts';
+import { calcModel } from '../lesson/calcMath.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
 
 export type Slide =

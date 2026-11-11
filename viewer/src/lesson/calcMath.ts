@@ -1,7 +1,7 @@
 // The arithmetic of a <calc>: running totals, the score, and for a logistic model the sigmoid, the probability
 // and the decision. Done here so the agent never computes; plus the waterfall's geometry in real pixels.
 import type { CalcBlock } from '../../../server/src/scene.ts';
-import { CHAR_PX, fit } from './chart.ts';
+import { CHAR_PX, fit } from './chartGeometry.ts';
 import { barTicks, formatTick, linear } from './scale.ts';
 
 export interface CalcRow {

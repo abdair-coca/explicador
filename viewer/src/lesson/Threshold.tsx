@@ -7,10 +7,10 @@ import { ReplayIcon } from '../components/icons';
 import { Button } from '../components/ui/button';
 import { cn } from '@/lib/utils';
 import { useWidth } from './Chart';
-import { CHAR_PX } from './chart';
+import { CHAR_PX } from './chartGeometry';
 import { formatRatio, metricNames } from './confusion';
 import { MatrixGrid } from './Matrix';
-import { changedFrom, dotsOf, matrixAt, metricsAt, predicted } from './threshold';
+import { changedFrom, dotsOf, matrixAt, metricsAt, predicted } from './thresholdMetrics';
 
 const LANE = 46;
 const DOT = 7;
