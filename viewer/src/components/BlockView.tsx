@@ -38,7 +38,7 @@ export function BlockView({ block }: { block: Block }) {
       return <MatrixScene block={block} />;
     case 'quiz':
       return <QuizView block={block} />;
-    // F12 in progress (see .dev/TASK.md): chapters get the lesson layout.
+    // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
       return null;
   }

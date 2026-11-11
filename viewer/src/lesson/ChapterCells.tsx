@@ -42,18 +42,18 @@ export function ChapterCells({ chapter }: { chapter: ChapterBlock }) {
           aria-expanded={open}
           aria-controls={body}
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg text-left"
+          className="flex min-h-9 min-w-[min(100%,14rem)] flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg text-left"
         >
           <ChevronDownIcon size={18} className={cn('shrink-0 transition-transform duration-200', !open && '-rotate-90')} />
-          <span className="font-extrabold">{notebook ? 'Your cells' : 'Your code'}</span>
-          <code className="min-w-0 truncate rounded-md bg-subtle px-1.5 py-0.5 font-mono text-xs font-semibold text-muted-foreground">{formatRef(ref)}</code>
-          {count && <span className="text-xs font-bold text-muted-foreground">{count}</span>}
+          <span className="whitespace-nowrap font-extrabold">{notebook ? 'Your cells' : 'Your code'}</span>
+          <code className="min-w-0 break-all rounded-md bg-subtle px-1.5 py-0.5 font-mono text-xs font-semibold text-muted-foreground">{formatRef(ref)}</code>
+          {count && <span className="whitespace-nowrap text-xs font-bold text-muted-foreground">{count}</span>}
         </button>
         {openCode && !chapter.missing && (
           <button
             type="button"
             onClick={() => openCode(ref)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-muted-foreground transition-all duration-150 hover:bg-primary-light hover:text-foreground active:scale-[0.96]"
+            className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-bold text-muted-foreground transition-all duration-150 hover:bg-primary-light hover:text-foreground active:scale-[0.96]"
           >
             <CodeIcon size={16} />
             Open in the code window

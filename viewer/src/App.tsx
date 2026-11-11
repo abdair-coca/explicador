@@ -6,6 +6,8 @@ import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply,
 import { CodeDock } from './code/CodeDock';
 import { readPref, useMedia, usePresence, writePref } from './code/hooks';
 import { codeReducer, initialCode } from './code/state';
+import { Lesson } from './lesson/Lesson';
+import { planLesson } from './lesson/chapters';
 import { BlockView } from './components/BlockView';
 import { DetailPanel, findItem, isItemBlock } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
@@ -374,6 +376,7 @@ export function App() {
 }
 
 function Scene({ scene }: { scene: ScenePayload }) {
+  const plan = useMemo(() => planLesson(scene.blocks), [scene.blocks]);
   return (
     <>
       {scene.status === 'stale' && (
@@ -394,10 +397,14 @@ function Scene({ scene }: { scene: ScenePayload }) {
           </div>
         </div>
       )}
-      {scene.blocks.map((block, i) => (
-        // Keyed by version so a new scene restarts its animations.
-        <BlockView key={`${scene.version}-${i}`} block={block} />
-      ))}
+      {plan ? (
+        <Lesson scene={scene} plan={plan} />
+      ) : (
+        scene.blocks.map((block, i) => (
+          // Keyed by version so a new scene restarts its animations.
+          <BlockView key={`${scene.version}-${i}`} block={block} />
+        ))
+      )}
       <p className="flex items-center gap-2 pt-2 text-sm font-semibold text-muted-foreground">
         <InfoIcon size={16} />
         Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}
