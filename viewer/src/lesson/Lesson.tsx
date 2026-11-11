@@ -2,6 +2,7 @@
 // blocks and a "Next" button), a sticky rail with progress (a strip of pills on small screens) and an end card.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ScenePayload } from '../../../server/src/scene.ts';
+import { staticScene } from '../api';
 import { BlockView } from '../components/BlockView';
 import { ArrowRightIcon, ChatIcon, CheckIcon, FlagIcon } from '../components/icons';
 import { useSelection } from '../components/selection';
@@ -161,7 +162,8 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
             <span>{chapter.block.goal}</span>
           </p>
         )}
-        {selection && (
+        {/* Offline copies cannot reach Claude. */}
+        {selection && staticScene === null && (
           <button
             type="button"
             onClick={(event) => selection.select(chapter.block.id, chapter.block.id, event.currentTarget)}

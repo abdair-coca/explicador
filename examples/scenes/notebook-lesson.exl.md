@@ -1,0 +1,196 @@
+# Can a model tell a good review from a bad one?
+
+This notebook teaches a computer to read a short movie review and say whether it is **positive** or **negative**. It never understands the words: it counts them, and learns how much each one pushes towards "positive". Here is how far that gets with 24 reviews.
+
+<stats id="headline">
+<stat value="0.833" label="accuracy on the 6 test reviews (5 right)" ref="reviews.ipynb:15" />
+<stat value="24" label="hand-written reviews, 12 positive and 12 negative" ref="reviews.ipynb:4" />
+<stat value="70" label="word features the model learns from" ref="reviews.ipynb:10" />
+</stats>
+
+<journey id="path" title="The data's path">
+<stage id="reviews" label="Reviews" value="24 reviews" kind="table" ref="reviews.ipynb:3">Every review is a sentence plus its label: 1 for positive, 0 for negative.</stage>
+<stage id="clean" label="Clean text" value="24 texts" kind="text" op="clean()" ref="reviews.ipynb:6">Lowercase, no punctuation, no filler words, but negations stay.</stage>
+<stage id="split" label="Train and test" value="18 + 6" kind="split" op="train_test_split()" ref="reviews.ipynb:8">The model learns from 18 reviews; 6 are hidden away to grade it fairly.</stage>
+<stage id="matrix" label="Word counts" value="18 × 70" kind="matrix" op="CountVectorizer()" ref="reviews.ipynb:10">Each review becomes a row of 70 numbers: how many times each word or word pair appears.</stage>
+<stage id="model" label="Logistic regression" value="70 weights" kind="model" op="fit()" ref="reviews.ipynb:15">The model learns one weight per word: positive words push up, negative words push down.</stage>
+<stage id="score" label="Test accuracy" value="0.833" kind="metric" ref="reviews.ipynb:15">On the 6 hidden reviews it gets 5 right.</stage>
+</journey>
+
+<chapter id="load" title="The reviews" goal="Know what the model learns from: 24 sentences, each with a 0 or a 1." ref="reviews.ipynb:2-4" />
+
+A **dataset** for this task is just a table: one column with the text, one with the answer we want the model to learn, called the **label**. Think of a stack of exam papers that already have the correct grade written on the back.
+
+| text | label |
+|---|---|
+| A great movie, I loved it | 1 (positive) |
+| A boring movie, I hated it | 0 (negative) |
+
+The notebook writes 24 reviews by hand: 12 with label 1 and 12 with label 0. Having the same number of each matters: a model that always said "positive" would only be right half of the time, so any score above 0.5 is real learning.
+
+> [!NOTE]
+> Real datasets have thousands of reviews. This one is tiny on purpose, so every number in the lesson can be checked by eye.
+
+<quiz id="q-label" question="What does the label 0 mean in this notebook?">
+<option why="The label is the answer, not a count of anything.">The review has no words</option>
+<option correct="true" why="1 is positive and 0 is negative; the model learns to predict this column.">The review is negative</option>
+<option why="Reviews are not scored by length.">The review is short</option>
+</quiz>
+
+<chapter id="clean" title="Cleaning the text" goal="See why the cleaning drops filler words but keeps &quot;not&quot;." ref="reviews.ipynb:5-6" />
+
+The model will count words, so two spellings of the same word should count as one: "Not" and "not" must become the same thing. Cleaning is like sorting coins before counting them: same coin, same pile.
+
+The function `clean()` does three things: it lowercases, it replaces anything that is not a letter by a space, and it drops **stop words**, words like "I", "at", "all" that appear everywhere and say nothing about the opinion.
+
+<trace id="trace-clean" title="One review through clean()" ref="reviews.ipynb:6">
+<value label="Original">Not good at all, I hated it</value>
+<value label="Lowercase" code="text.lower()" note="&quot;Not&quot; and &quot;not&quot; are now the same word.">not good at all, i hated it</value>
+<value label="Letters only" code="re.sub(r&quot;[^a-z\s]&quot;, &quot; &quot;, text)" note="The comma becomes a space, so it can never stick to a word.">not good at all  i hated it</value>
+<value label="No stop words" code="w not in STOP_WORDS" note="&quot;at&quot;, &quot;all&quot;, &quot;i&quot; and &quot;it&quot; go. &quot;not&quot; stays, because the notebook removed the negations from the stop word list.">not good hated</value>
+</trace>
+
+> [!IMPORTANT]
+> **The key decision of the notebook.** scikit-learn's list of English stop words contains "not". With it, "not good" would be cleaned into "good" and look positive. The notebook subtracts `{"not", "no", "never", "nor"}` from the list, so negations survive.
+
+<quiz id="q-not" question="What would happen to &quot;Not good, a waste of time&quot; if &quot;not&quot; were a stop word?">
+<option correct="true" why="Only &quot;good&quot;, &quot;waste&quot; and &quot;time&quot; would be left, and &quot;good&quot; pushes towards positive.">It would look more positive than it is</option>
+<option why="Cleaning only removes words; the review keeps its label 0.">Its label would change to 1</option>
+<option why="Other words like &quot;waste&quot; would still be there.">It would become an empty text</option>
+</quiz>
+
+<chapter id="split" title="Train and test" goal="Understand why 6 reviews are hidden from the model." ref="reviews.ipynb:7-8" />
+
+If a student sees the exam questions while studying, a perfect grade proves nothing. So the notebook hides some reviews: the model **trains** on 18 and is **tested** on the other 6, which it never sees while learning.
+
+`train_test_split(..., test_size=0.25, stratify=df["label"])` takes a quarter of the reviews for the test set. **Stratify** means the split keeps the class balance: the 6 test reviews are 3 positive and 3 negative, the same half-and-half as the whole dataset.
+
+<chart id="chart-split" title="Reviews in each part" type="bars" series="negative|positive" ref="reviews.ipynb:8">
+<row label="train" values="9|9" />
+<row label="test" values="3|3" />
+</chart>
+
+<quiz id="q-split" question="Why stratify the split?">
+<option why="The model sees the same 18 reviews either way.">So the model trains faster</option>
+<option correct="true" why="With only 6 test reviews, a random split could take 5 negatives and 1 positive, and the score would mostly measure that accident.">So both parts keep the same share of positive and negative reviews</option>
+</quiz>
+
+<chapter id="vectorize" title="Turning words into numbers" goal="Read a document-term matrix and know what CountVectorizer and TF-IDF put in it." ref="reviews.ipynb:9-11" />
+
+A model can only do arithmetic, so each review has to become a row of numbers. `CountVectorizer` builds a **vocabulary** of every word in the training reviews, and each review becomes one row with a column per word: the number is how many times that word appears. This is called a **bag of words**: like emptying the sentence into a bag, the order is lost but the counts remain.
+
+Here is the idea on 3 training reviews and 5 chosen words (cell 11 prints exactly this):
+
+<matrix id="dtm" title="3 reviews, 5 words" cols="good|great|bad|boring|not" ref="reviews.ipynb:11">
+<row label="awful film ending bad" values="0|0|1|0|0" />
+<row label="good story great acting" values="1|1|0|0|0" />
+<row label="great acting fun story" values="0|1|0|0|0" />
+<focus label="The word great" cells="*,2">"great" appears in two reviews, both positive.</focus>
+<focus label="One review" cells="2,*">"good story great acting" has a 1 under "good" and under "great": this row is all the model sees of it.</focus>
+</matrix>
+
+The notebook uses `ngram_range=(1, 2)`: besides single words, it also counts **pairs** of neighbouring words, so "not good" becomes a column of its own. With words and pairs, the 18 training reviews give a vocabulary of **70** columns.
+
+> [!TIP]
+> **TF-IDF** is the same table with smarter numbers: a word that appears in many reviews (like "film") gets a smaller weight than a rare, telling word. The notebook tries both.
+
+<quiz id="q-shape" question="The training matrix has shape (18, 70). What are the 70?">
+<option why="There are 18 training reviews; they are the rows.">The reviews</option>
+<option correct="true" why="One column per word or word pair in the training vocabulary.">The words and word pairs the vectorizer found</option>
+<option why="Labels are kept apart, in y_train.">The labels</option>
+</quiz>
+
+<chapter id="train" title="Training the model" goal="Know what logistic regression learns and read train against test accuracy." ref="reviews.ipynb:12-13" />
+
+**Logistic regression** gives every column a **weight**. To judge a review, it adds up the weights of the words it contains: if the total leans positive, it answers 1; if it leans negative, 0. It is like a jury where each word votes, and some words have louder voices than others. Training means finding the weights that best match the 18 labelled reviews.
+
+The notebook trains one model on the word counts and one on TF-IDF, and measures **accuracy** (the share of right answers) on both parts:
+
+<chart id="chart-acc" title="Accuracy: train against test" type="bars" series="train|test" highlight="test" ref="reviews.ipynb:13">
+<row label="BoW" values="1.000|0.833" />
+<row label="TF-IDF" values="1.000|0.833" />
+</chart>
+
+Both models get every training review right (1.000) but 5 of 6 test reviews (0.833). The gap is normal: the model has memorised the 18 reviews it studied. The test score is the honest one. With this little data, both vectorizers tie, so the notebook keeps the simpler word counts.
+
+<quiz id="q-gap" question="Which number tells you how well the model will do on new reviews?">
+<option why="It saw these reviews while learning, so a perfect score is easy.">Train accuracy, 1.000</option>
+<option correct="true" why="The 6 test reviews were hidden during training.">Test accuracy, 0.833</option>
+</quiz>
+
+<chapter id="evaluate" title="Grading on the test set" goal="Read a confusion matrix and compute accuracy, precision, recall and F1 from it." ref="reviews.ipynb:14-15" />
+
+Accuracy says how many answers were right, but not **which** mistakes happened. A **confusion matrix** does: rows are the real labels, columns what the model predicted. The diagonal holds the right answers; everything else is a mistake.
+
+Pick each highlight to see which cells it reads; the numbers come from the counts.
+
+<matrix id="cm" title="The 6 test reviews" kind="confusion" cols="negative|positive" positive="positive" ref="reviews.ipynb:15">
+<row label="negative" values="2|1" />
+<row label="positive" values="0|3" />
+<focus metric="accuracy">All the right answers over all the reviews: 5 of 6.</focus>
+<focus metric="precision">Of the 4 reviews the model called positive, how many really were. One negative review slipped in.</focus>
+<focus metric="recall">Of the 3 truly positive reviews, how many the model found: all of them.</focus>
+<focus metric="f1">One number that balances precision and recall; it is low if either one is low.</focus>
+<focus label="The mistake" cells="1,2">One negative review was called positive: a false positive.</focus>
+</matrix>
+
+The notebook prints the review it got wrong: **"worst film year really bad"**, a negative review that the model called positive. The word "worst" never appears in the training reviews, so the model has no weight for it, and "film", "year" and "really" happen to lean positive in such a small dataset (weights 0.011, 0.175 and 0.310, printed by cell 17).
+
+> [!WARNING]
+> With 6 test reviews, each mistake moves accuracy by about 0.17. These numbers show the method, not how good the model would be on real reviews.
+
+<quiz id="q-precision" question="Precision for the positive class is 0.75. What does it mean?">
+<option correct="true" why="3 of the 4 &quot;positive&quot; answers were truly positive.">When the model says positive, it is right 3 times out of 4</option>
+<option why="That is recall, which is 1.0 here: it found all 3 positives.">It finds 75 % of the positive reviews</option>
+<option why="Accuracy is 0.833.">75 % of all answers are right</option>
+</quiz>
+
+<chapter id="weights" title="Which words decide" goal="Read the model's weights and see that negation pairs carry meaning." ref="reviews.ipynb:16-17" />
+
+Because the model is just a weight per word, you can open it and look. The notebook prints the four strongest weights in each direction:
+
+<chart id="chart-coefs" title="The strongest weights" type="hbars" ref="reviews.ipynb:17">
+<row label="great" values="0.892" />
+<row label="loved" values="0.611" />
+<row label="fun" values="0.439" />
+<row label="not bad" values="0.345" />
+<row label="not good" values="-0.432" />
+<row label="bad acting" values="-0.470" />
+<row label="hated" values="-0.530" />
+<row label="boring" values="-0.607" />
+</chart>
+
+Two of the eight are **word pairs with "not"**: "not bad" pushes towards positive and "not good" towards negative. That is the payoff of keeping negations in chapter 2 and counting pairs in chapter 4.
+
+<quiz id="q-coef" question="A new review is &quot;great fun&quot;. Which way does the model lean?">
+<option correct="true" why="Both words have positive weights, 0.892 and 0.439.">Positive</option>
+<option why="Both words push up; nothing pushes down.">Negative</option>
+</quiz>
+
+<chapter id="review" title="Review" goal="Practise the questions someone could ask about this notebook." />
+
+Try to answer each one out loud before showing the answer.
+
+<quiz id="r-why-not" question="Why does the notebook keep &quot;not&quot; when it removes stop words?">
+<answer>Because "not" flips the meaning of the next word. Without it, "not good" would be cleaned into "good" and push the model towards positive. Keeping it, together with word pairs, gives the model features like "not good" (weight −0.432) and "not bad" (+0.345).</answer>
+</quiz>
+
+<quiz id="r-split" question="Why is the test set hidden during training, and why stratified?">
+<answer>A model graded on reviews it studied would look perfect (train accuracy 1.000) without proving anything. The 6 hidden reviews measure how it does on new text. Stratifying keeps them 3 positive and 3 negative, like the whole dataset.</answer>
+</quiz>
+
+<quiz id="r-bow" question="What is a bag of words?">
+<answer>A table with one row per review and one column per word in the vocabulary; each cell counts how often the word appears. Word order is lost. Here the vocabulary has 70 words and word pairs.</answer>
+</quiz>
+
+<quiz id="r-tfidf" question="How is TF-IDF different from plain counts?">
+<answer>It scales each count down when the word appears in many documents, so common words weigh less and rare, telling words weigh more. On this dataset both give the same test accuracy, 0.833.</answer>
+</quiz>
+
+<quiz id="r-precision" question="What are precision and recall here?">
+<answer>Precision: of the 4 reviews called positive, 3 were (0.75). Recall: of the 3 positive reviews, the model found all 3 (1.0). F1 balances both: 0.857.</answer>
+</quiz>
+
+<quiz id="r-error" question="Why did the model get &quot;worst film year really bad&quot; wrong?">
+<answer>"worst" never appears in the training reviews, so it has no weight, and "film", "year" and "really" lean slightly positive in such a small dataset (0.011, 0.175, 0.310). More data would fix it.</answer>
+</quiz>

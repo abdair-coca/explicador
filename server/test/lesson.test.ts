@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { describeClick, findClickTarget } from '../src/clicks/index.ts';
 import {
@@ -343,5 +345,42 @@ describe('lessons: the server side', () => {
     assert.deepEqual(boxesWithoutRange(root, result.scene.blocks), []);
     const big = tempProject({ 'nb/a.ipynb': JSON.stringify({ ...JSON.parse(notebook), cells: Array(5).fill(JSON.parse(notebook).cells[1]) }) });
     assert.deepEqual(boxesWithoutRange(big, result.scene.blocks), ['Raw (nb/a.ipynb)']);
+  });
+});
+
+describe('the example lesson', () => {
+  const repo = join(import.meta.dirname, '..', '..');
+  const project = join(repo, 'examples/notebook');
+  const parsed = parseExl(readFileSync(join(repo, 'examples/scenes/notebook-lesson.exl.md'), 'utf8'));
+
+  it('parses, uses every lesson tag and points only at files of examples/notebook', () => {
+    assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+    const types = new Set(parsed.scene.blocks.map((block) => block.type));
+    for (const type of ['chapter', 'stats', 'journey', 'trace', 'chart', 'matrix', 'quiz']) assert.ok(types.has(type as never), type);
+    for (const ref of parsed.refs) assert.ok(existsSync(join(project, ref)), ref);
+  });
+
+  it('gets its chapters\' cells with their outputs from the notebook', () => {
+    assert.ok(parsed.ok);
+    const chapters = withSnippets(project, parsed.scene.blocks).filter((block): block is ChapterBlock => block.type === 'chapter');
+    const evaluate = chapters.find((chapter) => chapter.id === 'evaluate');
+    assert.deepEqual(evaluate?.cells?.map((cell) => cell.n), [14, 15]);
+    assert.ok(evaluate?.cells?.[1]?.outputs?.length, 'cell 15 has its output');
+  });
+
+  it('shows only numbers the notebook printed', () => {
+    assert.ok(parsed.ok);
+    const notebook = JSON.parse(readFileSync(join(project, 'reviews.ipynb'), 'utf8')) as { cells: { outputs?: { text?: string[]; data?: Record<string, string[]> }[] }[] };
+    const printed = notebook.cells
+      .flatMap((cell) => cell.outputs ?? [])
+      .map((output) => [...(output.text ?? []), ...(output.data?.['text/plain'] ?? [])].join(''))
+      .join('\n');
+    const numbers = parsed.scene.blocks.flatMap((block) => {
+      if (block.type === 'stats') return block.stats.map((stat) => stat.value);
+      if (block.type === 'chart' || block.type === 'matrix') return block.rows.flatMap((row) => row.values);
+      return [];
+    });
+    assert.ok(numbers.length > 20);
+    for (const value of numbers) assert.ok(printed.includes(value), `${value} is not in any output of reviews.ipynb`);
   });
 });
