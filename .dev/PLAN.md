@@ -181,8 +181,8 @@ Defaults (approved by the user with the plan on 2026-11-10):
 
 The user asked for features that take the project to the next level and, offered five options, said "choose yourself". Chosen, in this order: **A** `<calc>`, a worked calculation of how a model scores one input (parts added one by one in a waterfall; for `kind="logistic"` the sigmoid, the probability and the decision), the viewer doing the arithmetic and the parser refusing parts that do not add up to the notebook's printed total; **B** `<threshold>`, a slider over the real test probabilities that recomputes the confusion matrix, precision and recall live; **C** practice mode, a viewer-only "Practice" view that asks every check and flashcard of a lesson, missed ones first, with a score. Not chosen now: a glossary tag; F11 stays planned. This grows the closed EXL catalog (decision 8) and the animation types (decision 5) with the user's go-ahead.
 
-- [ ] **F13a. `<calc>`.**
-- [ ] **F13b. `<threshold>`.**
+- [x] **F13a. `<calc>`.** Done 2026-11-11: parser (rounding check against the printed total), waterfall and sigmoid in the viewer, slides, docs, skill, example chapter 8 over the new cells 18–19.
+- [x] **F13b. `<threshold>`.** Done 2026-11-11: parser, strip with lanes, slider, live confusion matrix and metrics (reusing the matrix grid and metric code), slide, docs, skill, example chapter 9 over the new cells 20–21.
 - [ ] **F13c. Practice mode.**
 
 ### Unattended mode (user, 2026-11-10)

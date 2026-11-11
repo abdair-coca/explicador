@@ -26,6 +26,8 @@ import {
   confusionMetrics,
   stageKinds,
   type CalcBlock,
+  type ThresholdBlock,
+  type ThresholdPoint,
   type CalcPart,
   type CellPick,
   type ChapterBlock,
@@ -420,4 +422,50 @@ export function buildCalc(element: Element, ordinal: number, report: Report): Ca
     ...(threshold !== undefined && kind === 'logistic' ? { threshold } : {}),
     ...readRef(a.ref, element, report),
   };
+}
+
+/** A probability strictly inside (0, 1), or undefined. */
+function probability(value: string | undefined): number | undefined {
+  if (value === undefined || !NUMBER.test(value.trim())) return undefined;
+  const n = Number(value);
+  return n > 0 && n < 1 ? n : undefined;
+}
+
+export function buildThreshold(element: Element, ordinal: number, report: Report): ThresholdBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('threshold'), ordinal, report);
+  let classes: [string, string] = ['0', '1'];
+  if (a.classes !== undefined) {
+    const names = splitList(a.classes);
+    if (names.length !== 2 || names.some((name) => !name || name.length > limits.rowLabelLength) || names[0] === names[1]) {
+      report(element.attrs.get('classes')?.offset ?? element.offset, '"classes" names two different classes, the one below the threshold first: classes="negative|positive"');
+    } else classes = [names[0] ?? '', names[1] ?? ''];
+  }
+  let at = 0.5;
+  if (a.at !== undefined) {
+    const value = probability(a.at);
+    if (value === undefined) report(element.attrs.get('at')?.offset ?? element.offset, '"at" is the starting threshold, between 0 and 1: at="0.5"');
+    else at = value;
+  }
+  const points: ThresholdPoint[] = [];
+  for (const child of childElements(element, spec('threshold'), report)) {
+    const p = readAttrs(child, spec('point'), report);
+    requireSelfClosing(child, '<point score="0.608" actual="negative" label="worst film year really bad" />', report);
+    if (p.score === undefined || p.actual === undefined) continue;
+    const score = p.score.trim();
+    const n = Number(score);
+    if (!NUMBER.test(score) || n < 0 || n > 1) {
+      report(child.attrs.get('score')?.offset ?? child.offset, `"${score}" is not a probability; score is the model's probability of "${classes[1]}", from 0 to 1, as printed`);
+      continue;
+    }
+    const actual = p.actual.trim();
+    if (!classes.includes(actual)) {
+      report(child.attrs.get('actual')?.offset ?? child.offset, `"actual" must name one of the classes: ${classes.join(', ')} (got "${actual}")`);
+      continue;
+    }
+    const label = optionalText(p.label, 'label', limits.labelLength, child, report);
+    points.push({ score, actual, ...(label ? { label } : {}) });
+  }
+  if (points.length < 2) report(element.offset, '<threshold> needs at least two <point>s: the test inputs with their probability and real class');
+  if (points.length > limits.thresholdPoints) report(element.offset, `<threshold> has more than ${limits.thresholdPoints} points`);
+  return { type: 'threshold', id, title, classes, at, points, ...readRef(a.ref, element, report) };
 }

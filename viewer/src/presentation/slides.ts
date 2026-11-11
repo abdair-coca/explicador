@@ -1,7 +1,7 @@
 // Presentation order: one slide per Markdown block, <arch> and <data>, one per <flow> step,
 // and one per <walk> step of a <state> (or one slide for a <state> without a walk).
 // Lessons add a title slide per chapter, one slide per journey stage and trace value, one per chart, quiz and
-// stats block, one per matrix followed by one per highlight it offers, and one per step of a calculation.
+// stats block, one per matrix followed by one per highlight it offers, and one per step of a calculation, and one per threshold (interactive).
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calc.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
@@ -20,6 +20,7 @@ export type Slide =
   | { kind: 'chart'; block: number }
   | { kind: 'matrix'; block: number; focus?: number }
   | { kind: 'quiz'; block: number }
+  | { kind: 'threshold'; block: number }
   | { kind: 'calc'; block: number; step: number; of: number };
 
 /** One slide per item, numbered `step` of `of`. */
@@ -39,6 +40,7 @@ export function buildSlides(blocks: Block[]): Slide[] {
       case 'stats':
       case 'chart':
       case 'quiz':
+      case 'threshold':
         slides.push({ kind: block.type, block: i });
         break;
       case 'flow':

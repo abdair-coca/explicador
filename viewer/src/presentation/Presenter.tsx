@@ -16,6 +16,7 @@ import { FocusNote, MatrixGrid } from '../lesson/Matrix';
 import { LessonContext } from '../lesson/context';
 import { progressKey } from '../lesson/progress';
 import { QuizView } from '../lesson/Quiz';
+import { ThresholdView } from '../lesson/Threshold';
 import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
@@ -316,6 +317,16 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
         </h2>
         <div className="rounded-2xl border border-border-soft bg-card p-6 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           <CalcView block={block} index={slide.step} />
+        </div>
+      </div>
+    );
+  }
+  if (slide.kind === 'threshold' && block.type === 'threshold') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-3xl font-black tracking-tight">{block.title}</h2>
+        <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <ThresholdView block={block} />
         </div>
       </div>
     );

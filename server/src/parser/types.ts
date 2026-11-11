@@ -399,8 +399,28 @@ export interface CalcBlock {
   ref?: Ref;
 }
 
+/** One test input: the model's probability for the second class and its real class. */
+export interface ThresholdPoint {
+  score: string;
+  actual: string;
+  label?: string;
+}
+
+/** A decision threshold the reader moves over real predictions; the viewer recomputes the errors and metrics. */
+export interface ThresholdBlock {
+  type: 'threshold';
+  id: string;
+  title: string;
+  /** The class below the threshold and the class at or above it. */
+  classes: [string, string];
+  /** Starting threshold; default 0.5. */
+  at: number;
+  points: ThresholdPoint[];
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

@@ -57,6 +57,8 @@ export const catalog: Record<string, TagSpec> = {
     children: ['part'],
   },
   part: { attrs: { label: 'required', value: 'required', note: 'optional', ref: 'optional' } },
+  threshold: { attrs: { id: 'optional', title: 'required', classes: 'optional', at: 'optional', ref: 'optional' }, children: ['point'] },
+  point: { attrs: { score: 'required', actual: 'required', label: 'optional' } },
 };
 
 export const limits = {
@@ -99,6 +101,7 @@ export const limits = {
   options: 5,
   optionLength: 200,
   calcParts: 24,
+  thresholdPoints: 200,
 } as const;
 
 export type Report = (offset: number, message: string) => void;

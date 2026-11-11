@@ -192,6 +192,30 @@ The model starts from its **intercept** (its score before reading any word) and 
 <option why="Each word adds its own weight; the count of words does not decide.">Because most of the words are positive</option>
 </quiz>
 
+<chapter id="threshold" title="Moving the threshold" goal="See how the 0.5 threshold trades one kind of mistake for the other." ref="reviews.ipynb:20-21" />
+
+The model never says "positive" directly: it gives a **probability**, and a **threshold** turns it into an answer. scikit-learn uses 0.5, but that is a choice, like the mark that decides who passes an exam. Cell 21 prints the probability of every test review.
+
+Drag the threshold and watch the dots: green when the review is called right, red when it is wrong. The matrix and the metrics below are recomputed from the same 6 reviews.
+
+<threshold id="what-if" title="The 6 test reviews and the threshold" classes="negative|positive" ref="reviews.ipynb:21">
+<point score="0.156" actual="negative" label="bad music boring plot hated" />
+<point score="0.292" actual="negative" label="boring slow bad watch" />
+<point score="0.608" actual="negative" label="worst film year really bad" />
+<point score="0.652" actual="positive" label="good fun start finish" />
+<point score="0.748" actual="positive" label="good music fun plot loved" />
+<point score="0.815" actual="positive" label="loved music great film" />
+</threshold>
+
+> [!TIP]
+> Any threshold between 0.608 and 0.652 gets all 6 right here. Do not trust that: it was found by looking at the test set, so the test set can no longer grade it fairly. With so few reviews, keep 0.5.
+
+<quiz id="q-threshold" question="You raise the threshold from 0.5 to 0.7. What happens to recall for positive reviews?">
+<option why="Raising the threshold can only take &quot;positive&quot; answers away, never add them.">It goes up</option>
+<option correct="true" why="&quot;good fun start finish&quot; (0.652) is now called negative, so only 2 of the 3 positive reviews are found: recall drops from 1 to 0.6667.">It goes down</option>
+<option why="One positive review falls below 0.7.">It stays the same</option>
+</quiz>
+
 <chapter id="review" title="Review" goal="Practise the questions someone could ask about this notebook." />
 
 Try to answer each one out loud before showing the answer.

@@ -7,6 +7,7 @@ import {
   formatErrors,
   parseExl,
   type CalcBlock,
+  type ThresholdBlock,
   type ChapterBlock,
   type ChartBlock,
   type JourneyBlock,
@@ -358,7 +359,7 @@ describe('the example lesson', () => {
   it('parses, uses every lesson tag and points only at files of examples/notebook', () => {
     assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
     const types = new Set(parsed.scene.blocks.map((block) => block.type));
-    for (const type of ['chapter', 'stats', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'calc']) assert.ok(types.has(type as never), type);
+    for (const type of ['chapter', 'stats', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'calc', 'threshold']) assert.ok(types.has(type as never), type);
     for (const ref of parsed.refs) assert.ok(existsSync(join(project, ref)), ref);
   });
 
@@ -381,6 +382,7 @@ describe('the example lesson', () => {
       if (block.type === 'stats') return block.stats.map((stat) => stat.value);
       if (block.type === 'chart' || block.type === 'matrix') return block.rows.flatMap((row) => row.values);
       // Signs are added when printing (`+.3f`); the number itself must be printed.
+      if (block.type === 'threshold') return block.points.map((point) => point.score);
       if (block.type === 'calc') return [...block.parts.map((part) => part.value.replace(/^\+/, '')), ...(block.total ? [block.total] : [])];
       return [];
     });
@@ -429,5 +431,30 @@ describe('<calc>', () => {
     assert.match(errorsOf(calc(' classes="a|b"', parts))[0] ?? '', /"classes" works only in a <calc kind="logistic">/);
     assert.match(errorsOf(calc(' kind="logistic" threshold="1.5"', parts))[0] ?? '', /between 0 and 1/);
     assert.match(errorsOf(calc(' kind="logistic" classes="a"', parts))[0] ?? '', /names the two classes/);
+  });
+});
+
+describe('<threshold>', () => {
+  const points = '<point score="0.156" actual="negative" label="bad music" />\n<point score="0.608" actual="negative" />\n<point score="0.652" actual="positive" />';
+  const threshold = (attrs: string, body = points) => `<threshold title="Moving the threshold"${attrs}>\n${body}\n</threshold>`;
+
+  it('reads the classes, the starting threshold and the points', () => {
+    const parsed = parseExl(threshold(' classes="negative|positive" at="0.6" ref="nb/p2.ipynb:9"'));
+    assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+    const block = parsed.scene.blocks[0] as ThresholdBlock;
+    assert.deepEqual(block.classes, ['negative', 'positive']);
+    assert.equal(block.at, 0.6);
+    assert.deepEqual(block.points[0], { score: '0.156', actual: 'negative', label: 'bad music' });
+    assert.deepEqual(parsed.refs, ['nb/p2.ipynb']);
+    const plain = parseExl(threshold('', '<point score="0.2" actual="0" />\n<point score="0.9" actual="1" />'));
+    assert.ok(plain.ok && (plain.scene.blocks[0] as ThresholdBlock).at === 0.5);
+  });
+
+  it('refuses scores outside 0–1, unknown classes and a bad threshold', () => {
+    assert.match(errorsOf(threshold(' classes="negative|positive"', '<point score="1.2" actual="negative" />\n<point score="0.3" actual="positive" />'))[0] ?? '', /"1.2" is not a probability/);
+    assert.match(errorsOf(threshold(''))[0] ?? '', /"actual" must name one of the classes: 0, 1/);
+    assert.match(errorsOf(threshold(' classes="negative|positive" at="1"'))[0] ?? '', /starting threshold, between 0 and 1/);
+    assert.match(errorsOf(threshold(' classes="a|a"'))[0] ?? '', /two different classes/);
+    assert.match(errorsOf(threshold(' classes="negative|positive"', '<point score="0.2" actual="negative" />'))[0] ?? '', /at least two <point>s/);
   });
 });
