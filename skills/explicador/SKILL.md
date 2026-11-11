@@ -12,6 +12,7 @@ You explain code with **scenes**: an EXL document (Markdown plus a few diagram t
 1. **Pick a topic**: a short, stable name for what is explained ("login", "checkout flow"). Reuse the same topic for the same question so the cache hits.
 2. **Call `show_scene`** with the topic.
    - **fresh**: the scene is already in the viewer and its EXL is in the result. Do **not** read code or call other tools. Reply with 2–4 sentences summarizing it from the EXL and give the viewer URL.
+     Exception: a scene about a notebook (or data or ML code) without `<chapter>`s is an old format; rebuild it as a lesson (see "Lessons") under the same topic.
    - **stale**: re-read only the changed files it lists, update the EXL it returned and call `render_scene` with the same topic.
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
@@ -34,6 +35,22 @@ You explain code with **scenes**: an EXL document (Markdown plus a few diagram t
    - **Notebooks (`.ipynb`)**: never read the raw JSON. Call `read_notebook` (an outline of numbered cells; pass `cells: "3-5"` to read some whole). Refs to a notebook are **cell numbers**: `analysis.ipynb:3-5` is cells 3 to 5 (1-based, Markdown cells count), in scenes, `<code>`, answers and tours. The window shows the notebook as cells with their outputs.
 10. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
 11. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
+
+## Lessons (notebooks, data and ML code)
+
+When the topic is a Jupyter notebook, or a data or ML script, explain it as a **lesson** for a beginner: chapters that follow the notebook, each concept from zero, the real data on screen, and checks. Full tag reference: "Lessons" in `docs/EXL.md`; a complete example is `examples/scenes/notebook-lesson.exl.md` in the plugin.
+
+1. **Outline first**: `read_notebook` without `cells` gives the numbered cells; then read the cells of each section whole (`cells: "5-9"`), outputs included. Refs are cell numbers.
+2. **Intro** (before the first chapter): a `#` title that states the problem as a question ("Can a model tell a good review from a bad one?"), one short paragraph, then `<stats>` with 2–4 headline numbers (the result first) and a `<journey>` of the data's path: one `<stage>` per big step with its real size as `value` ("24 reviews", "18 × 70", "0.833") and the operation as `op` (`train_test_split()`).
+3. **One `<chapter>` per notebook section**, in notebook order: `ref` = the section's cells (a range), a `title` a beginner understands, and a `goal` ("Read a confusion matrix and compute precision from it"). The server attaches the cells with their outputs.
+4. **In each chapter**, short blocks, one idea each:
+   - **Each new concept from zero**: what it is in one sentence, an everyday **analogy** (a jury where each word votes; exam answers hidden from the student), and a **tiny worked example** (a 2–3 row Markdown table, or a small `<matrix>`) before the code.
+   - **The decision and why**: what the notebook chose (keep negations, stratify, max_iter) and what would go wrong otherwise, often as a `> [!IMPORTANT]` callout.
+   - **A visual of the real data**: `<trace>` for a transformation of one real value (cleaning text, tokenizing, scaling a row); `<chart>` for comparisons (`bars`), rankings and coefficients (`hbars`; negative values diverge) and trends (`line`); `<matrix kind="confusion">` for a classifier's errors, with a `<focus metric>` per metric you discuss and a `<focus cells>` on the mistakes; a plain `<matrix>` for a document-term matrix or a tiny worked example.
+   - **1–2 `<quiz>`** that check understanding, not memory: plausible wrong options, each with a `why` that teaches (do not start it with "Right" or "Wrong": the viewer already says so).
+5. **A final chapter "Review"** with 5–8 flashcards (`<quiz question><answer>…</answer></quiz>`) of the questions a teacher or reviewer would most likely ask about this notebook (why this preprocessing, why this split, what the metric means, why the model failed on an example), each answered in 2–4 sentences with the real numbers.
+6. **Numbers only from the notebook**: every number in the lesson (stats, stage values, chart rows, matrix cells, prose) is copied from a cell output, or from code that actually ran. Never compute metrics yourself: give the confusion counts and the viewer derives accuracy, precision, recall and F1 with their formulas. If an output you need is missing, say so in the prose instead of guessing.
+7. Callouts: `> [!NOTE]` for context, `> [!TIP]` for a shortcut or an intuition, `> [!IMPORTANT]` for the key decision, `> [!WARNING]` for a pitfall or a limit of the result, `> [!CAUTION]` for something that would break.
 
 ## EXL in short
 
@@ -90,6 +107,14 @@ One short paragraph of context.
 - **Every box that is a function, class, route or block gets a line range** (`path:start-end`), so the code window can focus its code when the user clicks it, and the code follows the flow while it plays. A bare `path` is only for a whole small file, a folder-like module or a data file; `render_scene` warns about the others. For notebooks the range is cells.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
+- Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
+  - `<chapter id? title goal? ref="nb.ipynb:5-9" />` self-closing; runs until the next chapter.
+  - `<stats><stat value="0.833" label="test accuracy" ref? /></stats>` (1–6).
+  - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
+  - `<trace title ref?>` with `<value label code? note? ref?>the value</value>` (2–12; the first is the input).
+  - `<chart title type="bars|hbars|line" series="train|test"? unit? highlight? ref?>` with `<row label="BoW" values="1.000|0.833" />` (one value per series, up to 4 series and 40 rows).
+  - `<matrix title cols="a|b" kind="confusion"? positive? corner? ref?>` with `<row label="a" values="2|1" />` and `<focus label cells="1,2 2,1">narration</focus>` (1-based, `*` = all) or, in a confusion matrix, `<focus metric="precision">narration</focus>`.
+  - `<quiz question>` with 2–5 `<option correct="true"? why?>text</option>` (exactly one correct), or one `<answer>Markdown</answer>` for a flashcard.
 
 ## Good scenes
 

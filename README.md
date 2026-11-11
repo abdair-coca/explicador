@@ -15,6 +15,7 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 8 (questions, done pending the user's review): the panel has a question box; Claude answers in the panel with the `answer_question` tool (Markdown, code lines copied by the server, an optional link to a scene it drew in the background). Questions are saved with the scene.
 - Phase 9 (code window, done pending the user's review): clicking a box also opens a VS Code-like read-only window under the diagram (tabs, file explorer, highlighted lines); Claude can walk you through code with the `explain_code` tool, a guided tour that highlights each part with a note, and an answer can carry a tour too. 
 - Phase 10 (focus, explain buttons, flows with code, notebooks; done pending the user's review): every box focuses its own lines, a flow or architecture can be walked with its code in one click, "Explain code" asks Claude for a tour, Jupyter notebooks render as cells with outputs, the code window covers the page below the top bar, and Markdown tables render. Plan: `.dev/PLAN.md`.
+- Phase 12 (notebook lessons, done pending the user's review): notebooks and data or ML code are explained as lessons by chapters, with the real data animated (the data's journey, value traces, charts, confusion and other matrices), checks per chapter, a final review of flashcards and a progress rail. Example: `examples/scenes/notebook-lesson.exl.md` over `examples/notebook/reviews.ipynb`.
 
 ## Use it (from a checkout)
 
