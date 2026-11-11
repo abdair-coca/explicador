@@ -186,16 +186,23 @@ The user asked to push the work and continue it in a cloud session without their
 - **Never:** push a commit whose checks fail; force-push or rewrite history; add dependencies to any `package.json`; start F11 or touch the bridge's security (token, Origin/Host checks, file access rules) or weaken validation; use or add the user's private files (their notebook is not in the repo; use `examples/notebook/`). Anything that needs one of these, or a product decision, goes to "Pending user decisions" below.
 - **Quality checklist** for a lesson (review `examples/scenes/notebook-lesson.exl.md` in the viewer against it): every number on screen comes from a notebook output or a computation that ran; each concept has an analogy and a tiny example before the code; one idea per block; charts follow the dataviz rules (legend for 2+ series, labels, table view, bars from zero, no dual axis); everything works by keyboard and at 390 px wide; reduced motion shows final states; presentation and export cover every lesson block; the agent-facing skill and `docs/EXL.md` match what the parser accepts.
 - **Backlog after F12** (in priority order; edit as you learn):
-  1. Bugs found while checking the example lesson in a browser (desktop and 390 px), presentation and export.
-  2. Skill quality: write a lesson for `examples/notebook/reviews.ipynb` strictly from the skill and fix the skill where the result misses the checklist.
-  3. Accessibility of charts, matrices and quizzes (focus order, labels, contrast relief, screen reader text).
-  4. Long notebooks: lessons with 10+ chapters and big outputs stay fast (lazy cell outputs, no layout jank).
-  5. Clearer errors from `render_scene` for lesson tags (examples in the messages), and `show_scene` telling the agent to rebuild old notebook scenes as lessons.
-  6. Small-screen polish of the lesson layout and the detail panel over lessons.
+  1. ~~Bugs found while checking the example lesson in a browser~~ (2026-11-11: journey ops broke mid-word; "Ask about this chapter" showed in offline exports; "Your cells" header crushed at 390 px; grouped bar labels overlapped; all fixed). Keep checking new lessons the same way.
+  2. Skill quality: the example lesson was written by following the skill's recipe; next, have a fresh agent write a lesson for `examples/notebook/reviews.ipynb` strictly from the skill and fix the skill where the result misses the checklist (needs a Claude session with the plugin).
+  3. ~~Accessibility of charts, matrices and quizzes~~ (2026-11-11: chart marks reachable and named, confusion cells say actual/predicted, checks labelled by their question). Open: a matrix focus is announced through the live note only; chart marks are one Tab stop each (up to 160 on a big chart): consider arrow-key navigation inside a chart.
+  4. Long notebooks: chapter cells and their outputs already render only when "Your cells" is opened; measure a lesson with 15+ chapters and a big HTML output before changing anything.
+  5. ~~`show_scene` telling the agent to rebuild old notebook scenes as lessons~~ (2026-11-11). Open: examples in more `render_scene` error messages for lesson tags.
+  6. ~~Small-screen top bar~~ (2026-11-11). Open: the chapter pill strip scrolls away on phones (sticky would cost another 45 px); the detail panel over a lesson on phones was not checked.
+  7. New: checks answered in Present mode are not saved to the lesson's progress (the presenter has no lesson context).
+  8. New: a lone journey stage on the last row is capped at 22rem, but rows of 2–3 stages still stretch; a grid with fixed columns may look calmer.
 
 Notes for later sessions:
 - On Linux run `npm run build` before `npm test`: two interactivity tests fail with "the viewer is not built" otherwise.
 - Example notebook: regenerate by executing it with `jupyter nbconvert --to notebook --execute --inplace` (scikit-learn, pandas, nbconvert, ipykernel installed in the sandbox only) and drop the cells' `execution` timing metadata; a server test checks that every number of the example lesson appears in its outputs.
+
+Session summary (2026-11-11, unattended cloud session):
+- Done: F12 letters A–H (charts, matrices, quizzes and flashcards, chapter cells, lesson layout with rail and progress, presentation slides, docs and skill recipe, example notebook and lesson), F12 closed; then backlog fixes for journey wrapping, accessibility of lesson blocks, the old-notebook-scene hint in `show_scene`, and the phone top bar. Every commit pushed to `main` with typecheck, lint, build and tests green (server 136, viewer 65).
+- Problems: the baseline `files.test.ts` expected a Windows drive path to be denied on Linux; the test now expects `missing` off Windows and the code is unchanged (see "Pending user decisions"). Interactivity tests need the viewer built first.
+- Not checked: a lesson for the user's own notebook; Claude actually writing a lesson from the skill (no Claude session with the plugin here); Safari and Firefox (Chromium only).
 
 Pending user decisions:
 - Check a lesson of the user's real notebook (INF672 exam) on their machine, and the F12 review.
