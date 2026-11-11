@@ -1,6 +1,7 @@
 // One scene block, whatever its type; the plain layout, lessons and slides share it.
 import type { Block } from '../../../server/src/scene.ts';
 import { ChartScene } from '../lesson/Chart';
+import { MatrixScene } from '../lesson/Matrix';
 import { JourneyScene } from '../lesson/Journey';
 import { StatsView } from '../lesson/Stats';
 import { TraceScene } from '../lesson/Trace';
@@ -32,9 +33,10 @@ export function BlockView({ block }: { block: Block }) {
       return <StatsView block={block} />;
     case 'chart':
       return <ChartScene block={block} />;
-    // F12 in progress (see .dev/TASK.md): chapters get the lesson layout; matrices and quizzes are not drawn yet.
-    case 'chapter':
     case 'matrix':
+      return <MatrixScene block={block} />;
+    // F12 in progress (see .dev/TASK.md): chapters get the lesson layout; quizzes are not drawn yet.
+    case 'chapter':
     case 'quiz':
       return null;
   }

@@ -22,7 +22,7 @@ A. ✅ **Chart** (done 2026-11-11: `lesson/chart.ts` pure geometry, `lesson/Char
    - Tooltip `.chart-tip` on hover and keyboard focus (marks have `tabIndex={0}`): value strong, series and label secondary; values never only in the tooltip.
    - Legend chips above the plot for two or more series (rect for bars, short line for lines), none for one series. Unit appended to values.
    - SceneFrame actions: "Table"/"Chart" toggle (`TableIcon`, table in `.prose-table`) and Replay (remounts the plot). Entrances use the existing `.chart-mark.grow-up|grow-down|grow-right|grow-left`, `.chart-dot`, staggered up to 600 ms.
-B. **Matrix** (`viewer/src/lesson/Matrix.tsx`).
+B. ✅ **Matrix** (done 2026-11-11: `lesson/Matrix.tsx`, heat in `lesson/heat.ts`; columns capped at 10rem so a 2×2 matrix does not stretch across a wide screen) (`viewer/src/lesson/Matrix.tsx`).
    - `MatrixGrid({ block, focus })`: CSS grid `auto repeat(n, minmax(4.75rem, 1fr))` with roles table/row/columnheader/rowheader/cell; corner text `block.corner`, or for a confusion matrix "actual ↓ · predicted →"; big tabular numbers in `.matrix-cell`.
    - Confusion: `.matrix-hit`/`.matrix-miss` from `cellOutcome(size, positiveOf(block), r, c)` plus a tag (`CheckIcon`/`CrossIcon` and TP/FP/FN/TN, or hit/miss with more than two classes). Plain numeric matrix: heat `color-mix(in oklab, var(--heat) X%, white)` with X = 6 + 70·t (t from min to max), white text when X > 55. Text cells stay white.
    - Focus: covered cells (`covers`) get `.lit`, the others `.dim`.
@@ -52,6 +52,7 @@ H. **Example and checks.** `examples/notebook/reviews.ipynb`: a small synthetic 
 
 ## Validation
 
+- 2026-11-11 B: typecheck 0, lint 0, build OK, server 132/132, viewer 64/64. Confusion matrix (metric chips, worked formula, error focus) at 1440 px and a 3×4 heat matrix with a column focus at 390 px checked in Chromium: no console errors, focus outlines not clipped.
 - 2026-11-11 A (cloud, Linux, Node 22.23): typecheck 0, lint 0, build OK, server 132/132, viewer 63/63. Charts checked in Chromium (Playwright) at 1440 and 390 px with a scratch scene (grouped bars with highlight, diverging hbars, two-series line, one-series bars): no console errors, labels do not collide, keyboard focus shows the tooltip.
 
 - 2026-11-10 (handoff): `npm run typecheck` 0 errors; `npm run lint` 0 warnings; `npm test` server 132/132, viewer 50/50; `npm run build` OK. Lesson blocks parse and the server attaches chapter cells; in the viewer, stats, journey and trace draw; chart, matrix, quiz and the lesson layout are not drawn yet.

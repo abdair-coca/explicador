@@ -12,6 +12,7 @@ import {
   nearestIndex,
   withUnit,
 } from '../src/lesson/chart.ts';
+import { heatOf, isNumeric } from '../src/lesson/heat.ts';
 
 const chart = (over: Partial<ChartBlock>): ChartBlock => ({
   type: 'chart',
@@ -146,5 +147,16 @@ describe('lineGeometry', () => {
   it('has no end labels for one series', () => {
     const g = lineGeometry(chart({ chartType: 'line' }), 600);
     assert.equal(g.lines?.[0]?.end, undefined);
+  });
+});
+
+describe('heatOf', () => {
+  it('ramps numbers from 6 to 76 percent and leaves text cells alone', () => {
+    assert.deepEqual(heatOf([{ values: ['0', '5'] }, { values: ['10', 'n/a'] }]), [
+      [6, 41],
+      [76, undefined],
+    ]);
+    assert.deepEqual(heatOf([{ values: ['3', '3'] }]), [[41, 41]]);
+    assert.ok(isNumeric('-1.5e3') && !isNumeric('cat'));
   });
 });
