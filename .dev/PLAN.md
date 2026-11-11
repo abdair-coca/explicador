@@ -174,7 +174,7 @@ Defaults (approved by the user with the plan on 2026-11-10):
 - The viewer chrome stays in English like the rest of the viewer; localizing it would be its own phase.
 - A small synthetic notebook executed with Jupyter (`examples/notebook/`) and its lesson (`examples/scenes/`) serve as example and test data; the user's notebook is only read.
 
-- [ ] **F12. Notebook lessons.** In progress; state and the specs of what is left in `.dev/TASK.md`.
+- [x] **F12. Notebook lessons.** Done 2026-11-11 in the unattended cloud session except the user's review and the check with the user's own notebook. Example: `examples/scenes/notebook-lesson.exl.md` over `examples/notebook/reviews.ipynb`.
   - Criterion: parser tests for every new tag (valid, invalid, incomplete), refs and cache invalidation, chapter cells attached with outputs, clicks on stages and chapters, the ranges warning; viewer tests (word diff, chapter split, confusion metrics, chart scales, slides, progress); typecheck, lint and tests pass; the example lesson checked in a browser (rail, journey, trace, charts, matrices, quizzes, cells, panel, presentation, export). The check with the user's own notebook and the user's review happen when the user is back.
 
 ### Unattended mode (user, 2026-11-10)
@@ -192,6 +192,10 @@ The user asked to push the work and continue it in a cloud session without their
   4. Long notebooks: lessons with 10+ chapters and big outputs stay fast (lazy cell outputs, no layout jank).
   5. Clearer errors from `render_scene` for lesson tags (examples in the messages), and `show_scene` telling the agent to rebuild old notebook scenes as lessons.
   6. Small-screen polish of the lesson layout and the detail panel over lessons.
+
+Notes for later sessions:
+- On Linux run `npm run build` before `npm test`: two interactivity tests fail with "the viewer is not built" otherwise.
+- Example notebook: regenerate by executing it with `jupyter nbconvert --to notebook --execute --inplace` (scikit-learn, pandas, nbconvert, ipykernel installed in the sandbox only) and drop the cells' `execution` timing metadata; a server test checks that every number of the example lesson appears in its outputs.
 
 Pending user decisions:
 - Check a lesson of the user's real notebook (INF672 exam) on their machine, and the F12 review.
@@ -260,4 +264,4 @@ Open points:
 | F9 | done (2026-11-09), user review pending |
 | F10 | done (2026-11-09), user review pending |
 | F11 | planned (approved 2026-11-09) |
-| F12 | approved (2026-11-10), in progress; continues unattended in a cloud session (see "Unattended mode"); goes before F11 |
+| F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
