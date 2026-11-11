@@ -81,8 +81,10 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
       width={g.width}
       height={g.height}
       className="block overflow-visible"
-      role="img"
-      aria-label={`${block.title}: ${block.rows.map((row) => `${row.label} ${row.values.map((v) => withUnit(v, block.unit)).join(' / ')}`).join('; ')}`}
+      // A group, not an image: its marks are focusable and each one names its label, series and value.
+      role="group"
+      aria-roledescription="chart"
+      aria-label={`${block.title}: ${block.rows.length} ${block.chartType === 'line' ? 'points' : 'rows'}; Tab through the marks, or use the Table view`}
       onMouseLeave={() => {
         setCross(undefined);
         onTip(undefined);
@@ -103,14 +105,14 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
         horizontal ? (
           <g key={tick.value}>
             <line className="chart-grid" x1={tick.at} x2={tick.at} y1={g.top} y2={g.bottom} />
-            <text className="chart-tick" x={tick.at} y={g.bottom + 18} textAnchor="middle">
+            <text aria-hidden="true" className="chart-tick" x={tick.at} y={g.bottom + 18} textAnchor="middle">
               {tick.text}
             </text>
           </g>
         ) : (
           <g key={tick.value}>
             <line className="chart-grid" x1={g.left} x2={g.right} y1={tick.at} y2={tick.at} />
-            <text className="chart-tick" x={g.left - 8} y={tick.at + 4} textAnchor="end">
+            <text aria-hidden="true" className="chart-tick" x={g.left - 8} y={tick.at + 4} textAnchor="end">
               {tick.text}
             </text>
           </g>
@@ -123,7 +125,7 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
           <line className="chart-axis" x1={g.left} x2={g.right} y1={g.zero} y2={g.zero} />
         ))}
       {g.labels.map((label, i) => (
-        <text key={i} className="chart-label" x={label.x} y={label.y} textAnchor={label.anchor}>
+        <text key={i} aria-hidden="true" className="chart-label" x={label.x} y={label.y} textAnchor={label.anchor}>
           {label.text !== label.full && <title>{label.full}</title>}
           {label.text}
         </text>
@@ -133,7 +135,7 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
         <g key={line.series} opacity={line.emphasis === 'muted' ? 0.9 : 1}>
           <path className="chart-line" d={line.d} stroke={line.color} pathLength={1} />
           {line.end && (
-            <text className="chart-label chart-fade" x={line.end.x} y={line.end.y} fill={line.color} style={{ animationDelay: '700ms' }}>
+            <text aria-hidden="true" className="chart-label chart-fade" x={line.end.x} y={line.end.y} fill={line.color} style={{ animationDelay: '700ms' }}>
               {line.end.text}
             </text>
           )}
@@ -166,7 +168,7 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
               <path className={cn('chart-mark', mark.grow)} d={mark.d} fill={mark.color} style={{ animationDelay: `${delay}ms` }} {...handlers} />
             )}
             {mark.showValue && (
-              <text className="chart-value chart-fade" x={mark.labelX} y={mark.labelY} textAnchor={mark.anchor} style={{ animationDelay: `${delay + 450}ms` }}>
+              <text aria-hidden="true" className="chart-value chart-fade" x={mark.labelX} y={mark.labelY} textAnchor={mark.anchor} style={{ animationDelay: `${delay + 450}ms` }}>
                 {mark.text}
               </text>
             )}
@@ -220,7 +222,8 @@ export function ChartView({ block }: { block: ChartBlock }) {
       <div ref={frame} className="relative w-full">
         {geometry && <Plot block={block} geometry={geometry} onTip={setTip} />}
         {tip && (
-          <div className="chart-tip" style={{ left: tip.x, top: tip.y }} role="status">
+          // The focused mark already names its value; the tooltip is only for the eye.
+          <div className="chart-tip" style={{ left: tip.x, top: tip.y }} aria-hidden="true">
             <p className="mb-0.5 text-[0.72rem] font-bold opacity-75">{tip.label}</p>
             {tip.items.map((item, i) => (
               <p key={i} className="flex items-center gap-2 whitespace-nowrap">

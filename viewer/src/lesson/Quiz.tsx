@@ -1,6 +1,6 @@
 // Checks: a multiple-choice question (a wrong pick shakes and says why, the right one pops) or a flashcard for the
 // final review (show the answer, then "did you know it?"). Progress goes to the lesson when there is one.
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { QuizBlock } from '../../../server/src/scene.ts';
 import { CheckIcon, CrossIcon } from '../components/icons';
 import { InlineMarkdown, Prose } from '../components/Prose';
@@ -119,13 +119,15 @@ const badge: Record<CheckState, React.ReactNode> = {
 export function QuizView({ block }: { block: QuizBlock }) {
   const card = block.options.length === 0;
   const [saved, save] = useCheck(block.id);
+  const questionId = useId();
   return (
     <section
-      aria-label={card ? 'Flashcard' : 'Check'}
+      aria-labelledby={questionId}
+      aria-roledescription={card ? 'flashcard' : 'check'}
       className={cn('space-y-4 rounded-2xl border-2 p-5', card ? 'border-dashed border-primary-dark bg-primary-light/40' : 'border-border bg-card shadow-[0_4px_0_var(--border)]')}
     >
       <header className="flex flex-wrap items-start gap-3">
-        <span className="flex-1 text-lg font-extrabold leading-snug">
+        <span id={questionId} className="flex-1 text-lg font-extrabold leading-snug">
           <InlineMarkdown text={block.question} />
         </span>
         {saved ? badge[saved] : <Badge variant={card ? 'step' : 'dark'}>{card ? 'Review' : 'Check'}</Badge>}

@@ -34,7 +34,7 @@ function useFitToStage(stage: React.RefObject<HTMLElement | null>, slideKey: num
     if (!element || !(slide instanceof HTMLElement)) return;
     element.style.removeProperty('--fit-h');
     const fit = (): void => {
-      const diagrams = [...slide.querySelectorAll<SVGSVGElement>('svg[role="group"]')];
+      const diagrams = [...slide.querySelectorAll<SVGSVGElement>('svg[role="group"]:not([aria-roledescription="chart"])')];
       const diagram = diagrams.sort((a, b) => b.clientHeight - a.clientHeight)[0];
       if (!diagram) return;
       const style = getComputedStyle(element);

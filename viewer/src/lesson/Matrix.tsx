@@ -48,7 +48,7 @@ export function MatrixGrid({ block, focus, large = false }: { block: MatrixBlock
                 <div
                   key={c}
                   role="cell"
-                  aria-label={`${row.label}, ${block.cols[c] ?? ''}: ${value}${outcome ? ` (${outcome})` : ''}`}
+                  aria-label={`${confusion ? `actual ${row.label}, predicted ${block.cols[c] ?? ''}` : `${row.label}, ${block.cols[c] ?? ''}`}: ${value}${outcome ? ` (${outcome})` : ''}`}
                   className={cn(
                     'matrix-cell relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-border px-2 text-center',
                     large ? 'min-h-28 py-4' : 'min-h-20 py-3',
