@@ -1,13 +1,15 @@
 // The lesson layout: the intro, then one section per chapter (number, title, goal, the reader's cells, the chapter's
 // blocks and a "Next" button), a sticky rail with progress (a strip of pills on small screens) and an end card.
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ScenePayload } from '../../../server/src/scene.ts';
 import { staticScene } from '../api';
 import { BlockView } from '../components/BlockView';
-import { ArrowRightIcon, ChatIcon, CheckIcon, FlagIcon } from '../components/icons';
+import { ArrowRightIcon, ChatIcon, CheckIcon, FlagIcon, SparkIcon } from '../components/icons';
 import { useSelection } from '../components/selection';
 import { cn } from '@/lib/utils';
 import { ChapterCells } from './ChapterCells';
+import { Practice } from './Practice';
 import { chapterAnchor, type Chapter, type LessonPlan } from './chapters';
 import { LessonContext } from './context';
 import { chapterDone, isDone, lessonSummary, progressKey, type Progress } from './progress';
@@ -50,7 +52,22 @@ function useActiveChapter(plan: LessonPlan, onSeen: (id: string) => void): strin
   return active;
 }
 
-function Rail({ plan, progress, active }: { plan: LessonPlan; progress: Progress; active: string | undefined }) {
+type Practise = (() => void) | undefined;
+
+function PracticeButton({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn('inline-flex min-h-9 items-center gap-1.5 rounded-xl border-2 border-primary-dark bg-primary-light px-3 text-sm font-bold transition-all duration-150 hover:bg-primary active:scale-[0.96]', className)}
+    >
+      <SparkIcon size={16} />
+      Practice
+    </button>
+  );
+}
+
+function Rail({ plan, progress, active, practise }: { plan: LessonPlan; progress: Progress; active: string | undefined; practise: Practise }) {
   const summary = lessonSummary(plan, progress);
   return (
     <nav aria-label="Chapters" className="sticky top-20 hidden max-h-[calc(100vh-6rem)] overflow-y-auto lg:block">
@@ -89,6 +106,7 @@ function Rail({ plan, progress, active }: { plan: LessonPlan; progress: Progress
           <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={summary.total} aria-valuenow={summary.done} aria-label="Checks done">
             <div className="h-full rounded-full bg-hit transition-[width] duration-500" style={{ width: `${(summary.done / summary.total) * 100}%` }} />
           </div>
+          {practise && <PracticeButton onClick={practise} className="mt-3 w-full justify-center" />}
         </div>
       )}
     </nav>
@@ -96,10 +114,15 @@ function Rail({ plan, progress, active }: { plan: LessonPlan; progress: Progress
 }
 
 /** Small screens: the chapters as a strip of pills at the top of the lesson. */
-function Pills({ plan, progress, active }: { plan: LessonPlan; progress: Progress; active: string | undefined }) {
+function Pills({ plan, progress, active, practise }: { plan: LessonPlan; progress: Progress; active: string | undefined; practise: Practise }) {
   return (
     <nav aria-label="Chapters" className="-mx-1 overflow-x-auto px-1 pb-1 lg:hidden">
       <ol className="flex w-max gap-1.5">
+        {practise && (
+          <li>
+            <PracticeButton onClick={practise} className="rounded-full" />
+          </li>
+        )}
         {plan.chapters.map((chapter) => {
           const done = chapterDone(chapter, progress);
           return (
@@ -196,7 +219,7 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
   );
 }
 
-function EndCard({ plan, progress }: { plan: LessonPlan; progress: Progress }) {
+function EndCard({ plan, progress, practise }: { plan: LessonPlan; progress: Progress; practise: Practise }) {
   const summary = lessonSummary(plan, progress);
   const complete = summary.chapters === plan.chapters.length && summary.done === summary.total;
   return (
@@ -218,6 +241,11 @@ function EndCard({ plan, progress }: { plan: LessonPlan; progress: Progress }) {
         )}
       </p>
       {!complete && summary.total > summary.done && <p className="mt-2 text-sm font-bold">Checks marked "Review again" or not answered yet keep their chapter open.</p>}
+      {practise && (
+        <div className="mt-4 flex justify-center">
+          <PracticeButton onClick={practise} />
+        </div>
+      )}
     </section>
   );
 }
@@ -226,23 +254,28 @@ export function Lesson({ scene, plan }: { scene: ScenePayload; plan: LessonPlan 
   const lesson = useLessonProgress(progressKey(scene.key, scene.savedAt));
   const { progress } = lesson;
   const active = useActiveChapter(plan, lesson.markSeen);
+  const [practising, setPractising] = useState(false);
+  const hasChecks = plan.introChecks.length + plan.chapters.reduce((n, chapter) => n + chapter.checks.length, 0) > 0;
+  const practise: Practise = hasChecks ? () => setPractising(true) : undefined;
   return (
     <LessonContext.Provider value={lesson}>
       <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
         <div className="hidden lg:block">
-          <Rail plan={plan} progress={progress} active={active} />
+          <Rail plan={plan} progress={progress} active={active} practise={practise} />
         </div>
         <div className="min-w-0 space-y-7">
           {plan.intro.map(({ block, index }) => (
             <BlockView key={`${scene.version}-${index}`} block={block} />
           ))}
-          <Pills plan={plan} progress={progress} active={active} />
+          <Pills plan={plan} progress={progress} active={active} practise={practise} />
           {plan.chapters.map((chapter, i) => (
             <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} />
           ))}
-          <EndCard plan={plan} progress={progress} />
+          <EndCard plan={plan} progress={progress} practise={practise} />
         </div>
       </div>
+      {/* In a portal: the page's entrance animation transforms <main>, which would trap a fixed dialog inside it. */}
+      {practising && createPortal(<Practice scene={scene} plan={plan} lesson={lesson} onClose={() => setPractising(false)} />, document.body)}
     </LessonContext.Provider>
   );
 }

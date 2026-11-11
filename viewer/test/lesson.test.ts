@@ -10,6 +10,7 @@ import { matrixFocuses } from '../src/lesson/focuses.ts';
 import { formatLike, splitNumbers, textAt } from '../src/lesson/numbers.ts';
 import { chapterDone, emptyProgress, lessonSummary, markSeen, record } from '../src/lesson/progress.ts';
 import { barTicks, formatTick, lineTicks, linear, niceTicks } from '../src/lesson/scale.ts';
+import { firstAnswer, practiceOrder, practiceScore } from '../src/lesson/practice.ts';
 import { getProgress, subscribeProgress, updateProgress } from '../src/lesson/store.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
 
@@ -240,5 +241,20 @@ describe('progress store', () => {
     stop();
     updateProgress(key, (current) => markSeen(current, 'c1'));
     assert.equal(heard, 1);
+  });
+});
+
+describe('practice', () => {
+  it('asks the missed checks first, then the new ones, then the done ones', () => {
+    const progress = { checks: { a: 'right', b: 'tried', d: 'review', e: 'known' } as const, seen: [] };
+    assert.deepEqual(practiceOrder(['a', 'b', 'c', 'd', 'e', 'f'], progress), ['b', 'd', 'c', 'f', 'a', 'e']);
+  });
+
+  it('scores the first answer of each check only', () => {
+    let answers = firstAnswer({}, 'q1', 'tried');
+    answers = firstAnswer(answers, 'q1', 'right');
+    answers = firstAnswer(answers, 'q2', 'right');
+    answers = firstAnswer(answers, 'card', 'known');
+    assert.deepEqual(practiceScore(['q1', 'q2', 'card', 'skipped'], answers), { right: 2, total: 4, missed: ['q1', 'skipped'] });
   });
 });

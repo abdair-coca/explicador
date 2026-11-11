@@ -183,7 +183,7 @@ The user asked for features that take the project to the next level and, offered
 
 - [x] **F13a. `<calc>`.** Done 2026-11-11: parser (rounding check against the printed total), waterfall and sigmoid in the viewer, slides, docs, skill, example chapter 8 over the new cells 18–19.
 - [x] **F13b. `<threshold>`.** Done 2026-11-11: parser, strip with lanes, slider, live confusion matrix and metrics (reusing the matrix grid and metric code), slide, docs, skill, example chapter 9 over the new cells 20–21.
-- [ ] **F13c. Practice mode.**
+- [x] **F13c. Practice mode.** Done 2026-11-11: "Practice" in the rail, pills and end card; missed first, fresh questions, score of first answers, repeat the missed; answers count in the lesson's progress; works in exports.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -280,4 +280,4 @@ Open points:
 | F10 | done (2026-11-09), user review pending |
 | F11 | planned (approved 2026-11-09) |
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
-| F13 | approved (2026-11-11, "choose yourself"), in progress |
+| F13 | done (2026-11-11), user review pending |

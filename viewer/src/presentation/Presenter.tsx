@@ -113,6 +113,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
         <span className="font-bold tabular-nums text-muted-foreground" aria-live="polite">
           {index + 1} / {slides.length}
         </span>
+        <span className="flex-1 sm:hidden" aria-hidden="true" />
         <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline">← → to move · F full screen · Esc to leave</span>
         <Button variant="ghost" size="icon-sm" onClick={toggleFullscreen} aria-label="Toggle full screen">
           <ExpandIcon size={16} />
