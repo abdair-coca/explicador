@@ -8,6 +8,14 @@ import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scen
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
+import { ChartView } from '../lesson/Chart';
+import { matrixFocuses } from '../lesson/focuses';
+import { JourneyTrack, stageRoute } from '../lesson/Journey';
+import { FocusNote, MatrixGrid } from '../lesson/Matrix';
+import { QuizView } from '../lesson/Quiz';
+import { StatsView } from '../lesson/Stats';
+import { TraceView } from '../lesson/Trace';
+import { FlagIcon } from '../components/icons';
 import { cn } from '@/lib/utils';
 import { buildSlides, keyAction, type Slide } from './slides';
 
@@ -207,6 +215,93 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
       <StepSlide title={block.title} step={slide.step} of={slide.of} route={walkRoute(block, slide.step)} narration={step?.narration}>
         <StateDiagram block={block} step={slide.step} />
       </StepSlide>
+    );
+  }
+  if (slide.kind === 'chapter' && block.type === 'chapter') {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6 py-8">
+        <div className="flex items-center gap-4">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-primary text-3xl font-black shadow-[0_4px_0_var(--primary-dark)]">{slide.number}</span>
+          <span className="text-lg font-extrabold uppercase tracking-wide text-muted-foreground">
+            Chapter {slide.number} of {slide.of}
+          </span>
+        </div>
+        <h2 className="text-6xl font-black leading-tight tracking-tight">{block.title}</h2>
+        {block.goal && (
+          <p className="flex items-start gap-3 text-2xl font-semibold leading-snug text-muted-foreground">
+            <FlagIcon size={26} className="mt-1 shrink-0 text-foreground" />
+            {block.goal}
+          </p>
+        )}
+      </div>
+    );
+  }
+  if (slide.kind === 'stats' && block.type === 'stats') {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <StatsView block={block} />
+      </div>
+    );
+  }
+  if (slide.kind === 'stage' && block.type === 'journey') {
+    const stage = block.stages[slide.step];
+    return (
+      <StepSlide
+        title={block.title}
+        step={slide.step}
+        of={slide.of}
+        route={stageRoute(block, slide.step)}
+        refText={stage?.ref ? formatRef(stage.ref) : undefined}
+        narration={stage?.narration}
+      >
+        <JourneyTrack block={block} index={slide.step} />
+      </StepSlide>
+    );
+  }
+  if (slide.kind === 'trace' && block.type === 'trace') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-black tracking-tight">{block.title}</h2>
+        <div className="rounded-2xl border border-border-soft bg-card p-5 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <TraceView block={block} index={slide.step} />
+        </div>
+      </div>
+    );
+  }
+  if (slide.kind === 'chart' && block.type === 'chart') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-3xl font-black tracking-tight">{block.title}</h2>
+        <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <ChartView block={block} />
+        </div>
+      </div>
+    );
+  }
+  if (slide.kind === 'matrix' && block.type === 'matrix') {
+    const focus = slide.focus !== undefined ? matrixFocuses(block)[slide.focus] : undefined;
+    return (
+      <div className="space-y-6">
+        <h2 className="flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight">
+          {block.title}
+          {focus && <Badge variant="step">{focus.label}</Badge>}
+        </h2>
+        <div className="flex flex-wrap items-start gap-8">
+          <MatrixGrid block={block} focus={focus} large />
+          {focus && (
+            <div className="min-w-[16rem] max-w-xl flex-1 text-xl">
+              <FocusNote focus={focus} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  if (slide.kind === 'quiz' && block.type === 'quiz') {
+    return (
+      <div className="mx-auto max-w-3xl text-lg">
+        <QuizView block={block} />
+      </div>
     );
   }
   return null;
