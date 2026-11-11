@@ -1,9 +1,11 @@
-// Presentation order: one slide per block, in document order. A block's steps are the parts of its slide: <flow>
-// steps, <walk> steps of a <state>, journey stages, trace values, calc steps and, after the whole matrix, each of its
-// highlights. Each → reveals the next part; with none left, → opens the next slide.
+// Presentation order: one slide per block, in document order. A block's steps are the parts of its slide: the parts
+// of a prose block (`prose.ts`), <flow> steps, <walk> steps of a <state>, stats cards, journey stages, trace values,
+// calc steps, a chart then its highlight, the whole matrix then each of its highlights, and a quiz then its answer.
+// Each → reveals the next part; with none left, → opens the next slide.
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calcMath.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
+import { proseSlide } from './prose.ts';
 
 export interface Slide {
   kind: Block['type'];
@@ -16,6 +18,14 @@ export interface Slide {
 
 function partsOf(block: Block): number {
   switch (block.type) {
+    case 'markdown':
+      return proseSlide(block.text).parts;
+    case 'stats':
+      return block.stats.length;
+    case 'chart':
+      return block.highlight === undefined ? 1 : 2;
+    case 'quiz':
+      return 2;
     case 'flow':
       return block.steps.length;
     case 'state':

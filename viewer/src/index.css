@@ -297,6 +297,29 @@ body {
 .roll-strip > span { height: 1em; line-height: 1; }
 @keyframes roll { from { transform: translateY(0); } }
 
+/* Prose parts (F14b): future parts keep their place, invisible; the current one comes in and earlier ones dim.
+   Bold gets a flat marker stroke drawn under it, callouts stamp in. Backwards fill lets `.past` dim afterwards. */
+.slide-part { transition: opacity var(--dur-slow) var(--ease-out); }
+.slide-part.future { visibility: hidden; }
+.slide-part:not(.future) { animation: fade-in 420ms var(--ease-out) backwards; }
+li.slide-part:not(.future),
+div.slide-part:not(.future) { animation-name: fade-up; }
+.slide-part.stamp:not(.future) { animation: stamp 460ms var(--ease-pop) backwards; }
+.slide-part.rising { animation: none; }
+.slide-part.past:not(.slide-heading) { opacity: 0.45; }
+.slide-part:not(.future) strong {
+  background: linear-gradient(var(--primary), var(--primary)) no-repeat 0 92% / 0% 0.38em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: marker 520ms var(--ease-out) 240ms forwards;
+}
+@keyframes marker { to { background-size: 100% 0.38em; } }
+@keyframes stamp { from { opacity: 0; transform: scale(1.1) rotate(-1.5deg); } }
+/* A chart's highlight part dims the other rows smoothly. */
+.presenter svg g[opacity] { transition: opacity var(--dur-slow) var(--ease-out); }
+.confetti { position: fixed; inset: 0; z-index: 80; overflow: hidden; pointer-events: none; }
+.confetti-piece { position: absolute; width: 0.55rem; height: 0.85rem; border-radius: 2px; }
+
 /* Detail panel: a bottom sheet that rises on small screens, a card that slides in beside the scene on large ones. */
 @keyframes sheet-in {
   from { transform: translateY(100%); }

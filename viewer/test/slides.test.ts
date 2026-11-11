@@ -57,6 +57,22 @@ describe('buildSlides with <data> and <state>', () => {
   });
 });
 
+describe('buildSlides parts that build up', () => {
+  it('reveals prose part by part, stats card by card, then a chart highlight and a quiz answer', () => {
+    const lesson: Block[] = [
+      { type: 'markdown', text: '# Title\n\nOne.\n\nTwo.' },
+      { type: 'stats', id: 's', stats: [{ value: '1', label: 'a' }, { value: '2', label: 'b' }, { value: '3', label: 'c' }] },
+      { type: 'chart', id: 'k', title: 'K', chartType: 'bars', series: [], rows: [{ label: 'a', values: ['1'] }], highlight: 'a' },
+      { type: 'chart', id: 'l', title: 'L', chartType: 'bars', series: [], rows: [{ label: 'a', values: ['1'] }] },
+      { type: 'quiz', id: 'q', question: 'Q?', options: [], answer: 'A.' },
+    ];
+    assert.deepEqual(
+      buildSlides(lesson).map((slide) => slide.parts),
+      [3, 3, 2, 1, 2],
+    );
+  });
+});
+
 describe('move', () => {
   const deck: Slide[] = [
     { kind: 'markdown', block: 0, parts: 1, chapter: 0 },

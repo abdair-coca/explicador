@@ -177,7 +177,7 @@ describe('callouts', () => {
 });
 
 describe('buildSlides for lessons', () => {
-  it('gives each lesson block a slide, with stages, trace values and matrix highlights as parts', () => {
+  it('gives each lesson block a slide, with stages, trace values, matrix highlights and the quiz answer as parts', () => {
     const lesson: Block[] = [
       { type: 'stats', id: 's', stats: [{ value: '1', label: 'one' }] },
       { type: 'chapter', id: 'c1', title: 'One' },
@@ -205,7 +205,7 @@ describe('buildSlides for lessons', () => {
       { kind: 'chapter', block: 4, parts: 1, chapter: 2 },
       { kind: 'chart', block: 5, parts: 1, chapter: 2 },
       { kind: 'matrix', block: 6, parts: 6, chapter: 2 },
-      { kind: 'quiz', block: 7, parts: 1, chapter: 2 },
+      { kind: 'quiz', block: 7, parts: 2, chapter: 2 },
     ]);
   });
 });

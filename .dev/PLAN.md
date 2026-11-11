@@ -234,7 +234,13 @@ Defaults (approved by the user with the plan on 2026-11-11, who then asked for t
     - Unit tests for slides with parts (every block kind) and for navigation: next and back across parts, Shift+→, Home and End.
     - Typecheck, lint, test and build pass.
     - Checked in Chrome at 1440 and 390 px, with reduced motion and in an exported file. Both on the example lesson and on the user's lesson, read in place and not copied into the repo.
-- [ ] **F14b. Parts that come alive.** Prose parts, stats, chart highlight, matrix cascade and focuses, quiz reveal with confetti and flashcard flip, and the skill note.
+- [x] **F14b. Parts that come alive.** Prose parts, stats, chart highlight, matrix cascade and focuses, quiz reveal with confetti and flashcard flip, and the skill note.
+  - Done 2026-11-11. The user's lesson has 51 slides and 111 parts.
+  - Taken during the part:
+    - Only numbers with decimals or of 100 and up count, so cell numbers stay still.
+    - A heading with inline Markdown fades in whole instead of rising word by word.
+    - Confetti lives in `animation/` and bursts only while presenting, when the answer becomes known, not when a slide opens already answered.
+  - Checked in a separate headless Chrome on the user's lesson read in place: title and paragraph parts with counting numbers, stats card by card, dimmed earlier parts with the marker, a quiz reveal with confetti, a matrix focus and a flashcard flip; with reduced motion numbers show at once and no confetti appears.
   - Criterion: unit tests for the prose splitter (sentences, bold, code, lists, callouts, tables) and for the parts of each block; the same checks and browser walk-through as F14a.
 - [ ] **F14c. Sounds.** Pop, whoosh and ding; the toggle and M; the remembered choice; silent when off or without Web Audio.
   - Criterion: tests for the sound switch (silent without Web Audio, remembered choice); the same checks; heard in Chrome.

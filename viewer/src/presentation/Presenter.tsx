@@ -3,9 +3,8 @@
 // presenter asks.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Prose } from '../components/Prose';
-import type { ChapterBlock, LinkKind, ScenePayload } from '../../../server/src/scene.ts';
-import { reducedMotion } from '../animation/reveal';
+import type { ChapterBlock, LinkKind, MatrixBlock, ScenePayload } from '../../../server/src/scene.ts';
+import { reducedMotion, staggerIn } from '../animation/reveal';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon } from '../components/icons';
 import { DiagramFitContext } from '../components/Diagram';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
@@ -26,6 +25,7 @@ import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
 import { ChapterCard } from './ChapterCard';
 import { ProgressBar } from './ProgressBar';
+import { SlideProse } from './SlideProse';
 import { buildSlides, keyAction, move, type Move, type Position, type Segment, type Slide } from './slides';
 
 /** A diagram never gets smaller than this to make a slide fit; past it, the slide scrolls. */
@@ -297,16 +297,43 @@ function StepSlide(props: {
   );
 }
 
+/** The whole matrix with its cells cascading in, then one highlight per part with its note. */
+function MatrixSlide({ block, part }: { block: MatrixBlock; part: number }) {
+  const grid = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (grid.current) staggerIn(grid.current.querySelectorAll('.matrix-cell'));
+  }, []);
+  const focus = part > 0 ? matrixFocuses(block)[part - 1] : undefined;
+  return (
+    <div className="space-y-6">
+      <h2 className="flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight">
+        {block.title}
+        {focus && (
+          <Badge key={part} variant="step" className="animate-pop-in">
+            {focus.label}
+          </Badge>
+        )}
+      </h2>
+      <div className="flex flex-wrap items-start gap-8">
+        <div ref={grid} className="min-w-0 max-w-full">
+          <MatrixGrid block={block} focus={focus} large />
+        </div>
+        {focus && (
+          <div key={part} className="min-w-[16rem] max-w-xl flex-1 text-xl">
+            <FocusNote focus={focus} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slide: Slide; part: number; chapters: number }) {
   const block = scene.blocks[slide.block];
   if (!block) return null;
   switch (block.type) {
     case 'markdown':
-      return (
-        <div className="prose-exl prose-slide mx-auto max-w-3xl">
-          <Prose>{block.text}</Prose>
-        </div>
-      );
+      return <SlideProse text={block.text} part={part} />;
     case 'arch':
       return <ArchScene block={block} />;
     case 'flow': {
@@ -339,7 +366,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
     case 'stats':
       return (
         <div className="mx-auto max-w-5xl">
-          <StatsView block={block} />
+          <StatsView block={block} shown={part} />
         </div>
       );
     case 'journey': {
@@ -371,33 +398,13 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
         <div className="space-y-6">
           <h2 className="text-3xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-            <ChartView block={block} />
+            {/* With a highlight, the first part shows every row and the second dims the rest. */}
+            <ChartView block={slide.parts > 1 && part === 0 ? { ...block, highlight: undefined } : block} />
           </div>
         </div>
       );
-    case 'matrix': {
-      const focus = part > 0 ? matrixFocuses(block)[part - 1] : undefined;
-      return (
-        <div className="space-y-6">
-          <h2 className="flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight">
-            {block.title}
-            {focus && (
-              <Badge key={part} variant="step" className="animate-pop-in">
-                {focus.label}
-              </Badge>
-            )}
-          </h2>
-          <div className="flex flex-wrap items-start gap-8">
-            <MatrixGrid block={block} focus={focus} large />
-            {focus && (
-              <div key={part} className="min-w-[16rem] max-w-xl flex-1 text-xl">
-                <FocusNote focus={focus} />
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+    case 'matrix':
+      return <MatrixSlide block={block} part={part} />;
     case 'calc':
       return (
         <div className="space-y-6">
@@ -424,7 +431,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
     case 'quiz':
       return (
         <div className="mx-auto max-w-3xl text-lg">
-          <QuizView block={block} />
+          <QuizView block={block} revealed={part > 0} presenting />
         </div>
       );
     default:

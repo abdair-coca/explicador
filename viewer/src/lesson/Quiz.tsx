@@ -1,7 +1,9 @@
 // Checks: a multiple-choice question (a wrong pick shakes and says why, the right one pops) or a flashcard for the
-// final review (show the answer, then "did you know it?"). Progress goes to the lesson when there is one.
-import { useId, useState } from 'react';
+// final review (show the answer, then "did you know it?"). Progress goes to the lesson when there is one. In Present
+// mode `revealed` shows the answer without counting it, and the right answer bursts into confetti.
+import { useEffect, useId, useRef, useState } from 'react';
 import type { QuizBlock } from '../../../server/src/scene.ts';
+import { confetti } from '../animation/confetti';
 import { CheckIcon, CrossIcon } from '../components/icons';
 import { InlineMarkdown, Prose } from '../components/Prose';
 import { Badge } from '../components/ui/badge';
@@ -20,28 +22,47 @@ function useCheck(id: string): [CheckState | undefined, (state: CheckState) => v
 
 const letter = (i: number): string => String.fromCharCode(65 + i);
 
-type CheckProps = { block: QuizBlock; saved: CheckState | undefined; save: (state: CheckState) => void };
+type CheckProps = { block: QuizBlock; saved: CheckState | undefined; save: (state: CheckState) => void; revealed: boolean; presenting: boolean };
 
-function Choice({ block, saved, save }: CheckProps) {
+/** Confetti from the right answer when it becomes known while presenting, not when a slide opens already answered. */
+function useCelebration(presenting: boolean, known: boolean, target: React.RefObject<HTMLElement | null>): void {
+  const was = useRef(known);
+  useEffect(() => {
+    if (presenting && known && !was.current && target.current) confetti(target.current);
+    was.current = known;
+  }, [presenting, known, target]);
+}
+
+function optionState(i: number, right: number, picked: number | undefined, solved: boolean, revealed: boolean, reveal: boolean): string | undefined {
+  if (solved) return i === right ? 'right' : 'faded';
+  if (revealed) return i === right ? 'right' : picked === i ? 'wrong' : 'faded';
+  return picked === i ? 'wrong' : reveal && i === right ? 'reveal' : undefined;
+}
+
+function Choice({ block, saved, save, revealed, presenting }: CheckProps) {
   const right = block.options.findIndex((option) => option.correct);
   const [picked, setPicked] = useState<number | undefined>(saved === 'right' ? right : undefined);
   const [reveal, setReveal] = useState(false);
   const solved = saved === 'right' || picked === right;
+  const rightOption = useRef<HTMLButtonElement>(null);
+  useCelebration(presenting, solved || revealed, rightOption);
   const choose = (i: number): void => {
     setPicked(i);
     save(i === right ? 'right' : 'tried');
   };
   const why = picked !== undefined ? block.options[picked]?.why : undefined;
+  const rightWhy = block.options[right]?.why;
   return (
     <>
       <ul className="grid gap-2.5" role="list">
         {block.options.map((option, i) => {
-          const state = solved ? (i === right ? 'right' : 'faded') : picked === i ? 'wrong' : reveal && i === right ? 'reveal' : undefined;
+          const state = optionState(i, right, picked, solved, revealed, reveal);
           return (
             <li key={`${i}-${picked === i ? picked : ''}`}>
               <button
+                ref={i === right ? rightOption : undefined}
                 type="button"
-                disabled={solved}
+                disabled={solved || revealed}
                 onClick={() => choose(i)}
                 aria-pressed={picked === i}
                 className={cn('quiz-option flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-semibold', state)}
@@ -64,7 +85,13 @@ function Choice({ block, saved, save }: CheckProps) {
             <InlineMarkdown text={why} />
           </p>
         )}
-        {!solved && picked !== undefined && (
+        {revealed && !solved && (
+          <p className="animate-fade-up rounded-xl bg-hit/10 px-4 py-3 text-base font-semibold">
+            <span className="mr-1.5 font-extrabold text-success">Answer: {letter(right)}.</span>
+            {rightWhy && <InlineMarkdown text={rightWhy} />}
+          </p>
+        )}
+        {!solved && !revealed && picked !== undefined && (
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm font-bold text-muted-foreground">Not quite. Try another option.</p>
             {!reveal && (
@@ -80,11 +107,11 @@ function Choice({ block, saved, save }: CheckProps) {
   );
 }
 
-function Flashcard({ saved, save, block }: CheckProps) {
+function Flashcard({ saved, save, block, revealed }: CheckProps) {
   const [open, setOpen] = useState(saved === 'known' || saved === 'review');
   return (
     <>
-      {open ? (
+      {open || revealed ? (
         <div className="animate-flip-in space-y-4">
           <div className="prose-exl rounded-xl border-2 border-border bg-card px-4 py-3">
             <Prose>{block.answer ?? ''}</Prose>
@@ -116,7 +143,7 @@ const badge: Record<CheckState, React.ReactNode> = {
   review: <Badge variant="stale">Review again</Badge>,
 };
 
-export function QuizView({ block }: { block: QuizBlock }) {
+export function QuizView({ block, revealed = false, presenting = false }: { block: QuizBlock; revealed?: boolean; presenting?: boolean }) {
   const card = block.options.length === 0;
   const [saved, save] = useCheck(block.id);
   const questionId = useId();
@@ -132,7 +159,11 @@ export function QuizView({ block }: { block: QuizBlock }) {
         </span>
         {saved ? badge[saved] : <Badge variant={card ? 'step' : 'dark'}>{card ? 'Review' : 'Check'}</Badge>}
       </header>
-      {card ? <Flashcard block={block} saved={saved} save={save} /> : <Choice block={block} saved={saved} save={save} />}
+      {card ? (
+        <Flashcard block={block} saved={saved} save={save} revealed={revealed} presenting={presenting} />
+      ) : (
+        <Choice block={block} saved={saved} save={save} revealed={revealed} presenting={presenting} />
+      )}
     </section>
   );
 }
