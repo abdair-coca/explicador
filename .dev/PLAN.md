@@ -195,12 +195,12 @@ The user asked to push the work and continue it in a cloud session without their
 - **Quality checklist** for a lesson (review `examples/scenes/notebook-lesson.exl.md` in the viewer against it): every number on screen comes from a notebook output or a computation that ran; each concept has an analogy and a tiny example before the code; one idea per block; charts follow the dataviz rules (legend for 2+ series, labels, table view, bars from zero, no dual axis); everything works by keyboard and at 390 px wide; reduced motion shows final states; presentation and export cover every lesson block; the agent-facing skill and `docs/EXL.md` match what the parser accepts.
 - **Backlog after F12** (in priority order; edit as you learn):
   1. ~~Bugs found while checking the example lesson in a browser~~ (2026-11-11: journey ops broke mid-word; "Ask about this chapter" showed in offline exports; "Your cells" header crushed at 390 px; grouped bar labels overlapped; all fixed). Keep checking new lessons the same way.
-  2. Skill quality: the example lesson was written by following the skill's recipe; next, have a fresh agent write a lesson for `examples/notebook/reviews.ipynb` strictly from the skill and fix the skill where the result misses the checklist (needs a Claude session with the plugin).
+  2. Skill quality: the example lesson was written by following the skill's recipe; next, have a fresh agent write a lesson for `examples/notebook/reviews.ipynb` strictly from the skill and fix the skill where the result misses the checklist. A first attempt (2026-11-11) with a background agent was lost when the session restarted; still to do, now including `<calc>` and `<threshold>`.
   3. ~~Accessibility of charts, matrices and quizzes~~ (2026-11-11: chart marks reachable and named, confusion cells say actual/predicted, checks labelled by their question). Open: a matrix focus is announced through the live note only; chart marks are one Tab stop each (up to 160 on a big chart): consider arrow-key navigation inside a chart.
   4. Long notebooks: chapter cells and their outputs already render only when "Your cells" is opened; measure a lesson with 15+ chapters and a big HTML output before changing anything.
   5. ~~`show_scene` telling the agent to rebuild old notebook scenes as lessons~~ (2026-11-11). Open: examples in more `render_scene` error messages for lesson tags.
   6. ~~Small-screen top bar~~ (2026-11-11). Open: the chapter pill strip scrolls away on phones (sticky would cost another 45 px); the detail panel over a lesson on phones was not checked.
-  7. New: checks answered in Present mode are not saved to the lesson's progress (the presenter has no lesson context).
+  7. ~~Checks answered in Present mode are not saved to the lesson's progress~~ (2026-11-11: a shared progress store).
   8. New: a lone journey stage on the last row is capped at 22rem, but rows of 2–3 stages still stretch; a grid with fixed columns may look calmer.
 
 Notes for later sessions:
@@ -211,6 +211,10 @@ Session summary (2026-11-11, unattended cloud session):
 - Done: F12 letters A–H (charts, matrices, quizzes and flashcards, chapter cells, lesson layout with rail and progress, presentation slides, docs and skill recipe, example notebook and lesson), F12 closed; then backlog fixes for journey wrapping, accessibility of lesson blocks, the old-notebook-scene hint in `show_scene`, and the phone top bar. Every commit pushed to `main` with typecheck, lint, build and tests green (server 136, viewer 65).
 - Problems: the baseline `files.test.ts` expected a Windows drive path to be denied on Linux; the test now expects `missing` off Windows and the code is unchanged (see "Pending user decisions"). Interactivity tests need the viewer built first.
 - Not checked: a lesson for the user's own notebook; Claude actually writing a lesson from the skill (no Claude session with the plugin here); Safari and Firefox (Chromium only).
+
+Session summary (2026-11-11, with the user):
+- Done: checks answered while presenting now count; F13 (chosen by the user with "choose yourself"): `<calc>` (F13a), `<threshold>` (F13b) and Practice mode (F13c), each with parser and viewer tests, docs, skill, slides and an example chapter over new executed cells 18–21 of `examples/notebook/reviews.ipynb`; checked in Chromium at 1440 and 390 px, in Present mode and in an exported file. Final run from clean `dist/`: typecheck 0, lint 0, build OK, server 141/141, viewer 79/79.
+- Pending: the skill-quality check (backlog 2), the user's review of F12 and F13, and a lesson of the user's own notebook.
 
 Pending user decisions:
 - Check a lesson of the user's real notebook (INF672 exam) on their machine, and the F12 review.
