@@ -249,7 +249,7 @@ export function App() {
             Explicador
           </span>
           {scene && (
-            <nav aria-label="Scenes" className="flex flex-wrap items-center gap-x-2 text-sm">
+            <nav aria-label="Scenes" className="order-last flex w-full min-w-0 flex-wrap items-center gap-x-2 text-sm sm:order-none sm:w-auto">
               {scene.trail.map((entry) => (
                 <span key={entry.key} className="flex items-center gap-2">
                   <span className="text-muted-foreground">/</span>
@@ -267,7 +267,7 @@ export function App() {
                 </span>
               ))}
               <span className="text-muted-foreground">/</span>
-              <span className="font-extrabold" aria-current="page">
+              <span className="min-w-0 break-all font-extrabold" aria-current="page">
                 {scene.topic}
               </span>
               <Badge variant={scene.status === 'fresh' ? 'success' : 'stale'}>{scene.status === 'fresh' ? 'Up to date' : 'Stale'}</Badge>
@@ -275,9 +275,10 @@ export function App() {
           )}
           {scene && (
             <span className="ml-auto flex items-center gap-2">
-              <Button variant="primary" size="sm" onClick={() => setPresenting(true)}>
+              {/* Icons only on phones, so the bar stays two lines tall. */}
+              <Button variant="primary" size="sm" onClick={() => setPresenting(true)} aria-label="Present">
                 <PresentIcon size={16} />
-                Present
+                <span className="hidden sm:inline">Present</span>
               </Button>
               {!offline && (
                 <a
@@ -285,9 +286,10 @@ export function App() {
                   download={`${scene.key}.html`}
                   className={buttonVariants({ variant: 'secondary', size: 'sm' })}
                   title="Download this scene as one HTML file that works offline"
+                  aria-label="Export"
                 >
                   <DownloadIcon size={16} />
-                  Export
+                  <span className="hidden sm:inline">Export</span>
                 </a>
               )}
             </span>
@@ -299,7 +301,7 @@ export function App() {
                 connection === 'live' || connection === 'static' ? 'bg-green-500' : connection === 'connecting' ? 'bg-primary' : 'bg-red-500',
               )}
             />
-            {connectionText[connection]}
+            <span className="sr-only sm:not-sr-only">{connectionText[connection]}</span>
           </span>
         </div>
       </header>
