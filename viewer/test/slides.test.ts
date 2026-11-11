@@ -149,6 +149,7 @@ describe('keyAction', () => {
     assert.equal(keyAction('End'), 'last');
     assert.equal(keyAction('Escape'), 'exit');
     assert.equal(keyAction('f'), 'fullscreen');
+    assert.equal(keyAction('M'), 'sound');
     assert.equal(keyAction('a'), undefined);
     assert.equal(keyAction('ArrowRight', true), 'skip');
     assert.equal(keyAction('PageDown', true), 'skip');

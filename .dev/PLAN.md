@@ -242,7 +242,16 @@ Defaults (approved by the user with the plan on 2026-11-11, who then asked for t
     - Confetti lives in `animation/` and bursts only while presenting, when the answer becomes known, not when a slide opens already answered.
   - Checked in a separate headless Chrome on the user's lesson read in place: title and paragraph parts with counting numbers, stats card by card, dimmed earlier parts with the marker, a quiz reveal with confetti, a matrix focus and a flashcard flip; with reduced motion numbers show at once and no confetti appears.
   - Criterion: unit tests for the prose splitter (sentences, bold, code, lists, callouts, tables) and for the parts of each block; the same checks and browser walk-through as F14a.
-- [ ] **F14c. Sounds.** Pop, whoosh and ding; the toggle and M; the remembered choice; silent when off or without Web Audio.
+- [x] **F14c. Sounds.** Pop, whoosh and ding; the toggle and M; the remembered choice; silent when off or without Web Audio.
+  - Done 2026-11-11.
+    - Turning sound on plays a pop as feedback.
+    - Pops play on forward moves only; a wipe whooshes in both directions.
+    - The choice is kept in `localStorage` under `explicador.sound`.
+  - Checked in a separate headless Chrome by counting oscillators and noise sources:
+    - Nothing plays while sound is off.
+    - With sound on: one pop per part or slide, a whoosh per chapter, and a two-note ding on a quiz reveal.
+    - The stored choice follows the toggle.
+  - Not heard by a person yet.
   - Criterion: tests for the sound switch (silent without Web Audio, remembered choice); the same checks; heard in Chrome.
 - One commit per part, like F13. The user reviews at the end of F14.
 
@@ -347,4 +356,4 @@ Open points:
 | F11 | planned (approved 2026-11-09) |
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
 | F13 | done (2026-11-11), user review pending |
-| F14 | in progress (approved 2026-11-11) |
+| F14 | done (2026-11-11), user review pending |

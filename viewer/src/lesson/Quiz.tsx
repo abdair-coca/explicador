@@ -4,6 +4,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { QuizBlock } from '../../../server/src/scene.ts';
 import { confetti } from '../animation/confetti';
+import { play } from '../animation/sound';
 import { CheckIcon, CrossIcon } from '../components/icons';
 import { InlineMarkdown, Prose } from '../components/Prose';
 import { Badge } from '../components/ui/badge';
@@ -24,11 +25,14 @@ const letter = (i: number): string => String.fromCharCode(65 + i);
 
 type CheckProps = { block: QuizBlock; saved: CheckState | undefined; save: (state: CheckState) => void; revealed: boolean; presenting: boolean };
 
-/** Confetti from the right answer when it becomes known while presenting, not when a slide opens already answered. */
+/** Confetti and a ding when the right answer becomes known while presenting, not when a slide opens already answered. */
 function useCelebration(presenting: boolean, known: boolean, target: React.RefObject<HTMLElement | null>): void {
   const was = useRef(known);
   useEffect(() => {
-    if (presenting && known && !was.current && target.current) confetti(target.current);
+    if (presenting && known && !was.current && target.current) {
+      confetti(target.current);
+      play('ding');
+    }
     was.current = known;
   }, [presenting, known, target]);
 }

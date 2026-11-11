@@ -17,6 +17,7 @@ Claude Code plugin that explains software systems with animated, interactive dia
 - Phase 10 (focus, explain buttons, flows with code, notebooks; done pending the user's review): every box focuses its own lines, a flow or architecture can be walked with its code in one click, "Explain code" asks Claude for a tour, Jupyter notebooks render as cells with outputs, the code window covers the page below the top bar, and Markdown tables render. Plan: `.dev/PLAN.md`.
 - Phase 12 (notebook lessons, done pending the user's review): notebooks and data or ML code are explained as lessons by chapters, with the real data animated (the data's journey, value traces, charts, confusion and other matrices), checks per chapter, a final review of flashcards and a progress rail. Example: `examples/scenes/notebook-lesson.exl.md` over `examples/notebook/reviews.ipynb`.
 - Phase 13 (play with the model, done pending the user's review): `<calc>` animates how a model scores one input (a waterfall of the intercept and each feature's weight, then the sigmoid, the probability and the decision), `<threshold>` lets the reader move a classifier's threshold over the real test probabilities with the confusion matrix and metrics recomputed live, and Practice mode drills every check of a lesson, missed ones first, with a score.
+- Phase 14 (a presentation that grabs attention, done pending the user's review): Present mode gives each block one slide revealed part by part (sentences, list items, callouts, stats cards, journey stages, matrix highlights, a quiz then its answer), with numbers that count up, a marker stroke under bold words, confetti on answers, slides that move in the direction of travel, chapters that open with a yellow wipe onto a night-blue card, a progress bar by chapter, and optional sounds.
 
 ## Use it (from a checkout)
 
@@ -32,7 +33,7 @@ claude --plugin-dir ../..
 
 The first run reads the index and the code, then renders the scene and opens the viewer. Asking again with no changes serves the cached scene without reading code. Editing a referenced file marks the scene stale, and the next explanation refreshes it.
 
-**Present** turns the scene into full-screen slides (each prose block, each architecture, each flow step) that only advance when you press →, Space or PageDown; ← goes back, F toggles full screen, Esc leaves.
+**Present** turns the scene into full-screen slides, one per block, revealed part by part: each →, Space or PageDown shows the next part (a sentence group, a list item, a flow step, a matrix highlight, a quiz's answer) and then the next slide. ← goes back, Shift+→ skips to the next slide, F toggles full screen (the bars hide while the mouse rests), M turns the sounds on or off (off by default), and Esc leaves.
 
 **Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom, presentation and the detail panel (with its key code) work; "Go deeper" and questions do not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
 

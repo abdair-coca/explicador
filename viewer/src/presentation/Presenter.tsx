@@ -5,7 +5,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from 'react-dom';
 import type { ChapterBlock, LinkKind, MatrixBlock, ScenePayload } from '../../../server/src/scene.ts';
 import { reducedMotion, staggerIn } from '../animation/reveal';
-import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon } from '../components/icons';
+import { play, setSound, soundEnabled } from '../animation/sound';
+import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon } from '../components/icons';
 import { DiagramFitContext } from '../components/Diagram';
 import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
@@ -129,6 +130,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const lesson = useLessonProgress(progressKey(scene.key, scene.savedAt));
   const [at, setAt] = useState<Position>({ slide: 0, part: 0 });
   const [fullscreen, setFullscreen] = useState(false);
+  const [sound, setSoundState] = useState(soundEnabled);
   const root = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLElement>(null);
   const wipe = useRef<HTMLDivElement>(null);
@@ -141,16 +143,20 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const goTo = useCallback(
     (next: Position) => {
       if (busy.current || (next.slide === at.slide && next.part === at.part)) return;
+      const forward = next.slide > at.slide || (next.slide === at.slide && next.part > at.part);
       if (next.slide === at.slide) {
+        if (forward) play('pop');
         setAt(next);
         return;
       }
-      const travel: Travel = next.slide > at.slide ? 'forward' : 'back';
+      const travel: Travel = forward ? 'forward' : 'back';
       const update = (): void => setAt(next);
       if (slides[next.slide]?.kind !== 'chapter') {
+        if (forward) play('pop');
         moveSlide(travel, update);
         return;
       }
+      play('whoosh');
       busy.current = true;
       void wipeTo(wipe.current, travel, update).finally(() => {
         busy.current = false;
@@ -168,6 +174,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
     if (document.fullscreenElement) void document.exitFullscreen();
     onExit();
   }, [onExit]);
+  const toggleSound = useCallback(() => {
+    const on = !soundEnabled();
+    setSound(on);
+    setSoundState(on);
+    play('pop');
+  }, []);
 
   useEffect(() => {
     const update = (): void => setFullscreen(document.fullscreenElement !== null);
@@ -189,13 +201,14 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       if (!action) return;
       event.preventDefault();
       if (action === 'fullscreen') toggleFullscreen();
+      else if (action === 'sound') toggleSound();
       else if (action === 'exit') {
         if (!document.fullscreenElement) exit();
       } else go(action);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, toggleFullscreen, exit]);
+  }, [go, toggleFullscreen, toggleSound, exit]);
 
   const label = useCallback(
     (segment: Segment): string => {
@@ -223,9 +236,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
         </span>
         <span className="flex-1 sm:hidden" aria-hidden="true" />
         <span className="ml-auto hidden font-semibold text-muted-foreground lg:inline">
-          ← → to move · Shift+→ next slide · F full screen · Esc to leave
+          ← → to move · Shift+→ next slide · F full screen · M sound · Esc to leave
         </span>
-        <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · F · Esc</span>
+        <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · F · M · Esc</span>
+        <Button variant="ghost" size="icon-sm" onClick={toggleSound} aria-label="Sound" aria-pressed={sound} title={sound ? 'Sound on (M)' : 'Sound off (M)'}>
+          {sound ? <SoundIcon size={16} /> : <MuteIcon size={16} />}
+        </Button>
         <Button variant="ghost" size="icon-sm" onClick={toggleFullscreen} aria-label="Toggle full screen">
           <ExpandIcon size={16} />
         </Button>
