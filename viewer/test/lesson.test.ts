@@ -10,6 +10,7 @@ import { matrixFocuses } from '../src/lesson/focuses.ts';
 import { formatLike, splitNumbers, textAt } from '../src/lesson/numbers.ts';
 import { chapterDone, emptyProgress, lessonSummary, markSeen, record } from '../src/lesson/progress.ts';
 import { barTicks, formatTick, lineTicks, linear, niceTicks } from '../src/lesson/scale.ts';
+import { getProgress, subscribeProgress, updateProgress } from '../src/lesson/store.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
 
 const quiz = (id: string): Block => ({ type: 'quiz', id, question: 'Q?', options: [], answer: 'A.' });
@@ -222,5 +223,22 @@ describe('codeBreaks', () => {
     assert.deepEqual(codeBreaks('fit'), ['fit']);
     assert.deepEqual(codeBreaks('CountVectorizer()'), ['Count', 'Vectorizer(', ')']);
     assert.equal(codeBreaks('a=1, b=2').join(''), 'a=1, b=2');
+  });
+});
+
+describe('progress store', () => {
+  it('shares one lesson\'s progress between readers and tells them about real changes only', () => {
+    const key = 'test.store.a';
+    let heard = 0;
+    const stop = subscribeProgress(key, () => (heard += 1));
+    updateProgress(key, (current) => record(current, 'q1', 'right'));
+    assert.equal(getProgress(key).checks.q1, 'right');
+    updateProgress(key, (current) => record(current, 'q1', 'tried'));
+    assert.equal(getProgress(key).checks.q1, 'right', 'a right answer stays right');
+    assert.equal(heard, 1);
+    assert.deepEqual(getProgress('test.store.b'), emptyProgress, 'other lessons are apart');
+    stop();
+    updateProgress(key, (current) => markSeen(current, 'c1'));
+    assert.equal(heard, 1);
   });
 });

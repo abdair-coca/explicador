@@ -12,7 +12,10 @@ import { ChartView } from '../lesson/Chart';
 import { matrixFocuses } from '../lesson/focuses';
 import { JourneyTrack, stageRoute } from '../lesson/Journey';
 import { FocusNote, MatrixGrid } from '../lesson/Matrix';
+import { LessonContext } from '../lesson/context';
+import { progressKey } from '../lesson/progress';
 import { QuizView } from '../lesson/Quiz';
+import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
 import { FlagIcon } from '../components/icons';
@@ -56,6 +59,7 @@ function useFitToStage(stage: React.RefObject<HTMLElement | null>, slideKey: num
 
 export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () => void }) {
   const slides = useMemo(() => buildSlides(scene.blocks), [scene.blocks]);
+  const lesson = useLessonProgress(progressKey(scene.key, scene.savedAt));
   const [index, setIndex] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLElement>(null);
@@ -119,7 +123,10 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
           align-items/justify-content center would push its top out of reach of the scrollbar. */}
       <main ref={stage} className="flex min-h-0 flex-1 flex-col overflow-auto px-6 py-6">
         <div key={index} className="animate-pop-in m-auto w-full max-w-7xl">
-          <DiagramFitContext.Provider value={true}>{slide && <SlideView scene={scene} slide={slide} />}</DiagramFitContext.Provider>
+          <DiagramFitContext.Provider value={true}>
+            {/* Checks answered here count in the lesson's progress, like on the page. */}
+            <LessonContext.Provider value={lesson}>{slide && <SlideView scene={scene} slide={slide} />}</LessonContext.Provider>
+          </DiagramFitContext.Provider>
         </div>
       </main>
       <footer className="flex items-center gap-4 border-t border-border-soft bg-card px-6 py-3">

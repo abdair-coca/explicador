@@ -1,6 +1,6 @@
 // The lesson layout: the intro, then one section per chapter (number, title, goal, the reader's cells, the chapter's
 // blocks and a "Next" button), a sticky rail with progress (a strip of pills on small screens) and an end card.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ScenePayload } from '../../../server/src/scene.ts';
 import { staticScene } from '../api';
 import { BlockView } from '../components/BlockView';
@@ -9,8 +9,9 @@ import { useSelection } from '../components/selection';
 import { cn } from '@/lib/utils';
 import { ChapterCells } from './ChapterCells';
 import { chapterAnchor, type Chapter, type LessonPlan } from './chapters';
-import { LessonContext, type Lesson as LessonValue } from './context';
-import { chapterDone, isDone, lessonSummary, loadProgress, markSeen, progressKey, record, saveProgress, type CheckState, type Progress } from './progress';
+import { LessonContext } from './context';
+import { chapterDone, isDone, lessonSummary, progressKey, type Progress } from './progress';
+import { useLessonProgress } from './useProgress';
 
 function scrollToChapter(id: string): void {
   const target = document.getElementById(chapterAnchor(id));
@@ -222,20 +223,9 @@ function EndCard({ plan, progress }: { plan: LessonPlan; progress: Progress }) {
 }
 
 export function Lesson({ scene, plan }: { scene: ScenePayload; plan: LessonPlan }) {
-  const key = progressKey(scene.key, scene.savedAt);
-  const [progress, setProgress] = useState<Progress>(() => loadProgress(key));
-  useEffect(() => setProgress(loadProgress(key)), [key]);
-  const update = useCallback(
-    (change: (current: Progress) => Progress) =>
-      setProgress((current) => {
-        const next = change(current);
-        if (next !== current) saveProgress(key, next);
-        return next;
-      }),
-    [key],
-  );
-  const lesson = useMemo<LessonValue>(() => ({ progress, record: (id: string, state: CheckState) => update((current) => record(current, id, state)) }), [progress, update]);
-  const active = useActiveChapter(plan, (id) => update((current) => markSeen(current, id)));
+  const lesson = useLessonProgress(progressKey(scene.key, scene.savedAt));
+  const { progress } = lesson;
+  const active = useActiveChapter(plan, lesson.markSeen);
   return (
     <LessonContext.Provider value={lesson}>
       <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
