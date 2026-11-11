@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { Block, MatrixBlock } from '../../server/src/scene.ts';
 import { splitCallouts } from '../src/lib/callouts.ts';
+import { codeBreaks } from '../src/lesson/breaks.ts';
 import { planLesson } from '../src/lesson/chapters.ts';
 import { cellOutcome, computeMetric, counts, covers, formatRatio, outcomes } from '../src/lesson/confusion.ts';
 import { changeCounts, diffLetters, diffWords } from '../src/lesson/diff.ts';
@@ -211,5 +212,15 @@ describe('buildSlides for lessons', () => {
       { kind: 'matrix', block: 6, focus: 4 },
       { kind: 'quiz', block: 7 },
     ]);
+  });
+});
+
+describe('codeBreaks', () => {
+  it('cuts code after _ . ( , = and keeps every character', () => {
+    assert.deepEqual(codeBreaks('train_test_split()'), ['train_', 'test_', 'split(', ')']);
+    assert.deepEqual(codeBreaks('df.drop_duplicates()'), ['df.', 'drop_', 'duplicates(', ')']);
+    assert.deepEqual(codeBreaks('fit'), ['fit']);
+    assert.deepEqual(codeBreaks('CountVectorizer()'), ['Count', 'Vectorizer(', ')']);
+    assert.equal(codeBreaks('a=1, b=2').join(''), 'a=1, b=2');
   });
 });

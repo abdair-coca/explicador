@@ -1,12 +1,13 @@
 // The data's path through a notebook: stage tiles in reading order, played one by one like a flow. The active
 // stage's size counts up, a dot runs along the arrow that reaches it, and the narration says why it matters.
-import { useMemo, useRef } from 'react';
+import { Fragment, useMemo, useRef } from 'react';
 import type { JourneyBlock } from '../../../server/src/scene.ts';
 import { stepDuration, usePlayback, useReducedMotion } from '../animation/playback';
 import { tourFromJourney } from '../code/tourFrom';
 import { ArrowRightIcon, kindIcon } from '../components/icons';
 import { formatRef, neighbour, SceneFrame, StepControls, StepNarration, StepProgress, TourButton, useBoxSelection } from '../components/scenes';
 import { cn } from '@/lib/utils';
+import { codeBreaks } from './breaks';
 import { CountUp } from './CountUp';
 import { useFirstVisible, useFollowCode } from './hooks';
 
@@ -24,7 +25,7 @@ export function JourneyTrack(props: { block: JourneyBlock; index: number; onPick
       {block.stages.map((stage, i) => {
         const asked = boxes.asked?.get(stage.id);
         return (
-          <li key={stage.id} className="flex min-w-[10.5rem] flex-1 basis-[11.5rem] items-stretch">
+          <li key={stage.id} className="flex min-w-[10.5rem] max-w-[22rem] flex-1 basis-[11.5rem] items-stretch">
             {i > 0 && (
               <span className={cn('journey-link', i <= index && 'done')} aria-hidden="true">
                 <ArrowRightIcon size={20} />
@@ -61,7 +62,17 @@ export function JourneyTrack(props: { block: JourneyBlock; index: number; onPick
                   </span>
                 )}
               </span>
-              {stage.op && <code className="op-pill">→ {stage.op}</code>}
+              {stage.op && (
+                <code className="op-pill">
+                  →{'\u00a0'}
+                  {codeBreaks(stage.op).map((part, k) => (
+                    <Fragment key={k}>
+                      {k > 0 && <wbr />}
+                      {part}
+                    </Fragment>
+                  ))}
+                </code>
+              )}
               {stage.value && (
                 <span className="text-2xl font-black leading-tight tracking-tight">
                   {i === index ? <CountUp key={index} text={stage.value} /> : stage.value}
