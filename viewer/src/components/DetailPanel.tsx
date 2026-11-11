@@ -2,7 +2,7 @@
 // and the questions the user asked Claude about it. On small screens it is a bottom sheet;
 // in exported files it is read-only.
 import { Prose } from './Prose';
-import type { NodeKind, Question, Ref, SceneBlock, ScenePayload, Tour } from '../../../server/src/scene.ts';
+import type { Block, ChapterBlock, NodeKind, Question, Ref, SceneBlock, ScenePayload, StageKind, Tour } from '../../../server/src/scene.ts';
 import { CodeCard } from './CodeCard';
 import type { ExplainReply } from '../api';
 import { ExplainButton } from './ExplainButton';
@@ -13,10 +13,11 @@ import type { Selected } from './selection';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
-/** What the panel shows about a node, an entity or a state. */
+/** What the panel shows about a node, an entity, a state, a journey stage or a lesson chapter. */
 interface Item {
   label: string;
-  kind: NodeKind;
+  /** Picks the color of the icon chip (`kind-*` classes). */
+  kind: NodeKind | StageKind | 'chapter';
   icon: string[];
   caption: string;
   desc?: string | undefined;
@@ -24,17 +25,45 @@ interface Item {
   ref?: Ref | undefined;
 }
 
-export function findItem(block: SceneBlock, id: string): Item | undefined {
-  if (block.type === 'arch' || block.type === 'flow') {
-    const node = block.nodes.find((n) => n.id === id);
-    return node && { ...node, icon: kindIcon[node.kind], caption: node.kind };
+/** Blocks whose items open the detail panel. */
+export type ItemBlock = SceneBlock | ChapterBlock;
+
+export function isItemBlock(block: Block | undefined): block is ItemBlock {
+  return block !== undefined && block.type !== 'markdown' && ['arch', 'flow', 'data', 'state', 'journey', 'chapter'].includes(block.type);
+}
+
+export function findItem(block: ItemBlock, id: string): Item | undefined {
+  switch (block.type) {
+    case 'arch':
+    case 'flow': {
+      const node = block.nodes.find((n) => n.id === id);
+      return node && { ...node, icon: kindIcon[node.kind], caption: node.kind };
+    }
+    case 'data': {
+      const entity = block.entities.find((e) => e.id === id);
+      return entity && { ...entity, kind: 'store', icon: kindIcon.entity, caption: 'entity' };
+    }
+    case 'state': {
+      const status = block.states.find((s) => s.id === id);
+      return status && { ...status, kind: 'module', icon: kindIcon.state, caption: 'state' };
+    }
+    case 'journey': {
+      const stage = block.stages.find((s) => s.id === id);
+      return (
+        stage && {
+          label: stage.label,
+          kind: stage.kind,
+          icon: kindIcon[stage.kind],
+          caption: 'stage',
+          desc: [stage.value, stage.op].filter(Boolean).join(' · ') || undefined,
+          about: stage.narration,
+          ref: stage.ref,
+        }
+      );
+    }
+    case 'chapter':
+      return id === block.id ? { label: block.title, kind: 'chapter', icon: kindIcon.chapter, caption: 'chapter', desc: block.goal, ref: block.ref } : undefined;
   }
-  if (block.type === 'data') {
-    const entity = block.entities.find((e) => e.id === id);
-    return entity && { ...entity, kind: 'store', icon: kindIcon.entity, caption: 'entity' };
-  }
-  const status = block.states.find((s) => s.id === id);
-  return status && { ...status, kind: 'module', icon: kindIcon.state, caption: 'state' };
 }
 
 export function DetailPanel(props: {
@@ -58,11 +87,11 @@ export function DetailPanel(props: {
   /** Id of the latest tour, so a pending request stops waiting when it arrives. */
   tourId?: string | undefined;
 }) {
-  const block = props.scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === props.selected.block);
+  const block = props.scene.blocks.find((b): b is ItemBlock => isItemBlock(b) && b.id === props.selected.block);
   const item = block && findItem(block, props.selected.node);
   if (!block || !item) return null;
-  const codes = (block.codes ?? []).filter((c) => c.node === props.selected.node);
-  const drill = block.drills.find((d) => d.node === props.selected.node)?.topic;
+  const codes = block.type === 'chapter' ? [] : (block.codes ?? []).filter((c) => c.node === props.selected.node);
+  const drill = block.type === 'chapter' ? undefined : block.drills.find((d) => d.node === props.selected.node)?.topic;
   const questions = (props.questions ?? []).filter((q) => q.block === props.selected.block && q.node === props.selected.node);
 
   return (

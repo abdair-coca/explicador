@@ -2,6 +2,24 @@
 // Tags are recognized only at the start of a line outside code fences; everything else is Markdown.
 import { readElement, ExlSyntaxError, type Element } from './reader.ts';
 import {
+  blockHead,
+  catalog,
+  checkId,
+  checkText,
+  childElements,
+  limits,
+  narrationOf,
+  parseRef,
+  readAbout,
+  readAttrs,
+  readCode,
+  readDesc,
+  readDrill,
+  withCodes,
+  type Report,
+} from './common.ts';
+import { buildChapter, buildChart, buildJourney, buildMatrix, buildQuiz, buildStats, buildTrace } from './lesson.ts';
+import {
   cardinalities,
   fieldKeys,
   linkKinds,
@@ -30,55 +48,10 @@ import {
   type SceneNode,
 } from './types.ts';
 
-interface TagSpec {
-  attrs: Record<string, 'required' | 'optional'>;
-  children?: readonly string[];
-  /** Whether the tag holds text (narration) instead of being self-closing. */
-  text?: boolean;
-}
+export { catalog, limits, parseRefString } from './common.ts';
 
-export const catalog: Record<string, TagSpec> = {
-  arch: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'group', 'edge', 'drill', 'code'] },
-  flow: { attrs: { id: 'optional', title: 'required' }, children: ['node', 'step', 'drill', 'code'] },
-  code: { attrs: { node: 'required', ref: 'required' }, text: true },
-  group: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional' }, children: ['node', 'group'] },
-  drill: { attrs: { node: 'required', topic: 'required' } },
-  data: { attrs: { id: 'optional', title: 'required' }, children: ['entity', 'relation', 'drill', 'code'] },
-  entity: { attrs: { id: 'required', label: 'required', desc: 'optional', ref: 'optional' }, children: ['field'] },
-  field: { attrs: { name: 'required', type: 'optional', key: 'optional' } },
-  relation: { attrs: { from: 'required', to: 'required', card: 'required', label: 'optional' } },
-  state: { attrs: { id: 'optional', title: 'required' }, children: ['status', 'transition', 'walk', 'drill', 'code'] },
-  status: { attrs: { id: 'required', label: 'required', desc: 'optional', role: 'optional', ref: 'optional' } },
-  transition: { attrs: { from: 'required', to: 'required', event: 'required', ref: 'optional' } },
-  walk: { attrs: {}, children: ['go'] },
-  go: { attrs: { event: 'required' }, text: true },
-  node: { attrs: { id: 'required', label: 'required', desc: 'optional', kind: 'optional', ref: 'optional' } },
-  edge: { attrs: { from: 'required', to: 'required', label: 'optional', kind: 'optional' } },
-  step: { attrs: { from: 'required', to: 'optional', label: 'optional', kind: 'optional', ref: 'optional' }, text: true },
-};
+const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter'];
 
-const topLevelTags = ['arch', 'flow', 'data', 'state'];
-
-export const limits = {
-  idLength: 40,
-  labelLength: 80,
-  descLength: 80,
-  titleLength: 120,
-  topicLength: 80,
-  fieldLength: 60,
-  fields: 40,
-  narrationLength: 600,
-  aboutLength: 1200,
-  noteLength: 300,
-  codeLines: 40,
-  codesPerNode: 3,
-  nodes: 60,
-  edges: 120,
-  steps: 100,
-} as const;
-
-const ID = new RegExp(`^[A-Za-z][A-Za-z0-9_-]{0,${limits.idLength - 1}}$`);
-const REF = /^([^:\s]+?)(?::(\d+)(?:-(\d+))?)?$/;
 // A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
 const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
@@ -166,17 +139,30 @@ export function parseExl(source: string): ParseResult {
 
   checkBlockIds(blocks, errors);
   if (!blocks.some((block) => block.type !== 'markdown') && errors.length === 0) {
-    errors.push({ line: 1, column: 1, message: 'A scene needs at least one <arch>, <flow>, <data> or <state>' });
+    errors.push({ line: 1, column: 1, message: 'A scene needs at least one scene tag, such as <arch>, <flow>, <journey> or <chapter>' });
+  }
+  if (blocks.filter((block) => block.type === 'chapter').length > limits.chapters) {
+    errors.push({ line: 1, column: 1, message: `A lesson has at most ${limits.chapters} chapters` });
   }
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, scene: { blocks }, refs: collectRefs(blocks) };
 }
 
-type Report = (offset: number, message: string) => void;
+const builders: Record<string, (element: Element, ordinal: number, report: Report) => Block> = {
+  data: buildData,
+  state: buildState,
+  chapter: buildChapter,
+  stats: buildStats,
+  journey: buildJourney,
+  trace: buildTrace,
+  chart: buildChart,
+  matrix: buildMatrix,
+  quiz: buildQuiz,
+};
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
-  if (element.name === 'data') return buildData(element, ordinal, report);
-  if (element.name === 'state') return buildState(element, ordinal, report);
+  const build = builders[element.name];
+  if (build) return build(element, ordinal, report);
   const spec = catalog[element.name];
   if (!spec) return undefined;
   const attrs = readAttrs(element, spec, report);
@@ -305,24 +291,6 @@ function buildBlock(element: Element, ordinal: number, report: Report): Block | 
   return { type: 'flow', id, title, nodes, steps, drills, ...withCodes(codes) };
 }
 
-/** Child elements a tag allows; stray text and other tags are reported. */
-function childElements(element: Element, spec: TagSpec, report: Report): Element[] {
-  const children: Element[] = [];
-  for (const child of element.children) {
-    if (child.kind === 'text') {
-      if (child.text.trim()) report(child.offset, `Text is not allowed directly inside <${element.name}>`);
-      continue;
-    }
-    if (!spec.children?.includes(child.name)) {
-      const allowed = (spec.children ?? []).map((name) => `<${name}>`).join(', ');
-      report(child.offset, `<${child.name}> is not allowed inside <${element.name}>; use ${allowed}`);
-      continue;
-    }
-    children.push(child);
-  }
-  return children;
-}
-
 function buildGroup(element: Element, report: Report): SceneGroup | undefined {
   const spec = catalog.group;
   if (!spec) return undefined;
@@ -332,75 +300,6 @@ function buildGroup(element: Element, report: Report): SceneGroup | undefined {
   checkId(a.id, element, report);
   const label = checkText(a.label, 'label', limits.labelLength, element, report);
   return { id: a.id, label, ...readDesc(a.desc, element, report), kind: parseKind(a.kind, element, report) };
-}
-
-/**
- * The tag's body as its long description (`about`): text only, paragraphs kept, spaces collapsed.
- * Child tags other than `allowed` are reported.
- */
-function readAbout(element: Element, allowed: readonly string[], report: Report): { about?: string } {
-  if (element.selfClosing) return {};
-  const text = element.children
-    .map((c) => {
-      if (c.kind === 'text') return c.text;
-      if (!allowed.includes(c.name)) report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);
-      return '\n\n';
-    })
-    .join('');
-  const about = text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .join('\n\n');
-  if (about.length > limits.aboutLength) {
-    report(element.offset, `The text inside <${element.name}> is longer than ${limits.aboutLength} characters`);
-  }
-  return about ? { about } : {};
-}
-
-/** `codes` only when a block has some, so blocks without key code keep their old shape. */
-function withCodes(codes: CodeSnippet[]): { codes?: CodeSnippet[] } {
-  return codes.length > 0 ? { codes } : {};
-}
-
-/** <code ref="path:start-end" node="id">why it matters</code>: key lines the server copies from the file. */
-function readCode(child: Element, ids: Set<string>, codes: CodeSnippet[], report: Report): void {
-  // Only a snippet without errors is kept, so a rejected one does not count against the per-node limit.
-  let valid = true;
-  const fail = (offset: number, message: string): void => {
-    valid = false;
-    report(offset, message);
-  };
-  const a = readAttrs(child, catalog.code ?? { attrs: {} }, fail);
-  const nodeOffset = child.attrs.get('node')?.offset ?? child.offset;
-  if (a.node !== undefined && !ids.has(a.node)) fail(nodeOffset, `"node" refers to unknown item "${a.node}"`);
-  else if (a.node !== undefined && codes.filter((c) => c.node === a.node).length >= limits.codesPerNode) {
-    fail(nodeOffset, `"${a.node}" already has ${limits.codesPerNode} <code> snippets`);
-  }
-  const ref = a.ref === undefined ? undefined : parseRef(a.ref, child, fail);
-  const refOffset = child.attrs.get('ref')?.offset ?? child.offset;
-  if (ref && ref.start === undefined) fail(refOffset, '<code> needs a line range: ref="path:start-end"');
-  else if (ref?.start !== undefined && (ref.end ?? ref.start) - ref.start + 1 > limits.codeLines) {
-    fail(refOffset, `<code> shows at most ${limits.codeLines} lines; pick the ones that matter`);
-  }
-  const note = child.children
-    .map((c) => {
-      if (c.kind === 'element') fail(c.offset, `<${c.name}> is not allowed inside <code>`);
-      return c.kind === 'text' ? c.text : '';
-    })
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!note) fail(child.offset, '<code> needs a note on why these lines matter: <code ref="a.js:3-9" node="x">Why.</code>');
-  else if (note.length > limits.noteLength) fail(child.offset, `<code> note is longer than ${limits.noteLength} characters`);
-  if (valid && a.node !== undefined && ref?.start !== undefined) codes.push({ node: a.node, ref, note });
-}
-
-/** The optional one-line `desc`, as a spreadable object. */
-function readDesc(value: string | undefined, element: Element, report: Report): { desc?: string } {
-  if (value === undefined) return {};
-  const desc = checkText(value, 'desc', limits.descLength, element, report);
-  return desc ? { desc } : {};
 }
 
 /** `kind` of an edge or step; undefined for a call, the default. */
@@ -451,65 +350,6 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   return { id: a.id, label, ...desc, ...about, kind, ...(ref ? { ref } : {}) };
 }
 
-function readAttrs(element: Element, spec: TagSpec, report: Report): Record<string, string | undefined> {
-  const values: Record<string, string | undefined> = {};
-  for (const [name, attr] of element.attrs) {
-    if (!(name in spec.attrs)) {
-      const allowed = Object.keys(spec.attrs).join(', ');
-      report(attr.offset, `Unknown attribute "${name}" on <${element.name}>; allowed: ${allowed}`);
-      continue;
-    }
-    values[name] = attr.value;
-  }
-  for (const [name, need] of Object.entries(spec.attrs)) {
-    if (need === 'required' && values[name] === undefined) {
-      report(element.offset, `<${element.name}> is missing the "${name}" attribute`);
-    }
-  }
-  return values;
-}
-
-function checkId(id: string, element: Element, report: Report): void {
-  if (!ID.test(id)) {
-    report(
-      element.attrs.get('id')?.offset ?? element.offset,
-      `Invalid id "${id}": start with a letter, then letters, digits, "-" or "_" (max ${limits.idLength})`,
-    );
-  }
-}
-
-function checkText(value: string, attr: string, max: number, element: Element, report: Report): string {
-  const offset = element.attrs.get(attr)?.offset ?? element.offset;
-  const text = value.trim();
-  if (/[\r\n]/.test(text)) report(offset, `"${attr}" must be a single line`);
-  else if (!text) report(offset, `"${attr}" must not be empty`);
-  else if (text.length > max) report(offset, `"${attr}" is longer than ${max} characters`);
-  return text;
-}
-
-export function parseRefString(value: string): Ref | string {
-  const m = REF.exec(value.trim());
-  if (!m?.[1]) return 'expected "path", "path:line" or "path:start-end"';
-  const path = m[1].replace(/^\.\//, '');
-  if (path.includes('\\')) return 'use forward slashes in paths';
-  if (path.startsWith('/') || /^[A-Za-z]:/.test(path)) return 'use a path relative to the project root';
-  if (path.split('/').some((part) => part === '..' || part === '')) return 'the path must stay inside the project';
-  const start = m[2] === undefined ? undefined : Number(m[2]);
-  const end = m[3] === undefined ? undefined : Number(m[3]);
-  if (start !== undefined && start < 1) return 'line numbers start at 1';
-  if (start !== undefined && end !== undefined && end < start) return 'the end line is before the start line';
-  return { path, ...(start !== undefined ? { start } : {}), ...(end !== undefined ? { end } : {}) };
-}
-
-function parseRef(value: string, element: Element, report: Report): Ref | undefined {
-  const ref = parseRefString(value);
-  if (typeof ref === 'string') {
-    report(element.attrs.get('ref')?.offset ?? element.offset, `Invalid ref "${value}": ${ref}`);
-    return undefined;
-  }
-  return ref;
-}
-
 function checkBlockIds(blocks: Block[], errors: ExlError[]): void {
   const seen = new Set<string>();
   for (const block of blocks) {
@@ -525,55 +365,42 @@ function collectRefs(blocks: Block[]): string[] {
     if (ref) paths.add(ref.path);
   };
   for (const block of blocks) {
-    if (block.type === 'arch' || block.type === 'flow') block.nodes.forEach((node) => add(node.ref));
-    if (block.type === 'flow') block.steps.forEach((step) => add(step.ref));
-    if (block.type === 'data') block.entities.forEach((entity) => add(entity.ref));
-    if (block.type === 'state') {
-      block.states.forEach((status) => add(status.ref));
-      block.transitions.forEach((transition) => add(transition.ref));
+    switch (block.type) {
+      case 'arch':
+        block.nodes.forEach((node) => add(node.ref));
+        break;
+      case 'flow':
+        block.nodes.forEach((node) => add(node.ref));
+        block.steps.forEach((step) => add(step.ref));
+        break;
+      case 'data':
+        block.entities.forEach((entity) => add(entity.ref));
+        break;
+      case 'state':
+        block.states.forEach((status) => add(status.ref));
+        block.transitions.forEach((transition) => add(transition.ref));
+        break;
+      case 'journey':
+        block.stages.forEach((stage) => add(stage.ref));
+        break;
+      case 'stats':
+        block.stats.forEach((stat) => add(stat.ref));
+        break;
+      case 'trace':
+        add(block.ref);
+        block.values.forEach((value) => add(value.ref));
+        break;
+      case 'chapter':
+      case 'chart':
+      case 'matrix':
+        add(block.ref);
+        break;
+      default:
+        break;
     }
-    if (block.type !== 'markdown') block.codes?.forEach((code) => add(code.ref));
+    if ('codes' in block) block.codes?.forEach((code) => add(code.ref));
   }
   return [...paths].sort();
-}
-
-/** id and title shared by every scene block. */
-function blockHead(element: Element, spec: TagSpec, ordinal: number, report: Report): { id: string; title: string } {
-  const attrs = readAttrs(element, spec, report);
-  if (element.selfClosing) report(element.offset, `<${element.name}> must have children`);
-  if (attrs.id !== undefined) checkId(attrs.id, element, report);
-  return {
-    id: attrs.id ?? `${element.name}-${ordinal}`,
-    title: checkText(attrs.title ?? '', 'title', limits.titleLength, element, report),
-  };
-}
-
-/** Reads a <drill> for a block whose clickable items have the given ids. */
-function readDrill(child: Element, ids: Set<string>, drills: Drill[], report: Report): void {
-  const a = readAttrs(child, catalog.drill ?? { attrs: {} }, report);
-  if (!child.selfClosing) report(child.offset, '<drill> must be self-closing: <drill node="a" topic="..." />');
-  const offset = child.attrs.get('node')?.offset ?? child.offset;
-  if (a.node !== undefined && !ids.has(a.node)) report(offset, `"node" refers to unknown item "${a.node}"`);
-  else if (a.node !== undefined && drills.some((d) => d.node === a.node)) report(offset, `"${a.node}" already has a <drill>`);
-  const topic = checkText(a.topic ?? '', 'topic', limits.topicLength, child, report);
-  if (topic && !/[\p{L}\p{N}]/u.test(topic)) report(child.offset, '"topic" needs letters or digits');
-  if (a.node !== undefined && a.topic !== undefined) drills.push({ node: a.node, topic });
-}
-
-function narrationOf(element: Element, report: Report): string {
-  const narration = element.children
-    .map((c) => {
-      if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);
-      return c.kind === 'text' ? c.text : '';
-    })
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!narration) report(element.offset, `<${element.name}> needs narration text`);
-  else if (narration.length > limits.narrationLength) {
-    report(element.offset, `Narration is longer than ${limits.narrationLength} characters`);
-  }
-  return narration;
 }
 
 function buildData(element: Element, ordinal: number, report: Report): DataBlock {

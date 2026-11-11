@@ -11,16 +11,20 @@ const MAX_LINE = 400;
 
 type Lines = { lines: string[] } | { cells: NotebookCell[] } | { missing: true };
 
-/** Reads the lines of a ref, opening each file once. */
-function lineReader(root: string): (ref: Ref) => Lines {
+/**
+ * Reads the lines of a ref, opening each file once. A notebook's range counts cells: quotes carry their source only,
+ * while `outputs` (a lesson chapter) keeps what each cell printed.
+ */
+function lineReader(root: string, outputs = false): (ref: Ref) => Lines {
   const files = new Map<string, string[] | undefined>();
   const notebooks = new Map<string, ReturnType<typeof readProjectFile>>();
   return (ref) => {
     if (isNotebookPath(ref.path)) {
-      // A notebook's range counts cells; the quote carries their source only, never their outputs.
       if (!notebooks.has(ref.path)) notebooks.set(ref.path, readProjectFile(root, ref.path));
       const file = notebooks.get(ref.path);
-      const cells = file?.ok && 'notebook' in file ? quoteCells(file.notebook, ref.start ?? 1, ref.end ?? ref.start ?? 1) : [];
+      const start = ref.start ?? 1;
+      const end = ref.end ?? start;
+      const cells = file?.ok && 'notebook' in file ? (outputs ? file.notebook.cells.slice(start - 1, end) : quoteCells(file.notebook, start, end)) : [];
       return cells.length > 0 ? { cells } : { missing: true };
     }
     if (!files.has(ref.path)) {
@@ -41,11 +45,16 @@ function lineReader(root: string): (ref: Ref) => Lines {
   };
 }
 
-/** Copies of `blocks` whose snippets carry their lines, or `missing` when the file or the lines are gone. */
+/**
+ * Copies of `blocks` whose snippets carry their lines and whose chapters carry their cells (with outputs) or lines,
+ * or `missing` when the file or the range is gone.
+ */
 export function withSnippets(root: string, blocks: Block[]): Block[] {
   const read = lineReader(root);
+  const readChapter = lineReader(root, true);
   return blocks.map((block) => {
-    if (block.type === 'markdown' || !block.codes) return block;
+    if (block.type === 'chapter') return block.ref ? { ...block, ...readChapter(block.ref) } : block;
+    if (!('codes' in block) || !block.codes) return block;
     return { ...block, codes: block.codes.map((code) => ({ ...code, ...read(code.ref) })) };
   });
 }

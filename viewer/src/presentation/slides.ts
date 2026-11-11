@@ -1,6 +1,9 @@
 // Presentation order: one slide per Markdown block, <arch> and <data>, one per <flow> step,
 // and one per <walk> step of a <state> (or one slide for a <state> without a walk).
+// Lessons add a title slide per chapter, one slide per journey stage and trace value, one per chart, quiz and
+// stats block, and one per matrix followed by one per highlight it offers.
 import type { Block } from '../../../server/src/scene.ts';
+import { matrixFocuses } from '../lesson/focuses.ts';
 
 export type Slide =
   | { kind: 'markdown'; block: number }
@@ -8,18 +11,56 @@ export type Slide =
   | { kind: 'step'; block: number; step: number; of: number }
   | { kind: 'data'; block: number }
   | { kind: 'state'; block: number }
-  | { kind: 'walk'; block: number; step: number; of: number };
+  | { kind: 'walk'; block: number; step: number; of: number }
+  | { kind: 'chapter'; block: number; number: number; of: number }
+  | { kind: 'stats'; block: number }
+  | { kind: 'stage'; block: number; step: number; of: number }
+  | { kind: 'trace'; block: number; step: number; of: number }
+  | { kind: 'chart'; block: number }
+  | { kind: 'matrix'; block: number; focus?: number }
+  | { kind: 'quiz'; block: number };
+
+/** One slide per item, numbered `step` of `of`. */
+function steps<K extends 'step' | 'walk' | 'stage' | 'trace'>(kind: K, block: number, count: number): { kind: K; block: number; step: number; of: number }[] {
+  return Array.from({ length: count }, (_, step) => ({ kind, block, step, of: count }));
+}
 
 export function buildSlides(blocks: Block[]): Slide[] {
   const slides: Slide[] = [];
+  const chapters = blocks.filter((block) => block.type === 'chapter').length;
+  let chapter = 0;
   blocks.forEach((block, i) => {
-    if (block.type === 'markdown') slides.push({ kind: 'markdown', block: i });
-    else if (block.type === 'arch') slides.push({ kind: 'arch', block: i });
-    else if (block.type === 'flow') {
-      block.steps.forEach((_, step) => slides.push({ kind: 'step', block: i, step, of: block.steps.length }));
-    } else if (block.type === 'data') slides.push({ kind: 'data', block: i });
-    else if (block.walk.length === 0) slides.push({ kind: 'state', block: i });
-    else block.walk.forEach((_, step) => slides.push({ kind: 'walk', block: i, step, of: block.walk.length }));
+    switch (block.type) {
+      case 'markdown':
+      case 'arch':
+      case 'data':
+      case 'stats':
+      case 'chart':
+      case 'quiz':
+        slides.push({ kind: block.type, block: i });
+        break;
+      case 'flow':
+        slides.push(...steps('step', i, block.steps.length));
+        break;
+      case 'state':
+        if (block.walk.length === 0) slides.push({ kind: 'state', block: i });
+        else slides.push(...steps('walk', i, block.walk.length));
+        break;
+      case 'chapter':
+        chapter += 1;
+        slides.push({ kind: 'chapter', block: i, number: chapter, of: chapters });
+        break;
+      case 'journey':
+        slides.push(...steps('stage', i, block.stages.length));
+        break;
+      case 'trace':
+        slides.push(...steps('trace', i, block.values.length));
+        break;
+      case 'matrix':
+        slides.push({ kind: 'matrix', block: i });
+        matrixFocuses(block).forEach((_, focus) => slides.push({ kind: 'matrix', block: i, focus }));
+        break;
+    }
   });
   return slides;
 }

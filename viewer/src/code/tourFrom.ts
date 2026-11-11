@@ -1,6 +1,6 @@
 // Tours built from a scene itself, with no help from Claude: a flow's steps (or an architecture's boxes) that carry
 // a ref become the stops, and their narration (or description) becomes the note.
-import type { ArchBlock, FlowBlock, Ref, Tour, TourStep } from '../../../server/src/scene.ts';
+import type { ArchBlock, FlowBlock, JourneyBlock, Ref, Tour, TourStep } from '../../../server/src/scene.ts';
 
 const MAX_NOTE = 1400;
 
@@ -16,6 +16,17 @@ export function tourFromFlow(block: FlowBlock): Tour | undefined {
     steps.push({ ref, note: clip(step.label ? `**${step.label}** · ${step.narration}` : step.narration) });
   }
   return steps.length > 0 ? { id: `flow:${block.id}`, title: block.title, steps } : undefined;
+}
+
+/** One stop per journey stage that points at code: the data's path through the notebook, cell by cell. */
+export function tourFromJourney(block: JourneyBlock): Tour | undefined {
+  const steps: TourStep[] = [];
+  for (const stage of block.stages) {
+    if (!stage.ref) continue;
+    const head = [stage.label, stage.value].filter(Boolean).join(' · ');
+    steps.push({ ref: stage.ref, note: clip(`**${head}** · ${stage.narration}`) });
+  }
+  return steps.length > 0 ? { id: `journey:${block.id}`, title: block.title, steps } : undefined;
 }
 
 /** One stop per box that points at code, in the order they are declared. */

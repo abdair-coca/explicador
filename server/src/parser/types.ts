@@ -208,9 +208,170 @@ export interface StateBlock {
   codes?: CodeSnippet[];
 }
 
-export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock;
+/** The kind of data a journey stage holds; it picks the stage's icon. */
+export const stageKinds = ['file', 'table', 'text', 'matrix', 'split', 'model', 'metric'] as const;
+export type StageKind = (typeof stageKinds)[number];
 
-export type Block = MarkdownBlock | SceneBlock;
+/** One stop on the data's path: what the data is at this point, and the operation that made it. */
+export interface JourneyStage {
+  id: string;
+  label: string;
+  /** The data's size or shape here, shown big ("49 582 reviews", "4 000 × 23 672"). */
+  value?: string;
+  kind: StageKind;
+  /** The operation that produced this stage from the previous one, as code ("drop_duplicates()"). */
+  op?: string;
+  ref?: Ref;
+  narration: string;
+}
+
+/** The path of the data through a notebook or pipeline, played stage by stage. */
+export interface JourneyBlock {
+  type: 'journey';
+  id: string;
+  title: string;
+  stages: JourneyStage[];
+  drills: Drill[];
+  codes?: CodeSnippet[];
+}
+
+/** Blocks with clickable items (nodes, entities, states, stages), drills and key code. */
+export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock | JourneyBlock;
+
+/** Starts a chapter of a lesson; the chapter runs until the next one. */
+export interface ChapterBlock {
+  type: 'chapter';
+  id: string;
+  title: string;
+  /** What the reader will understand by the end of the chapter. */
+  goal?: string;
+  /** The cells (or lines) the chapter explains; always a range. */
+  ref?: Ref;
+  /** Filled by the server when the scene is shown: the chapter's notebook cells, with their outputs. */
+  cells?: NotebookCell[];
+  /** Filled by the server for a chapter over a plain file: its lines. */
+  lines?: string[];
+  /** Set by the server when the file or the range is gone. */
+  missing?: boolean;
+}
+
+/** A headline number. */
+export interface Stat {
+  /** As it should read, e.g. "84.6 %" or "49 582"; numbers in it count up. */
+  value: string;
+  label: string;
+  ref?: Ref;
+}
+
+export interface StatsBlock {
+  type: 'stats';
+  id: string;
+  title?: string;
+  stats: Stat[];
+}
+
+/** One value of a trace: the input, or the result of one operation. */
+export interface TraceValue {
+  label: string;
+  /** The value, whitespace collapsed. */
+  text: string;
+  /** The operation as code, e.g. `texto.lower()`. */
+  code?: string;
+  /** Why this operation matters. */
+  note?: string;
+  ref?: Ref;
+}
+
+/** One real value followed through a series of operations; the viewer shows what each one changes. */
+export interface TraceBlock {
+  type: 'trace';
+  id: string;
+  title: string;
+  ref?: Ref;
+  values: TraceValue[];
+}
+
+export const chartTypes = ['bars', 'hbars', 'line'] as const;
+export type ChartType = (typeof chartTypes)[number];
+
+/** One category (bars) or x position (line) with a value per series, written as the notebook prints them. */
+export interface DataRow {
+  label: string;
+  values: string[];
+}
+
+export interface ChartBlock {
+  type: 'chart';
+  id: string;
+  title: string;
+  chartType: ChartType;
+  /** Series names; one unnamed series when the chart has a single one. */
+  series: string[];
+  rows: DataRow[];
+  /** Appended to every value, e.g. "%". */
+  unit?: string;
+  /** A series name or a row label to emphasize. */
+  highlight?: string;
+  ref?: Ref;
+}
+
+/** A cell, a whole row (`col` absent) or a whole column (`row` absent); 0-based. */
+export interface CellPick {
+  row?: number;
+  col?: number;
+}
+
+export const confusionMetrics = ['accuracy', 'precision', 'recall', 'f1'] as const;
+export type ConfusionMetric = (typeof confusionMetrics)[number];
+
+/** A named highlight on a matrix: some cells and what they mean. */
+export interface MatrixFocus {
+  label?: string;
+  /** Cells to highlight; empty for a metric, whose cells the viewer derives. */
+  cells: CellPick[];
+  /** Only in a confusion matrix: the viewer computes this metric from the counts. */
+  metric?: ConfusionMetric;
+  narration: string;
+}
+
+export interface MatrixBlock {
+  type: 'matrix';
+  id: string;
+  title: string;
+  cols: string[];
+  rows: DataRow[];
+  /** A confusion matrix: rows are the actual classes, columns the predicted ones, cells are counts. */
+  kind?: 'confusion';
+  /** Text of the top-left cell, e.g. "actual \ predicted". */
+  corner?: string;
+  /** Confusion matrices only: index of the positive class (default the last). */
+  positive?: number;
+  focuses: MatrixFocus[];
+  ref?: Ref;
+}
+
+export interface QuizOption {
+  text: string;
+  correct?: true;
+  /** Why this option is right or wrong; shown once it is picked. */
+  why?: string;
+}
+
+/** A check: a multiple-choice question, or a flashcard (a question with a hidden answer). */
+export interface QuizBlock {
+  type: 'quiz';
+  id: string;
+  question: string;
+  /** Empty for a flashcard. */
+  options: QuizOption[];
+  /** The flashcard's answer (Markdown); absent for a multiple-choice question. */
+  answer?: string;
+}
+
+/** Blocks of lessons that hold no clickable items. */
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock;
+
+export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 
 export interface Scene {
   blocks: Block[];

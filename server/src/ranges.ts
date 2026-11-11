@@ -6,7 +6,7 @@ import type { Block, Ref } from './scene.ts';
 const SHORT_FILE_LINES = 30;
 const SHORT_NOTEBOOK_CELLS = 2;
 
-/** `Label (path)` for every node, entity or state whose ref has no line (or cell) range, short files excepted. */
+/** `Label (path)` for every node, entity, state or stage whose ref has no line (or cell) range, short files excepted. */
 export function boxesWithoutRange(root: string, blocks: Block[]): string[] {
   const found: string[] = [];
   const sizes = new Map<string, number | undefined>();
@@ -24,6 +24,7 @@ export function boxesWithoutRange(root: string, blocks: Block[]): string[] {
     if (block.type === 'arch' || block.type === 'flow') block.nodes.forEach((node) => check(node.label, node.ref));
     else if (block.type === 'data') block.entities.forEach((entity) => check(entity.label, entity.ref));
     else if (block.type === 'state') block.states.forEach((status) => check(status.label, status.ref));
+    else if (block.type === 'journey') block.stages.forEach((stage) => check(stage.label, stage.ref));
   }
   return [...new Set(found)];
 }

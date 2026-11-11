@@ -1,5 +1,5 @@
 // Stroke icons (24×24, round caps), the Titi way: SVG in the chrome, never emoji.
-import type { NodeKind } from '../../../server/src/scene.ts';
+import type { NodeKind, StageKind } from '../../../server/src/scene.ts';
 
 type IconProps = { className?: string; size?: number };
 
@@ -44,8 +44,15 @@ export const InfoIcon = icon(['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 16v-
 export const AlertIcon = icon(['M12 3 2 20.5h20Z', 'M12 9.5v5', 'M12 17.5h.01']);
 export const SparkIcon = icon(['M12 3v4', 'M12 17v4', 'M3 12h4', 'M17 12h4', 'm6 6 2.5 2.5', 'm15.5 15.5 2.5 2.5', 'm6 18 2.5-2.5', 'm15.5 8.5 2.5-2.5']);
 
+export const CheckIcon = icon(['m5 12.5 4.5 4.5L19 7.5']);
+export const CrossIcon = icon(['M18 6 6 18', 'm6 6 12 12']);
+export const BulbIcon = icon(['M9 18h6', 'M10 21h4', 'M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z']);
+export const FlagIcon = icon(['M5 21V4', 'M5 4h11l-2 4 2 4H5']);
+export const TableIcon = icon(['M3 5h18v14H3Z', 'M3 10h18', 'M3 15h18', 'M9 5v14']);
+export const ChevronDownIcon = icon(['m6 9 6 6 6-6']);
+
 /** Icon paths for each node kind, drawn inside the diagram's SVG (24×24 box). */
-export const kindIcon: Record<NodeKind | 'entity' | 'state', string[]> = {
+export const kindIcon: Record<NodeKind | 'entity' | 'state' | StageKind | 'chapter', string[]> = {
   actor: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4.5 21a7.5 7.5 0 0 1 15 0'],
   ui: ['M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z', 'M3 9h18'],
   service: ['M4 3.5h16v7H4Z', 'M4 13.5h16v7H4Z', 'M8 7h.01', 'M8 17h.01'],
@@ -55,6 +62,15 @@ export const kindIcon: Record<NodeKind | 'entity' | 'state', string[]> = {
   external: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
   entity: ['M3 5h18v14H3Z', 'M3 10h18', 'M9 10v9'],
   state: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
+  // Journey stages: what the data is at that point.
+  file: ['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z', 'M14 3v5h5', 'M9 13h6', 'M9 17h4'],
+  table: ['M3 5h18v14H3Z', 'M3 10h18', 'M3 15h18', 'M9 5v14'],
+  text: ['M4 6h16', 'M4 11h16', 'M4 16h10'],
+  matrix: ['M4 4h4v4H4Z', 'M10 4h4v4h-4Z', 'M16 4h4v4h-4Z', 'M4 10h4v4H4Z', 'M10 10h4v4h-4Z', 'M16 10h4v4h-4Z', 'M4 16h4v4H4Z', 'M10 16h4v4h-4Z', 'M16 16h4v4h-4Z'],
+  split: ['M12 3v6', 'm12 9-6 6v6', 'm12 9 6 6v6'],
+  model: ['M12 3 3 8l9 5 9-5Z', 'm3 13 9 5 9-5', 'm3 18 9 5 9-5'],
+  metric: ['M4 20V10', 'M10 20V4', 'M16 20v-7', 'M3 20h18'],
+  chapter: ['M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2Z', 'M4 19V5', 'M8 7h6'],
 };
 
 export const FolderIcon = icon(['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z']);

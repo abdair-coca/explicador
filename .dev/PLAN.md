@@ -153,6 +153,50 @@ The user tried the plugin on a real project and asked: every box focuses its own
 
 - [ ] **F11. Run notebook cells** (planned; approved by the user on 2026-11-09). Jupyter kernel through `python -m ipykernel` if installed (no new dependency for Explicador); a Run button per cell, only on an explicit click and with a warning the first time in each session; 60 s limit, Stop and restart; results shown in the code window and never written to the `.ipynb`; it needs a design pass on security (the bridge would start processes), so it gets its own task, tests and review.
 
+### F12: notebook lessons (requested by the user on 2026-11-10, before F11)
+
+The user said Explicador explains big systems well but not a notebook, using their ML exam notebook (`INF672/evaluaciones/SegundoParcial/Coca_Abdair_P2_INF672.ipynb`, sentiment analysis with logistic regression): they need to understand it, and want explanations that are clear, beautiful, intuitive and engaging. The scenes cached there show why: `<arch>`/`<flow>` boxes ("Preprocessing → Split → Vectorizers → LogisticRegression") never show a real review, the document-term matrix, the confusion matrix or the coefficients, and the user's panel questions ("what is the vectorizer for?", "does this work like a RAG?", "what are BoW and TF-IDF?") were concept questions answered with text only.
+
+Choices through a quiz (user, 2026-11-10): a **lesson by chapters** (a hero with the result, one chapter per notebook section with visuals of the real data, the decisions and the cells beside, a side rail with progress; Present turns it into slides); four visual pieces: **data journey**, **step-by-step transformation**, **animated charts**, **interactive matrices**; **checks per chapter plus a final review** for the defense; concepts explained **from zero** (an analogy and a tiny worked example before the code). This extends product decision 5 (more animation types) and grows the closed EXL catalog of decision 8; `AGENTS.md` is updated with the phase.
+
+Defaults (approved by the user with the plan on 2026-11-10):
+- A lesson is a plain EXL document with new blocks, so cache, refs, questions, presentation and export keep working. The tags are general (any scene may use them); the skill uses the lesson format for notebooks and data or ML scripts.
+- `<chapter id? title goal? ref? />` (top level, self-closing) starts a chapter that runs until the next one. With chapters the viewer switches to the lesson layout: the intro, a sticky chapter rail (a strip of pills on small screens) with ✓ per chapter and overall progress, chapter headers with number, goal, "Your cells" (the chapter's cells with their outputs, inline and collapsible, also openable in the code window) and "Ask about this chapter", and a "Next chapter" button. The server attaches the chapter's cells (with outputs, within the notebook limits) or lines when it publishes the scene.
+- `<stats>` with `<stat value label ref? />` (1–6): the headline numbers, counting up.
+- `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12): the data's path with its real sizes. It plays like a flow (active stage, the operation on the connector, the value counting up, narration, the code window follows); stages are clickable (panel, questions, go deeper). Stage `kind`: file, table, text, matrix, split, model, metric.
+- `<trace title ref?>` with `<value label code? ref? note?>text</value>` (2–12): one real value through each operation. The viewer computes a word diff (removed words struck out, changed words with the changed letters marked, word count) and animates it step by step.
+- `<chart title type series? unit? highlight? ref?>` with `<row label values />`: `type` is `bars` (grouped, from zero), `hbars` (horizontal, diverging around zero) or `line`; up to 4 series and 40 rows; numbers are written as the notebook prints them and shown as written; bars grow and lines draw.
+- `<matrix title cols kind? corner? positive? ref?>` with `<row label values />` and `<focus label cells>narration</focus>`: a grid with heat colors; a focus highlights cells (`r,c`, `r,*`, `*,c`) and narrates. With `kind="confusion"` the viewer colors hits and errors and derives accuracy, precision, recall and F1 from the counts itself, showing each formula with the real numbers, so the agent does no arithmetic.
+- `<quiz question>` with 2–5 `<option correct? why?>` (exactly one `correct="true"`), or one `<answer>` for a flashcard (the defense review). A right answer pops, a wrong one shakes, and the why shows; cards reveal on request and ask "did you know it?". Progress is kept per scene in the browser (localStorage, reset when the scene is re-rendered), also in exports.
+- Markdown callouts `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]` render as colored boxes; a leading `**bold**` line is their title.
+- Presentation: one slide per chapter title, journey stage, trace value, chart, matrix and focus, quiz and stats block.
+- Skill: a lesson recipe for notebooks (outline with `read_notebook`; the problem as a question; stats and journey; one chapter per section; each concept from zero with an analogy and a tiny example; the decision and its justification; a visual of the real data; 1–2 checks; a final review with defense cards), and the rule that numbers come from the outputs or from a computation that actually ran. A cached notebook scene without chapters is rebuilt as a lesson.
+- The viewer chrome stays in English like the rest of the viewer; localizing it would be its own phase.
+- A small synthetic notebook executed with Jupyter (`examples/notebook/`) and its lesson (`examples/scenes/`) serve as example and test data; the user's notebook is only read.
+
+- [ ] **F12. Notebook lessons.** In progress; state and the specs of what is left in `.dev/TASK.md`.
+  - Criterion: parser tests for every new tag (valid, invalid, incomplete), refs and cache invalidation, chapter cells attached with outputs, clicks on stages and chapters, the ranges warning; viewer tests (word diff, chapter split, confusion metrics, chart scales, slides, progress); typecheck, lint and tests pass; the example lesson checked in a browser (rail, journey, trace, charts, matrices, quizzes, cells, panel, presentation, export). The check with the user's own notebook and the user's review happen when the user is back.
+
+### Unattended mode (user, 2026-11-10)
+
+The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
+
+- **Objective (fixed):** Explicador explains Jupyter notebooks (data science, ML) as lessons that are correct, easy for a beginner, beautiful and engaging: chapters with the real data animated (journey, trace, charts, matrices), checks per chapter and a final review, as approved in F12.
+- **Loop:** finish F12 (`.dev/TASK.md`, A to H); then repeat: take the most valuable item of the backlog below (bugs first), write it into `TASK.md`, make the smallest change with tests, run typecheck, lint, test and build, commit (Conventional Commits, author from `AGENTS.md`, no attribution lines) and push to `main`, update the backlog. Add what you discover. Stop when nothing left clearly serves the objective or the session ends, always leaving `main` green and `TASK.md` accurate.
+- **Never:** push a commit whose checks fail; force-push or rewrite history; add dependencies to any `package.json`; start F11 or touch the bridge's security (token, Origin/Host checks, file access rules) or weaken validation; use or add the user's private files (their notebook is not in the repo; use `examples/notebook/`). Anything that needs one of these, or a product decision, goes to "Pending user decisions" below.
+- **Quality checklist** for a lesson (review `examples/scenes/notebook-lesson.exl.md` in the viewer against it): every number on screen comes from a notebook output or a computation that ran; each concept has an analogy and a tiny example before the code; one idea per block; charts follow the dataviz rules (legend for 2+ series, labels, table view, bars from zero, no dual axis); everything works by keyboard and at 390 px wide; reduced motion shows final states; presentation and export cover every lesson block; the agent-facing skill and `docs/EXL.md` match what the parser accepts.
+- **Backlog after F12** (in priority order; edit as you learn):
+  1. Bugs found while checking the example lesson in a browser (desktop and 390 px), presentation and export.
+  2. Skill quality: write a lesson for `examples/notebook/reviews.ipynb` strictly from the skill and fix the skill where the result misses the checklist.
+  3. Accessibility of charts, matrices and quizzes (focus order, labels, contrast relief, screen reader text).
+  4. Long notebooks: lessons with 10+ chapters and big outputs stay fast (lazy cell outputs, no layout jank).
+  5. Clearer errors from `render_scene` for lesson tags (examples in the messages), and `show_scene` telling the agent to rebuild old notebook scenes as lessons.
+  6. Small-screen polish of the lesson layout and the detail panel over lessons.
+
+Pending user decisions:
+- Check a lesson of the user's real notebook (INF672 exam) on their machine, and the F12 review.
+- Viewer chrome in the user's language (it is English, like the rest of the viewer).
+
 ## Decisions pending user review
 
 Taken during the unattended F1 session (2026-11-09) as the most conservative option consistent with this plan. Each can be reverted.
@@ -215,3 +259,4 @@ Open points:
 | F9 | done (2026-11-09), user review pending |
 | F10 | done (2026-11-09), user review pending |
 | F11 | planned (approved 2026-11-09) |
+| F12 | approved (2026-11-10), in progress; continues unattended in a cloud session (see "Unattended mode"); goes before F11 |

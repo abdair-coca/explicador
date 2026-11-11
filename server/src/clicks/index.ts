@@ -3,9 +3,9 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { stateDir, writeFileAtomic } from '../project.ts';
-import type { Question, Ref, SceneBlock, ScenePayload } from '../scene.ts';
+import type { Block, Question, Ref, SceneBlock, ScenePayload } from '../scene.ts';
 
-/** Something the user can click: a node, an entity or a state. */
+/** Something the user can click: a node, an entity, a state, a journey stage or a lesson chapter. */
 export interface ClickItem {
   id: string;
   label: string;
@@ -14,16 +14,29 @@ export interface ClickItem {
 }
 
 export interface ClickTarget {
-  block: SceneBlock;
+  block: { id: string; title: string };
   node: ClickItem;
   /** Topic of the deeper scene: the node's <drill> topic, or its label. */
   topic: string;
   drilled: boolean;
 }
 
+const sceneBlockTypes: ReadonlySet<string> = new Set(['arch', 'flow', 'data', 'state', 'journey']);
+
+function isSceneBlock(block: Block): block is SceneBlock {
+  return sceneBlockTypes.has(block.type);
+}
+
 export function findClickTarget(scene: ScenePayload, blockId: unknown, nodeId: unknown): ClickTarget | undefined {
   if (typeof blockId !== 'string' || typeof nodeId !== 'string') return undefined;
-  const block = scene.blocks.find((b): b is SceneBlock => b.type !== 'markdown' && b.id === blockId);
+  const found = scene.blocks.find((b) => b.type !== 'markdown' && b.id === blockId);
+  // A chapter is one item: itself.
+  if (found?.type === 'chapter') {
+    if (nodeId !== found.id) return undefined;
+    const node = { id: found.id, label: found.title, kind: 'chapter', ...(found.ref ? { ref: found.ref } : {}) };
+    return { block: found, node, topic: found.title, drilled: false };
+  }
+  const block = found && isSceneBlock(found) ? found : undefined;
   const node = block ? clickItems(block).find((n) => n.id === nodeId) : undefined;
   if (!block || !node) return undefined;
   const drill = block.drills.find((d) => d.node === nodeId);
@@ -39,6 +52,8 @@ export function clickItems(block: SceneBlock): ClickItem[] {
       return block.entities.map((e) => ({ id: e.id, label: e.label, kind: 'entity', ...(e.ref ? { ref: e.ref } : {}) }));
     case 'state':
       return block.states.map((s) => ({ id: s.id, label: s.label, kind: 'state', ...(s.ref ? { ref: s.ref } : {}) }));
+    case 'journey':
+      return block.stages.map((s) => ({ id: s.id, label: s.label, kind: 'stage', ...(s.ref ? { ref: s.ref } : {}) }));
   }
 }
 

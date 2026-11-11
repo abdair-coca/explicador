@@ -143,7 +143,7 @@ describe('parseExl: invalid documents', () => {
   });
 
   it('requires at least one scene block', () => {
-    assert.deepEqual(errorsOf('Just prose.'), ['1:1 A scene needs at least one <arch>, <flow>, <data> or <state>']);
+    assert.deepEqual(errorsOf('Just prose.'), ['1:1 A scene needs at least one scene tag, such as <arch>, <flow>, <journey> or <chapter>']);
   });
 
   it('rejects mismatched closing tags', () => {

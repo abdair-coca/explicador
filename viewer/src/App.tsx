@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Prose } from './components/Prose';
 import type { Ref, ScenePayload, Tour } from '../../server/src/scene.ts';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
@@ -7,11 +6,11 @@ import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply,
 import { CodeDock } from './code/CodeDock';
 import { readPref, useMedia, usePresence, writePref } from './code/hooks';
 import { codeReducer, initialCode } from './code/state';
-import { DetailPanel, findItem } from './components/DetailPanel';
+import { BlockView } from './components/BlockView';
+import { DetailPanel, findItem, isItemBlock } from './components/DetailPanel';
 import { AlertIcon, CloseIcon, DownloadIcon, InfoIcon, PresentIcon, SparkIcon } from './components/icons';
-import { ArchScene, FlowScene, type DrillHandler } from './components/scenes';
+import { type DrillHandler } from './components/scenes';
 import { SelectionContext, type Selected, type Selection } from './components/selection';
-import { DataScene, StateScene } from './components/views';
 import { Badge } from './components/ui/badge';
 import { Button, buttonVariants } from './components/ui/button';
 import { Presenter } from './presentation/Presenter';
@@ -102,14 +101,16 @@ export function App() {
         // Beside its details, show the box's code. Small screens keep the sheet for the details; a tour keeps its own lines.
         const { scene: current, autoCode: auto, wide: roomy, touring } = latest.current;
         if (closing || offline || !auto || !roomy || touring) return;
-        const found = current?.blocks.find((b) => b.type !== 'markdown' && b.id === block);
-        const ref = found && found.type !== 'markdown' ? findItem(found, node)?.ref : undefined;
+        // A chapter's code is in the lesson already ("Your cells"): asking about it keeps the lesson in view.
+        const found = current?.blocks.find((b) => isItemBlock(b) && b.id === block);
+        const ref = found && isItemBlock(found) && found.type !== 'chapter' ? findItem(found, node)?.ref : undefined;
         if (ref) dispatch({ type: 'show', ref });
       },
       ...(offline
         ? {}
         : {
             startTour: (walk: Tour) => dispatch({ type: 'tour', tour: walk }),
+            openCode: (ref: Ref) => openCode(ref),
             // A playing flow takes the open code window along with it; a tour keeps its own lines.
             followStep: (ref: Ref | undefined) => {
               const { codeOpen, touring } = latest.current;
@@ -393,19 +394,10 @@ function Scene({ scene }: { scene: ScenePayload }) {
           </div>
         </div>
       )}
-      {scene.blocks.map((block, i) => {
+      {scene.blocks.map((block, i) => (
         // Keyed by version so a new scene restarts its animations.
-        const key = `${scene.version}-${i}`;
-        if (block.type === 'arch') return <ArchScene key={key} block={block} />;
-        if (block.type === 'flow') return <FlowScene key={key} block={block} />;
-        if (block.type === 'data') return <DataScene key={key} block={block} />;
-        if (block.type === 'state') return <StateScene key={key} block={block} />;
-        return (
-          <div key={key} className="prose-exl max-w-3xl">
-            <Prose>{block.text}</Prose>
-          </div>
-        );
-      })}
+        <BlockView key={`${scene.version}-${i}`} block={block} />
+      ))}
       <p className="flex items-center gap-2 pt-2 text-sm font-semibold text-muted-foreground">
         <InfoIcon size={16} />
         Generated {new Date(scene.savedAt).toLocaleString()} ·{' '}

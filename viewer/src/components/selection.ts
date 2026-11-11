@@ -17,6 +17,8 @@ export interface Selection {
   startTour?: (tour: Tour) => void;
   /** Tells the code window which lines the playing flow is at; it moves only if it is open. */
   followStep?: (ref: Ref | undefined) => void;
+  /** Opens lines (or notebook cells) in the code window; absent where there is no window. */
+  openCode?: (ref: Ref) => void;
 }
 
 export const SelectionContext = createContext<Selection | undefined>(undefined);

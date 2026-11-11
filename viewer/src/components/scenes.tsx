@@ -84,9 +84,8 @@ export function ReplayButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Previous, play or pause, next. */
 /** "Explain with code": plays a tour built from the scene itself in the code window; absent where there is no window. */
-function TourButton({ tour }: { tour: ReturnType<typeof tourFromFlow> }) {
+export function TourButton({ tour }: { tour: ReturnType<typeof tourFromFlow> }) {
   const start = useSelection()?.startTour;
   if (!start || !tour) return null;
   return (
@@ -97,6 +96,7 @@ function TourButton({ tour }: { tour: ReturnType<typeof tourFromFlow> }) {
   );
 }
 
+/** Previous, play or pause, next. */
 export function StepControls({ playback }: { playback: Playback }) {
   return (
     <>
