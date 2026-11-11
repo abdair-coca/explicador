@@ -6,6 +6,7 @@ import { describeClick, findClickTarget } from '../src/clicks/index.ts';
 import {
   formatErrors,
   parseExl,
+  type CalcBlock,
   type ChapterBlock,
   type ChartBlock,
   type JourneyBlock,
@@ -357,7 +358,7 @@ describe('the example lesson', () => {
   it('parses, uses every lesson tag and points only at files of examples/notebook', () => {
     assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
     const types = new Set(parsed.scene.blocks.map((block) => block.type));
-    for (const type of ['chapter', 'stats', 'journey', 'trace', 'chart', 'matrix', 'quiz']) assert.ok(types.has(type as never), type);
+    for (const type of ['chapter', 'stats', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'calc']) assert.ok(types.has(type as never), type);
     for (const ref of parsed.refs) assert.ok(existsSync(join(project, ref)), ref);
   });
 
@@ -379,6 +380,8 @@ describe('the example lesson', () => {
     const numbers = parsed.scene.blocks.flatMap((block) => {
       if (block.type === 'stats') return block.stats.map((stat) => stat.value);
       if (block.type === 'chart' || block.type === 'matrix') return block.rows.flatMap((row) => row.values);
+      // Signs are added when printing (`+.3f`); the number itself must be printed.
+      if (block.type === 'calc') return [...block.parts.map((part) => part.value.replace(/^\+/, '')), ...(block.total ? [block.total] : [])];
       return [];
     });
     assert.ok(numbers.length > 20);
@@ -394,5 +397,37 @@ describe('needsLesson', () => {
     assert.equal(needsLesson(arch.scene.blocks, ['a.ipynb']), true);
     assert.equal(needsLesson(arch.scene.blocks, ['a.py']), false);
     assert.equal(needsLesson(lessonScene.scene.blocks, ['a.ipynb']), false);
+  });
+});
+
+describe('<calc>', () => {
+  const calc = (attrs: string, parts: string) => `<calc title="How the model scores it"${attrs}>\n${parts}\n</calc>`;
+  const parts = '<part label="intercept" value="-0.075" />\n<part label="bad" value="-0.332" note="a negative word" ref="nb/p2.ipynb:3" />\n<part label="really" value="+0.310" />';
+
+  it('reads parts, the printed total and the logistic options', () => {
+    const parsed = parseExl(calc(' kind="logistic" total="-0.097" classes="negative|positive" threshold="0.6" ref="nb/p2.ipynb:4"', parts));
+    assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+    const block = parsed.scene.blocks[0] as CalcBlock;
+    assert.equal(block.kind, 'logistic');
+    assert.deepEqual(block.parts.map((part) => part.value), ['-0.075', '-0.332', '+0.310']);
+    assert.equal(block.parts[1]?.note, 'a negative word');
+    assert.equal(block.total, '-0.097');
+    assert.deepEqual(block.classes, ['negative', 'positive']);
+    assert.equal(block.threshold, 0.6);
+    assert.deepEqual(parsed.refs, ['nb/p2.ipynb']);
+  });
+
+  it('accepts a total off by rounding and refuses one the parts do not add up to', () => {
+    // -0.097 exactly; -0.095 is within 3 × 0.0005 + 0.0005 of it, -0.090 is not.
+    assert.ok(parseExl(calc(' total="-0.095"', parts)).ok);
+    assert.match(errorsOf(calc(' total="-0.090"', parts))[0] ?? '', /The parts add up to -0.097, not -0.090/);
+  });
+
+  it('refuses bad numbers, too few parts and logistic options on a sum', () => {
+    assert.match(errorsOf(calc('', '<part label="a" value="0,5" />\n<part label="b" value="1" />'))[0] ?? '', /"0,5" is not a number/);
+    assert.match(errorsOf(calc('', '<part label="a" value="1" />'))[0] ?? '', /at least two <part>s/);
+    assert.match(errorsOf(calc(' classes="a|b"', parts))[0] ?? '', /"classes" works only in a <calc kind="logistic">/);
+    assert.match(errorsOf(calc(' kind="logistic" threshold="1.5"', parts))[0] ?? '', /between 0 and 1/);
+    assert.match(errorsOf(calc(' kind="logistic" classes="a"', parts))[0] ?? '', /names the two classes/);
   });
 });

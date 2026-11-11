@@ -1,5 +1,6 @@
 // One scene block, whatever its type; the plain layout, lessons and slides share it.
 import type { Block } from '../../../server/src/scene.ts';
+import { CalcScene } from '../lesson/Calc';
 import { ChartScene } from '../lesson/Chart';
 import { MatrixScene } from '../lesson/Matrix';
 import { QuizView } from '../lesson/Quiz';
@@ -38,6 +39,8 @@ export function BlockView({ block }: { block: Block }) {
       return <MatrixScene block={block} />;
     case 'quiz':
       return <QuizView block={block} />;
+    case 'calc':
+      return <CalcScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
       return null;

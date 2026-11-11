@@ -17,7 +17,7 @@ interface Tip {
   items: { series: string; text: string; color: string }[];
 }
 
-function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
+export function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
   const element = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   useLayoutEffect(() => {

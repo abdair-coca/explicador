@@ -52,6 +52,11 @@ export const catalog: Record<string, TagSpec> = {
   quiz: { attrs: { id: 'optional', question: 'required' }, children: ['option', 'answer'] },
   option: { attrs: { correct: 'optional', why: 'optional' }, text: true },
   answer: { attrs: {}, text: true },
+  calc: {
+    attrs: { id: 'optional', title: 'required', kind: 'optional', total: 'optional', classes: 'optional', threshold: 'optional', ref: 'optional' },
+    children: ['part'],
+  },
+  part: { attrs: { label: 'required', value: 'required', note: 'optional', ref: 'optional' } },
 };
 
 export const limits = {
@@ -93,6 +98,7 @@ export const limits = {
   questionLength: 300,
   options: 5,
   optionLength: 200,
+  calcParts: 24,
 } as const;
 
 export type Report = (offset: number, message: string) => void;

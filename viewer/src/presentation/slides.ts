@@ -1,8 +1,9 @@
 // Presentation order: one slide per Markdown block, <arch> and <data>, one per <flow> step,
 // and one per <walk> step of a <state> (or one slide for a <state> without a walk).
 // Lessons add a title slide per chapter, one slide per journey stage and trace value, one per chart, quiz and
-// stats block, and one per matrix followed by one per highlight it offers.
+// stats block, one per matrix followed by one per highlight it offers, and one per step of a calculation.
 import type { Block } from '../../../server/src/scene.ts';
+import { calcModel } from '../lesson/calc.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
 
 export type Slide =
@@ -18,10 +19,11 @@ export type Slide =
   | { kind: 'trace'; block: number; step: number; of: number }
   | { kind: 'chart'; block: number }
   | { kind: 'matrix'; block: number; focus?: number }
-  | { kind: 'quiz'; block: number };
+  | { kind: 'quiz'; block: number }
+  | { kind: 'calc'; block: number; step: number; of: number };
 
 /** One slide per item, numbered `step` of `of`. */
-function steps<K extends 'step' | 'walk' | 'stage' | 'trace'>(kind: K, block: number, count: number): { kind: K; block: number; step: number; of: number }[] {
+function steps<K extends 'step' | 'walk' | 'stage' | 'trace' | 'calc'>(kind: K, block: number, count: number): { kind: K; block: number; step: number; of: number }[] {
   return Array.from({ length: count }, (_, step) => ({ kind, block, step, of: count }));
 }
 
@@ -55,6 +57,9 @@ export function buildSlides(blocks: Block[]): Slide[] {
         break;
       case 'trace':
         slides.push(...steps('trace', i, block.values.length));
+        break;
+      case 'calc':
+        slides.push(...steps('calc', i, calcModel(block).steps));
         break;
       case 'matrix':
         slides.push({ kind: 'matrix', block: i });

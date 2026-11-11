@@ -177,6 +177,14 @@ Defaults (approved by the user with the plan on 2026-11-10):
 - [x] **F12. Notebook lessons.** Done 2026-11-11 in the unattended cloud session except the user's review and the check with the user's own notebook. Example: `examples/scenes/notebook-lesson.exl.md` over `examples/notebook/reviews.ipynb`.
   - Criterion: parser tests for every new tag (valid, invalid, incomplete), refs and cache invalidation, chapter cells attached with outputs, clicks on stages and chapters, the ranges warning; viewer tests (word diff, chapter split, confusion metrics, chart scales, slides, progress); typecheck, lint and tests pass; the example lesson checked in a browser (rail, journey, trace, charts, matrices, quizzes, cells, panel, presentation, export). The check with the user's own notebook and the user's review happen when the user is back.
 
+### F13: lessons that let the reader play with the model (user, 2026-11-11)
+
+The user asked for features that take the project to the next level and, offered five options, said "choose yourself". Chosen, in this order: **A** `<calc>`, a worked calculation of how a model scores one input (parts added one by one in a waterfall; for `kind="logistic"` the sigmoid, the probability and the decision), the viewer doing the arithmetic and the parser refusing parts that do not add up to the notebook's printed total; **B** `<threshold>`, a slider over the real test probabilities that recomputes the confusion matrix, precision and recall live; **C** practice mode, a viewer-only "Practice" view that asks every check and flashcard of a lesson, missed ones first, with a score. Not chosen now: a glossary tag; F11 stays planned. This grows the closed EXL catalog (decision 8) and the animation types (decision 5) with the user's go-ahead.
+
+- [ ] **F13a. `<calc>`.**
+- [ ] **F13b. `<threshold>`.**
+- [ ] **F13c. Practice mode.**
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -272,3 +280,4 @@ Open points:
 | F10 | done (2026-11-09), user review pending |
 | F11 | planned (approved 2026-11-09) |
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
+| F13 | approved (2026-11-11, "choose yourself"), in progress |

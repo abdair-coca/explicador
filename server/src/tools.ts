@@ -59,7 +59,7 @@ export const instructions = [
   'For any explanation: call show_scene first; if it is fresh, answer from it without reading code.',
   'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document',
   '(Markdown plus scene tags such as <arch> and <flow>; the explicador skill documents the format).',
-  'Notebooks and data or ML code are explained as lessons: <chapter>s with <stats>, <journey>, <trace>, <chart>, <matrix> and <quiz> over their real values.',
+  'Notebooks and data or ML code are explained as lessons: <chapter>s with <stats>, <journey>, <trace>, <chart>, <matrix>, <calc> and <quiz> over their real values.',
   'export_scene writes a cached scene as one offline HTML file for sharing.',
   'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
   'To walk the user through code (a file, a function, a whole flow across files, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
@@ -149,7 +149,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           .string()
           .min(1)
           .max(200_000)
-          .describe('EXL: Markdown plus scene tags (<arch>, <flow>, <data>, <state>, and for lessons <chapter>, <stats>, <journey>, <trace>, <chart>, <matrix>, <quiz>).'),
+          .describe('EXL: Markdown plus scene tags (<arch>, <flow>, <data>, <state>, and for lessons <chapter>, <stats>, <journey>, <trace>, <chart>, <matrix>, <quiz>, <calc>).'),
         background: z
           .boolean()
           .optional()

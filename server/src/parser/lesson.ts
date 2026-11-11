@@ -21,9 +21,12 @@ import {
   type Report,
 } from './common.ts';
 import {
+  calcKinds,
   chartTypes,
   confusionMetrics,
   stageKinds,
+  type CalcBlock,
+  type CalcPart,
   type CellPick,
   type ChapterBlock,
   type ChartBlock,
@@ -343,4 +346,78 @@ export function buildQuiz(element: Element, ordinal: number, report: Report): Qu
     if (!answer) report(first.offset, '<answer> needs the answer text');
   }
   return { type: 'quiz', id: a.id ?? `quiz-${ordinal}`, question, options, ...(answer ? { answer } : {}) };
+}
+
+/** Digits after the decimal point, as written ("-0.332" → 3, "2" → 0, "1.5e-3" → 1). */
+function decimalsIn(value: string): number {
+  const mantissa = value.split(/[eE]/)[0] ?? '';
+  return mantissa.includes('.') ? (mantissa.split('.')[1]?.length ?? 0) : 0;
+}
+
+export function buildCalc(element: Element, ordinal: number, report: Report): CalcBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('calc'), ordinal, report);
+  const kind = readEnum(a.kind, calcKinds, 'sum', 'kind', element, report);
+  const parts: CalcPart[] = [];
+  for (const child of childElements(element, spec('calc'), report)) {
+    const p = readAttrs(child, spec('part'), report);
+    requireSelfClosing(child, '<part label="film" value="+0.011" />', report);
+    if (p.label === undefined || p.value === undefined) continue;
+    const label = checkText(p.label, 'label', limits.rowLabelLength, child, report);
+    const value = p.value.trim();
+    if (!NUMBER.test(value)) {
+      report(child.attrs.get('value')?.offset ?? child.offset, `"${value}" is not a number; write it as the notebook prints it (-0.332)`);
+      continue;
+    }
+    const note = optionalText(p.note, 'note', limits.noteLength, child, report);
+    parts.push({ label, value, ...(note ? { note } : {}), ...readRef(p.ref, child, report) });
+  }
+  if (parts.length < 2) report(element.offset, '<calc> needs at least two <part>s, e.g. the intercept and one weight');
+  if (parts.length > limits.calcParts) report(element.offset, `<calc> has more than ${limits.calcParts} parts; keep the ones that matter and say so in the prose`);
+
+  let total: string | undefined;
+  if (a.total !== undefined) {
+    total = a.total.trim();
+    const offset = element.attrs.get('total')?.offset ?? element.offset;
+    if (!NUMBER.test(total)) {
+      report(offset, `"total" must be a number as the notebook prints it, e.g. total="0.438"`);
+      total = undefined;
+    } else if (parts.length > 0) {
+      // Every part and the total may be rounded by half a unit of their last decimal.
+      const sum = parts.reduce((acc, part) => acc + Number(part.value), 0);
+      const slack = parts.reduce((acc, part) => acc + 0.5 * 10 ** -decimalsIn(part.value), 0) + 0.5 * 10 ** -decimalsIn(total) + 1e-9;
+      if (Math.abs(sum - Number(total)) > slack) {
+        const shown = sum.toFixed(Math.max(...parts.map((part) => decimalsIn(part.value))));
+        report(offset, `The parts add up to ${shown}, not ${total}: copy every part and the total from the same output`);
+      }
+    }
+  }
+
+  let classes: [string, string] | undefined;
+  let threshold: number | undefined;
+  const logisticOnly = (name: string): void => report(element.attrs.get(name)?.offset ?? element.offset, `"${name}" works only in a <calc kind="logistic">`);
+  if (a.classes !== undefined) {
+    if (kind !== 'logistic') logisticOnly('classes');
+    const names = splitList(a.classes);
+    if (names.length !== 2 || names.some((name) => !name || name.length > limits.rowLabelLength)) {
+      report(element.attrs.get('classes')?.offset ?? element.offset, '"classes" names the two classes, below and above the threshold: classes="negative|positive"');
+    } else classes = [names[0] ?? '', names[1] ?? ''];
+  }
+  if (a.threshold !== undefined) {
+    if (kind !== 'logistic') logisticOnly('threshold');
+    const value = Number(a.threshold);
+    if (!NUMBER.test(a.threshold.trim()) || !(value > 0 && value < 1)) {
+      report(element.attrs.get('threshold')?.offset ?? element.offset, '"threshold" is a probability between 0 and 1, e.g. threshold="0.5"');
+    } else threshold = value;
+  }
+  return {
+    type: 'calc',
+    id,
+    title,
+    kind,
+    parts,
+    ...(total !== undefined ? { total } : {}),
+    ...(classes && kind === 'logistic' ? { classes } : {}),
+    ...(threshold !== undefined && kind === 'logistic' ? { threshold } : {}),
+    ...readRef(a.ref, element, report),
+  };
 }

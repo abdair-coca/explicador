@@ -9,10 +9,10 @@ Change these only after the user approves:
 2. A light index (file tree + import grep) in `.explicador/index/` of the analyzed project is read before code.
 3. Scenes are cached in `.explicador/scenes/` and invalidated by hashes of the files they reference.
 4. The viewer runs in a local browser tab.
-5. Animation types: step-by-step flow playback and zoom between levels, and for lessons (F12) the data's journey, step-by-step value traces, charts that grow and matrices with highlights.
+5. Animation types: step-by-step flow playback and zoom between levels, and for lessons (F12, F13) the data's journey, step-by-step value traces, charts that grow, matrices with highlights and worked calculations.
 6. Clicking an element opens its detail panel (description, key code); its "Go deeper" button asks the agent to go deeper and its question box asks the agent about the element, both delivered by a plugin monitor (`docs/decisions/interactivity.md`); a read-only code window beside it shows the element's code and plays the agent's code tours. It works without launch flags.
 7. Findings are appended to `FINDINGS.md` at the analyzed project's root.
-8. Agent output is EXL: Markdown plus a closed catalog of JSX-like tags, with no embedded JavaScript. Lessons (F12) added `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>` and `<quiz>` to the catalog.
+8. Agent output is EXL: Markdown plus a closed catalog of JSX-like tags, with no embedded JavaScript. Lessons (F12, F13) added `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>` and `<calc>` to the catalog.
 
 ## How to work
 

@@ -368,8 +368,39 @@ export interface QuizBlock {
   answer?: string;
 }
 
+export const calcKinds = ['sum', 'logistic'] as const;
+export type CalcKind = (typeof calcKinds)[number];
+
+/** One term of a worked calculation: a feature's contribution, the intercept, … */
+export interface CalcPart {
+  label: string;
+  /** As the notebook prints it, e.g. "-0.332". */
+  value: string;
+  note?: string;
+  ref?: Ref;
+}
+
+/**
+ * How a model scores one input, part by part. The viewer adds the parts; with `kind="logistic"` it also turns the
+ * score into a probability with the sigmoid and decides the class against the threshold.
+ */
+export interface CalcBlock {
+  type: 'calc';
+  id: string;
+  title: string;
+  kind: CalcKind;
+  parts: CalcPart[];
+  /** The total the notebook printed; the parts add up to it within rounding. */
+  total?: string;
+  /** Logistic only: the class below and the class at or above the threshold. */
+  classes?: [string, string];
+  /** Logistic only; default 0.5. */
+  threshold?: number;
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

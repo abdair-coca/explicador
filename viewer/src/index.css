@@ -452,3 +452,10 @@ body {
 .rail-dot { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; flex-shrink: 0; border-radius: 9999px; border: 2px solid var(--border); background: var(--card); font-size: 0.75rem; font-weight: 900; transition: background var(--dur-base), border-color var(--dur-base); }
 .rail-item.active .rail-dot { border-color: var(--primary-dark); background: var(--primary); }
 .rail-dot.done { border-color: var(--hit); background: var(--hit); color: #fff; animation: celebrate var(--dur-slow) var(--ease-pop); }
+
+/* Calculations: parts join a waterfall one by one; the current row is lit, the ones still to come are faint. */
+.calc-row { transition: opacity var(--dur-base) ease; }
+.calc-row.pending { opacity: 0.35; }
+.calc-current { fill: var(--primary-light); animation: fade-in var(--dur-fast) ease-out both; }
+.calc-link { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.calc-threshold { stroke: var(--muted-foreground); stroke-width: 1.5; stroke-dasharray: 5 4; }

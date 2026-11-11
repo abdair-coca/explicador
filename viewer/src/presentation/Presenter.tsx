@@ -8,6 +8,7 @@ import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scen
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
+import { CalcView } from '../lesson/Calc';
 import { ChartView } from '../lesson/Chart';
 import { matrixFocuses } from '../lesson/focuses';
 import { JourneyTrack, stageRoute } from '../lesson/Journey';
@@ -300,6 +301,21 @@ function SlideView({ scene, slide }: { scene: ScenePayload; slide: Slide }) {
               <FocusNote focus={focus} />
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+  if (slide.kind === 'calc' && block.type === 'calc') {
+    return (
+      <div className="space-y-6">
+        <h2 className="flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight">
+          {block.title}
+          <Badge variant="step">
+            Step {slide.step + 1} of {slide.of}
+          </Badge>
+        </h2>
+        <div className="rounded-2xl border border-border-soft bg-card p-6 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <CalcView block={block} index={slide.step} />
         </div>
       </div>
     );

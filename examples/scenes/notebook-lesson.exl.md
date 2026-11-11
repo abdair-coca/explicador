@@ -167,6 +167,31 @@ Two of the eight are **word pairs with "not"**: "not bad" pushes towards positiv
 <option why="Both words push up; nothing pushes down.">Negative</option>
 </quiz>
 
+<chapter id="scoring" title="How the model scored one review" goal="Follow the arithmetic behind one prediction, from word weights to a probability." ref="reviews.ipynb:18-19" />
+
+Chapter 6 showed one mistake: **"worst film year really bad"** was called positive. Now open the model and watch it decide. Cell 19 prints every word and word pair of that review that the model knows, with its weight; "worst" is not among them, because it never appeared in the training reviews.
+
+The model starts from its **intercept** (its score before reading any word) and adds the weight of each feature the review contains, like a jury where each word votes with its own loudness. Then the **sigmoid** squeezes the total into a probability between 0 and 1.
+
+<calc id="score-one" title="Scoring &quot;worst film year really bad&quot;" kind="logistic" total="0.438" classes="negative|positive" ref="reviews.ipynb:19">
+<part label="intercept" value="-0.075" note="Where every review starts, before any word is read." />
+<part label="bad" value="-0.332" note="The only negative word the model knows here." />
+<part label="film" value="+0.011" note="Almost neutral." />
+<part label="film year" value="+0.175" note="A word pair from the bigrams; it happened to appear in positive training reviews." />
+<part label="really" value="+0.310" note="In this small dataset &quot;really&quot; came mostly with positive reviews." />
+<part label="year" value="+0.175" />
+<part label="year really" value="+0.175" />
+</calc>
+
+> [!WARNING]
+> **Why it went wrong.** Five neutral words each push a little towards positive and together outvote "bad". The word that carries the meaning, "worst", has no weight at all. With more training data, "worst" would get a strong negative weight.
+
+<quiz id="q-score" question="The score is 0.438. Why is the answer &quot;positive&quot;?">
+<option why="The decision uses the probability, not the score directly.">Because 0.438 is less than 1</option>
+<option correct="true" why="sigmoid(0.438) is about 0.608, and 0.608 is at least the threshold 0.5. Any positive score gives a probability above 0.5.">Because its probability, 0.608, is at least 0.5</option>
+<option why="Each word adds its own weight; the count of words does not decide.">Because most of the words are positive</option>
+</quiz>
+
 <chapter id="review" title="Review" goal="Practise the questions someone could ask about this notebook." />
 
 Try to answer each one out loud before showing the answer.
