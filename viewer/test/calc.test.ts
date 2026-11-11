@@ -76,9 +76,7 @@ describe('waterfall', () => {
 });
 
 describe('calc slides', () => {
-  it('gives one slide per step: each part, the score, the probability and the decision', () => {
-    const slides = buildSlides([block]);
-    assert.equal(slides.length, 10);
-    assert.deepEqual(slides[9], { kind: 'calc', block: 0, step: 9, of: 10 });
+  it('gives one slide with a part per step: each term, the score, the probability and the decision', () => {
+    assert.deepEqual(buildSlides([block]), [{ kind: 'calc', block: 0, parts: 10, chapter: 0 }]);
   });
 });

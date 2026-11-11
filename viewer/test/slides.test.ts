@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { Block } from '../../server/src/scene.ts';
-import { buildSlides, keyAction } from '../src/presentation/slides.ts';
+import { buildSlides, keyAction, move, segmentFill, segmentsOf, type Position, type Slide } from '../src/presentation/slides.ts';
 
 const blocks: Block[] = [
   { type: 'markdown', text: '# Intro' },
@@ -21,32 +21,18 @@ const blocks: Block[] = [
 ];
 
 describe('buildSlides', () => {
-  it('makes one slide per prose block, per <arch> and per <flow> step, in document order', () => {
+  it('makes one slide per block, in document order, with each <flow> step as a part', () => {
     assert.deepEqual(buildSlides(blocks), [
-      { kind: 'markdown', block: 0 },
-      { kind: 'arch', block: 1 },
-      { kind: 'step', block: 2, step: 0, of: 2 },
-      { kind: 'step', block: 2, step: 1, of: 2 },
-      { kind: 'markdown', block: 3 },
+      { kind: 'markdown', block: 0, parts: 1, chapter: 0 },
+      { kind: 'arch', block: 1, parts: 1, chapter: 0 },
+      { kind: 'flow', block: 2, parts: 2, chapter: 0 },
+      { kind: 'markdown', block: 3, parts: 1, chapter: 0 },
     ]);
   });
 });
 
-describe('keyAction', () => {
-  it('advances only on explicit keys', () => {
-    assert.equal(keyAction('ArrowRight'), 'next');
-    assert.equal(keyAction(' '), 'next');
-    assert.equal(keyAction('PageUp'), 'prev');
-    assert.equal(keyAction('Home'), 'first');
-    assert.equal(keyAction('End'), 'last');
-    assert.equal(keyAction('Escape'), 'exit');
-    assert.equal(keyAction('f'), 'fullscreen');
-    assert.equal(keyAction('a'), undefined);
-  });
-});
-
 describe('buildSlides with <data> and <state>', () => {
-  it('gives <data> one slide and a <state> one slide per walk step, or one without a walk', () => {
+  it('gives <data> one part and a <state> one part per walk step, or one without a walk', () => {
     const views: Block[] = [
       { type: 'data', id: 'd', title: 'D', entities: [{ id: 'e', label: 'E', fields: [] }], relations: [], drills: [] },
       {
@@ -64,10 +50,92 @@ describe('buildSlides with <data> and <state>', () => {
       { type: 'state', id: 't', title: 'T', states: [{ id: 'a', label: 'A', role: 'initial' }], transitions: [], walk: [], drills: [] },
     ];
     assert.deepEqual(buildSlides(views), [
-      { kind: 'data', block: 0 },
-      { kind: 'walk', block: 1, step: 0, of: 2 },
-      { kind: 'walk', block: 1, step: 1, of: 2 },
-      { kind: 'state', block: 2 },
+      { kind: 'data', block: 0, parts: 1, chapter: 0 },
+      { kind: 'state', block: 1, parts: 2, chapter: 0 },
+      { kind: 'state', block: 2, parts: 1, chapter: 0 },
     ]);
+  });
+});
+
+describe('move', () => {
+  const deck: Slide[] = [
+    { kind: 'markdown', block: 0, parts: 1, chapter: 0 },
+    { kind: 'flow', block: 1, parts: 3, chapter: 0 },
+    { kind: 'markdown', block: 2, parts: 2, chapter: 0 },
+  ];
+
+  it('reveals each part before opening the next slide, and stops at the end', () => {
+    const seen: Position[] = [];
+    let at: Position = { slide: 0, part: 0 };
+    for (let i = 0; i < 6; i++) {
+      at = move(deck, at, 'next');
+      seen.push(at);
+    }
+    assert.deepEqual(seen, [
+      { slide: 1, part: 0 },
+      { slide: 1, part: 1 },
+      { slide: 1, part: 2 },
+      { slide: 2, part: 0 },
+      { slide: 2, part: 1 },
+      { slide: 2, part: 1 },
+    ]);
+  });
+
+  it('goes back part by part, then to the previous slide fully built, and stops at the start', () => {
+    assert.deepEqual(move(deck, { slide: 2, part: 1 }, 'prev'), { slide: 2, part: 0 });
+    assert.deepEqual(move(deck, { slide: 2, part: 0 }, 'prev'), { slide: 1, part: 2 });
+    assert.deepEqual(move(deck, { slide: 0, part: 0 }, 'prev'), { slide: 0, part: 0 });
+  });
+
+  it('skips the remaining parts and jumps to either end', () => {
+    assert.deepEqual(move(deck, { slide: 1, part: 0 }, 'skip'), { slide: 2, part: 0 });
+    assert.deepEqual(move(deck, { slide: 2, part: 0 }, 'skip'), { slide: 2, part: 1 });
+    assert.deepEqual(move(deck, { slide: 1, part: 1 }, 'first'), { slide: 0, part: 0 });
+    assert.deepEqual(move(deck, { slide: 0, part: 0 }, 'last'), { slide: 2, part: 1 });
+  });
+});
+
+describe('segmentsOf and segmentFill', () => {
+  it('gives each chapter a segment, and the slides before the first chapter their own, filled part by part', () => {
+    const lesson: Slide[] = [
+      { kind: 'markdown', block: 0, parts: 1, chapter: 0 },
+      { kind: 'chapter', block: 1, parts: 1, chapter: 1 },
+      { kind: 'journey', block: 2, parts: 4, chapter: 1 },
+      { kind: 'chapter', block: 3, parts: 1, chapter: 2 },
+    ];
+    const segments = segmentsOf(lesson);
+    assert.deepEqual(segments, [
+      { first: 0, count: 1, chapter: 0 },
+      { first: 1, count: 2, chapter: 1 },
+      { first: 3, count: 1, chapter: 2 },
+    ]);
+    const one = segments[1]!;
+    assert.equal(segmentFill(one, lesson, { slide: 0, part: 0 }), 0);
+    assert.equal(segmentFill(one, lesson, { slide: 1, part: 0 }), 0.5);
+    assert.equal(segmentFill(one, lesson, { slide: 2, part: 1 }), 0.75);
+    assert.equal(segmentFill(one, lesson, { slide: 3, part: 0 }), 1);
+  });
+
+  it('gives each slide a segment when the scene has no chapters', () => {
+    assert.deepEqual(
+      segmentsOf(buildSlides(blocks)).map((segment) => segment.first),
+      [0, 1, 2, 3],
+    );
+  });
+});
+
+describe('keyAction', () => {
+  it('advances only on explicit keys, and skips the remaining parts with Shift', () => {
+    assert.equal(keyAction('ArrowRight'), 'next');
+    assert.equal(keyAction(' '), 'next');
+    assert.equal(keyAction('PageUp'), 'prev');
+    assert.equal(keyAction('Home'), 'first');
+    assert.equal(keyAction('End'), 'last');
+    assert.equal(keyAction('Escape'), 'exit');
+    assert.equal(keyAction('f'), 'fullscreen');
+    assert.equal(keyAction('a'), undefined);
+    assert.equal(keyAction('ArrowRight', true), 'skip');
+    assert.equal(keyAction('PageDown', true), 'skip');
+    assert.equal(keyAction(' ', true), 'next');
   });
 });

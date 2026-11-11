@@ -177,7 +177,7 @@ describe('callouts', () => {
 });
 
 describe('buildSlides for lessons', () => {
-  it('gives chapters, stages, trace values, charts, quizzes and matrix highlights their slides', () => {
+  it('gives each lesson block a slide, with stages, trace values and matrix highlights as parts', () => {
     const lesson: Block[] = [
       { type: 'stats', id: 's', stats: [{ value: '1', label: 'one' }] },
       { type: 'chapter', id: 'c1', title: 'One' },
@@ -198,21 +198,14 @@ describe('buildSlides for lessons', () => {
       quiz('q'),
     ];
     assert.deepEqual(buildSlides(lesson), [
-      { kind: 'stats', block: 0 },
-      { kind: 'chapter', block: 1, number: 1, of: 2 },
-      { kind: 'stage', block: 2, step: 0, of: 2 },
-      { kind: 'stage', block: 2, step: 1, of: 2 },
-      { kind: 'trace', block: 3, step: 0, of: 2 },
-      { kind: 'trace', block: 3, step: 1, of: 2 },
-      { kind: 'chapter', block: 4, number: 2, of: 2 },
-      { kind: 'chart', block: 5 },
-      { kind: 'matrix', block: 6 },
-      { kind: 'matrix', block: 6, focus: 0 },
-      { kind: 'matrix', block: 6, focus: 1 },
-      { kind: 'matrix', block: 6, focus: 2 },
-      { kind: 'matrix', block: 6, focus: 3 },
-      { kind: 'matrix', block: 6, focus: 4 },
-      { kind: 'quiz', block: 7 },
+      { kind: 'stats', block: 0, parts: 1, chapter: 0 },
+      { kind: 'chapter', block: 1, parts: 1, chapter: 1 },
+      { kind: 'journey', block: 2, parts: 2, chapter: 1 },
+      { kind: 'trace', block: 3, parts: 2, chapter: 1 },
+      { kind: 'chapter', block: 4, parts: 1, chapter: 2 },
+      { kind: 'chart', block: 5, parts: 1, chapter: 2 },
+      { kind: 'matrix', block: 6, parts: 6, chapter: 2 },
+      { kind: 'quiz', block: 7, parts: 1, chapter: 2 },
     ]);
   });
 });

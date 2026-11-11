@@ -60,6 +60,12 @@
   --dur-slow: 400ms;
   --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* Present mode's night surface for chapter cards: Titi's text color, with white text on it. */
+  --night: #1a1a2e;
+  --night-foreground: #ffffff;
+  --night-muted: rgb(255 255 255 / 0.64);
+  --night-line: rgb(255 255 255 / 0.14);
 }
 
 @theme inline {
@@ -230,6 +236,66 @@ body {
 .reveal .edge-label-group { animation: fade-in var(--dur-base) ease-out both; }
 .animate-pop-in { animation: pop-in var(--dur-base) var(--ease-pop) both; }
 .animate-fade-up { animation: fade-up var(--dur-base) var(--ease-out) both; }
+
+/* Present mode (F14). Chapter cards turn the presenter night blue, slides move in the direction of travel (View
+   Transitions; browsers without them cut), a yellow wipe opens each chapter, and the chrome hides in full screen.
+   These run longer than the 400 ms entrance rule, in Present mode only. */
+.presenter[data-tone='night'] {
+  --background: var(--night);
+  --card: var(--night);
+  --foreground: var(--night-foreground);
+  --muted-foreground: var(--night-muted);
+  --muted: var(--night-line);
+  --border: var(--night-line);
+  --border-soft: var(--night-line);
+}
+.presenter,
+.presenter-bar {
+  transition-property: background-color, border-color, color, opacity, transform;
+  transition-duration: var(--dur-slow);
+  transition-timing-function: var(--ease-out);
+}
+.presenter[data-idle] { cursor: none; }
+.presenter[data-idle] .presenter-header { opacity: 0; transform: translateY(-100%); }
+.presenter[data-idle] .presenter-footer { opacity: 0; transform: translateY(100%); }
+.presenter[data-idle] .presenter-bar:focus-within { opacity: 1; transform: none; }
+
+.presenter-stage { view-transition-name: slide; }
+/* The chrome swaps at once; only the slide moves. */
+::view-transition-old(root) { animation: none; opacity: 0; }
+::view-transition-new(root) { animation: none; }
+::view-transition-old(slide) { animation: slide-out-left 240ms cubic-bezier(0.32, 0, 0.67, 0) both; }
+::view-transition-new(slide) { animation: slide-in-right 460ms var(--ease-pop) both; }
+:root[data-travel='back']::view-transition-old(slide) { animation-name: slide-out-right; }
+:root[data-travel='back']::view-transition-new(slide) { animation-name: slide-in-left; }
+@keyframes slide-out-left { to { opacity: 0; transform: translateX(-72px) scale(0.985); } }
+@keyframes slide-out-right { to { opacity: 0; transform: translateX(72px) scale(0.985); } }
+@keyframes slide-in-right { from { opacity: 0; transform: translateX(96px) scale(0.985); } }
+@keyframes slide-in-left { from { opacity: 0; transform: translateX(-96px) scale(0.985); } }
+
+.wipe { transform: translateX(-110%) skewX(-12deg); will-change: transform; }
+
+.chapter-number {
+  font-size: clamp(6.5rem, 19vw, 13rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--primary);
+  text-shadow: 0 0.07em 0 var(--primary-dark);
+}
+.chapter-rule { transform-origin: left; animation: rule-draw 420ms var(--ease-out) 180ms both; }
+@keyframes rule-draw { from { transform: scaleX(0); } }
+
+/* Words rise one after another from below their own line; the padding keeps accents and descenders visible. */
+.rise { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0.12em 0 0.16em; margin: -0.12em 0 -0.16em; }
+.rise-inner { display: inline-block; animation: word-rise 380ms var(--ease-pop) both; }
+@keyframes word-rise { from { opacity: 0; transform: translateY(110%); } }
+
+/* Numbers roll like an odometer: each digit spins a full turn and lands on its value. */
+.roll { display: inline-block; height: 1em; overflow: hidden; line-height: 1; vertical-align: top; }
+.roll-strip { display: flex; flex-direction: column; transform: translateY(calc(var(--to) * -1em)); animation: roll 560ms var(--ease-pop) both; }
+.roll-strip > span { height: 1em; line-height: 1; }
+@keyframes roll { from { transform: translateY(0); } }
 
 /* Detail panel: a bottom sheet that rises on small screens, a card that slides in beside the scene on large ones. */
 @keyframes sheet-in {

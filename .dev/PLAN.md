@@ -185,6 +185,61 @@ The user asked for features that take the project to the next level and, offered
 - [x] **F13b. `<threshold>`.** Done 2026-11-11: parser, strip with lanes, slider, live confusion matrix and metrics (reusing the matrix grid and metric code), slide, docs, skill, example chapter 9 over the new cells 20–21.
 - [x] **F13c. Practice mode.** Done 2026-11-11: "Practice" in the rail, pills and end card; missed first, fresh questions, score of first answers, repeat the missed; answers count in the lesson's progress; works in exports.
 
+### F14: a presentation that grabs attention (user, 2026-11-11)
+
+The user presented the lesson of their exam notebook and found Present mode boring. Their screenshots show a title with a 334-character paragraph and three still stat cards. That lesson gives 73 slides: 19 prose slides of up to 876 characters, 16 matrix, 12 quiz, 8 chart, 8 journey stage, 7 chapter, 2 trace and 1 stats. Every slide appears whole with the same 300 ms pop, and each step of a block (a journey stage, a matrix focus, a trace value) remounts the whole slide. The footer is 73 identical dots. The user asked for animations and micro-interactions that make the presentation spectacular.
+
+Choices through a quiz (user, 2026-11-11):
+- **Mixed look.** Each chapter enters as a full-screen night-blue card with a giant number and a yellow wipe. Content stays cream and yellow and enters in parts.
+- **Parts on →.** Each → reveals the next part of the slide, which animates by itself. With no parts left, → moves to the next slide.
+- **Subtle sounds.** A pop on each part, a whoosh on a chapter change and a ding on a right answer. They are off by default, with a toggle.
+- Not chosen: laser pointer, slide overview, presenter view.
+
+This grows product decision 5 and relaxes two Titi rules in Present mode only: a dark surface for chapter cards, and transitions longer than 400 ms. `AGENTS.md` is updated with the phase.
+
+Defaults (approved by the user with the plan on 2026-11-11, who then asked for the INF672 session to recreate the lesson once it is done):
+- **One slide per block, its steps as parts.** Flow and walk steps, journey stages, trace values, calc steps and matrix focuses become parts of one slide. The block stays on screen and its own step animations play. The exam lesson goes from 73 slides to 51. ← from a slide's first part shows the previous slide fully built, and Shift+→ skips the remaining parts.
+- **Prose in parts.** The viewer splits a Markdown block into headings, paragraphs, list items, callouts, tables and code blocks. Paragraphs over about 200 characters split at sentence ends, never inside code or bold.
+  - A heading rises word by word, and numbers count up to the value as written.
+  - Bold words get a yellow marker sweep, and callouts stamp in.
+  - Earlier parts dim.
+  - No EXL or agent change, so cached lessons benefit.
+- **Other blocks.**
+  - Stats: one card per part, counting up.
+  - Chart: the bars grow. With `highlight`, a second part dims the other rows.
+  - Matrix: the cells cascade in, then there is one part per focus. The other cells dim and the note crossfades.
+  - Quiz: first the question and its options, then a part that reveals the right answer and its why, with flat confetti. A flashcard flips. A click on an option still counts in the lesson's progress; a reveal by → does not.
+- **Transitions.** Slides move in the direction of travel (≤500 ms). Entering a chapter takes ≤900 ms: a yellow wipe crosses the screen and uncovers a `#1A1A2E` card, where the number rolls in, the title rises word by word and the goal fades in. Flat: no gradients or blur.
+- **Chrome.**
+  - The bar has one progress segment per chapter instead of one dot per slide; scenes without chapters get one segment per slide.
+  - It shows the current chapter's title, a playhead that glides and a thin fill for the parts of the current slide. A click on a segment opens that chapter.
+  - In full screen the header and footer hide after 2.5 s without the mouse moving.
+  - Labels stay in English like the rest of the viewer.
+- **Sounds.** Synthesized with the Web Audio API: no audio files and no dependency. A speaker button and the M key toggle them, the browser remembers the choice, and they also work in exports.
+- **Reduced motion:** no moves, wipes or confetti. Parts still come one by one, in their final state.
+- **Skill:** lesson prose is written for slides: one idea per paragraph, at most two sentences, the key term in bold.
+
+- [x] **F14a. Stage and pace.** Slides with parts, navigation, directional transitions, chapter cards with the wipe, the chapter progress bar, and chrome that hides in full screen.
+  - Done 2026-11-11.
+    - Slide moves use View Transitions; browsers without them cut.
+    - The wipe is a skewed yellow panel driven by the Web Animations API (260 ms in, 340 ms out), and keys are ignored while it runs.
+    - Two key presses within one frame of a slide move count once.
+  - Checked:
+    - In the user's Chrome on the example lesson: parts, chapter cards, the wipe and view transitions sampled in the page.
+    - In a separate headless Chrome: 390 px, reduced motion, and an exported file opened from disk.
+    - On the user's lesson read in place: 51 slides, 72 parts.
+  - Not checked: real full screen (simulated in the page: idle after 2.5 s, back on a pointer move, the CSS hides the bars).
+  - On phones a journey's narration sits below the stacked stages and needs scrolling, as before.
+  - Criterion:
+    - Unit tests for slides with parts (every block kind) and for navigation: next and back across parts, Shift+→, Home and End.
+    - Typecheck, lint, test and build pass.
+    - Checked in Chrome at 1440 and 390 px, with reduced motion and in an exported file. Both on the example lesson and on the user's lesson, read in place and not copied into the repo.
+- [ ] **F14b. Parts that come alive.** Prose parts, stats, chart highlight, matrix cascade and focuses, quiz reveal with confetti and flashcard flip, and the skill note.
+  - Criterion: unit tests for the prose splitter (sentences, bold, code, lists, callouts, tables) and for the parts of each block; the same checks and browser walk-through as F14a.
+- [ ] **F14c. Sounds.** Pop, whoosh and ding; the toggle and M; the remembered choice; silent when off or without Web Audio.
+  - Criterion: tests for the sound switch (silent without Web Audio, remembered choice); the same checks; heard in Chrome.
+- One commit per part, like F13. The user reviews at the end of F14.
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -286,3 +341,4 @@ Open points:
 | F11 | planned (approved 2026-11-09) |
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
 | F13 | done (2026-11-11), user review pending |
+| F14 | in progress (approved 2026-11-11) |

@@ -1,85 +1,112 @@
-// Presentation order: one slide per Markdown block, <arch> and <data>, one per <flow> step,
-// and one per <walk> step of a <state> (or one slide for a <state> without a walk).
-// Lessons add a title slide per chapter, one slide per journey stage and trace value, one per chart, quiz and
-// stats block, one per matrix followed by one per highlight it offers, and one per step of a calculation, and one per threshold (interactive).
+// Presentation order: one slide per block, in document order. A block's steps are the parts of its slide: <flow>
+// steps, <walk> steps of a <state>, journey stages, trace values, calc steps and, after the whole matrix, each of its
+// highlights. Each → reveals the next part; with none left, → opens the next slide.
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calcMath.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
 
-export type Slide =
-  | { kind: 'markdown'; block: number }
-  | { kind: 'arch'; block: number }
-  | { kind: 'step'; block: number; step: number; of: number }
-  | { kind: 'data'; block: number }
-  | { kind: 'state'; block: number }
-  | { kind: 'walk'; block: number; step: number; of: number }
-  | { kind: 'chapter'; block: number; number: number; of: number }
-  | { kind: 'stats'; block: number }
-  | { kind: 'stage'; block: number; step: number; of: number }
-  | { kind: 'trace'; block: number; step: number; of: number }
-  | { kind: 'chart'; block: number }
-  | { kind: 'matrix'; block: number; focus?: number }
-  | { kind: 'quiz'; block: number }
-  | { kind: 'threshold'; block: number }
-  | { kind: 'calc'; block: number; step: number; of: number };
+export interface Slide {
+  kind: Block['type'];
+  block: number;
+  /** Parts revealed one per →, at least 1. */
+  parts: number;
+  /** 0 before the first <chapter>, then the number of the chapter the slide belongs to. */
+  chapter: number;
+}
 
-/** One slide per item, numbered `step` of `of`. */
-function steps<K extends 'step' | 'walk' | 'stage' | 'trace' | 'calc'>(kind: K, block: number, count: number): { kind: K; block: number; step: number; of: number }[] {
-  return Array.from({ length: count }, (_, step) => ({ kind, block, step, of: count }));
+function partsOf(block: Block): number {
+  switch (block.type) {
+    case 'flow':
+      return block.steps.length;
+    case 'state':
+      return block.walk.length;
+    case 'journey':
+      return block.stages.length;
+    case 'trace':
+      return block.values.length;
+    case 'calc':
+      return calcModel(block).steps;
+    case 'matrix':
+      return 1 + matrixFocuses(block).length;
+    default:
+      return 1;
+  }
 }
 
 export function buildSlides(blocks: Block[]): Slide[] {
-  const slides: Slide[] = [];
-  const chapters = blocks.filter((block) => block.type === 'chapter').length;
   let chapter = 0;
-  blocks.forEach((block, i) => {
-    switch (block.type) {
-      case 'markdown':
-      case 'arch':
-      case 'data':
-      case 'stats':
-      case 'chart':
-      case 'quiz':
-      case 'threshold':
-        slides.push({ kind: block.type, block: i });
-        break;
-      case 'flow':
-        slides.push(...steps('step', i, block.steps.length));
-        break;
-      case 'state':
-        if (block.walk.length === 0) slides.push({ kind: 'state', block: i });
-        else slides.push(...steps('walk', i, block.walk.length));
-        break;
-      case 'chapter':
-        chapter += 1;
-        slides.push({ kind: 'chapter', block: i, number: chapter, of: chapters });
-        break;
-      case 'journey':
-        slides.push(...steps('stage', i, block.stages.length));
-        break;
-      case 'trace':
-        slides.push(...steps('trace', i, block.values.length));
-        break;
-      case 'calc':
-        slides.push(...steps('calc', i, calcModel(block).steps));
-        break;
-      case 'matrix':
-        slides.push({ kind: 'matrix', block: i });
-        matrixFocuses(block).forEach((_, focus) => slides.push({ kind: 'matrix', block: i, focus }));
-        break;
-    }
+  return blocks.map((block, i) => {
+    if (block.type === 'chapter') chapter += 1;
+    return { kind: block.type, block: i, parts: Math.max(1, partsOf(block)), chapter };
   });
-  return slides;
 }
 
-export type Key = 'next' | 'prev' | 'first' | 'last' | 'exit' | 'fullscreen';
+export interface Position {
+  slide: number;
+  part: number;
+}
 
-/** Keyboard map of the presenter; anything else is ignored. */
-export function keyAction(key: string): Key | undefined {
+export type Move = 'next' | 'prev' | 'skip' | 'first' | 'last';
+
+/**
+ * Where a move leads. Next reveals the next part or opens the next slide at its first part; prev hides the last part
+ * or goes back to the previous slide fully built; skip opens the next slide; first and last go to the ends.
+ */
+export function move(slides: readonly Slide[], at: Position, how: Move): Position {
+  const last = Math.max(0, slides.length - 1);
+  const lastPart = (slide: number): number => (slides[slide]?.parts ?? 1) - 1;
+  switch (how) {
+    case 'next':
+      if (at.part < lastPart(at.slide)) return { slide: at.slide, part: at.part + 1 };
+      return at.slide < last ? { slide: at.slide + 1, part: 0 } : at;
+    case 'skip':
+      return at.slide < last ? { slide: at.slide + 1, part: 0 } : { slide: at.slide, part: lastPart(at.slide) };
+    case 'prev':
+      if (at.part > 0) return { slide: at.slide, part: at.part - 1 };
+      return at.slide > 0 ? { slide: at.slide - 1, part: lastPart(at.slide - 1) } : at;
+    case 'first':
+      return { slide: 0, part: 0 };
+    case 'last':
+      return { slide: last, part: lastPart(last) };
+  }
+}
+
+/** A stretch of the progress bar: the slides of one chapter, or one slide when the scene has no chapters. */
+export interface Segment {
+  first: number;
+  count: number;
+  /** The chapter number, 0 for the slides before the first chapter (and for every slide without chapters). */
+  chapter: number;
+}
+
+export function segmentsOf(slides: readonly Slide[]): Segment[] {
+  if (!slides.some((slide) => slide.kind === 'chapter')) return slides.map((_, i) => ({ first: i, count: 1, chapter: 0 }));
+  const segments: Segment[] = [];
+  slides.forEach((slide, i) => {
+    const current = segments.at(-1);
+    if (current && current.chapter === slide.chapter) current.count += 1;
+    else segments.push({ first: i, count: 1, chapter: slide.chapter });
+  });
+  return segments;
+}
+
+/** How much of a segment has been shown, from 0 to 1, counting the revealed parts of the current slide. */
+export function segmentFill(segment: Segment, slides: readonly Slide[], at: Position): number {
+  if (at.slide >= segment.first + segment.count) return 1;
+  if (at.slide < segment.first) return 0;
+  const parts = slides[at.slide]?.parts ?? 1;
+  return (at.slide - segment.first + (at.part + 1) / parts) / segment.count;
+}
+
+export type Key = 'next' | 'prev' | 'skip' | 'first' | 'last' | 'exit' | 'fullscreen';
+
+/** Keyboard map of the presenter; anything else is ignored. Shift with a forward key skips the remaining parts. */
+export function keyAction(key: string, shift = false): Key | undefined {
   switch (key) {
     case 'ArrowRight':
     case 'ArrowDown':
     case 'PageDown':
+      return shift ? 'skip' : 'next';
     case ' ':
     case 'Enter':
       return 'next';
