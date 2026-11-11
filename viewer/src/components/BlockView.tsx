@@ -2,6 +2,7 @@
 import type { Block } from '../../../server/src/scene.ts';
 import { ChartScene } from '../lesson/Chart';
 import { MatrixScene } from '../lesson/Matrix';
+import { QuizView } from '../lesson/Quiz';
 import { JourneyScene } from '../lesson/Journey';
 import { StatsView } from '../lesson/Stats';
 import { TraceScene } from '../lesson/Trace';
@@ -35,9 +36,10 @@ export function BlockView({ block }: { block: Block }) {
       return <ChartScene block={block} />;
     case 'matrix':
       return <MatrixScene block={block} />;
-    // F12 in progress (see .dev/TASK.md): chapters get the lesson layout; quizzes are not drawn yet.
-    case 'chapter':
     case 'quiz':
+      return <QuizView block={block} />;
+    // F12 in progress (see .dev/TASK.md): chapters get the lesson layout.
+    case 'chapter':
       return null;
   }
 }

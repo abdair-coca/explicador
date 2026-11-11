@@ -430,11 +430,12 @@ body {
 
 /* Quizzes: options are Titi tiles; a right pick pops green, a wrong one shakes red. */
 .quiz-option { border: 2px solid var(--border); background: var(--card); box-shadow: 0 4px 0 var(--border); transition: transform var(--dur-fast) ease-out, border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast), opacity var(--dur-base); }
-.quiz-option:not(:disabled):hover { transform: translateY(-2px); border-color: var(--primary); }
+.quiz-option:not(:disabled):not(.wrong):hover { transform: translateY(-2px); border-color: var(--primary); }
 .quiz-option:not(:disabled):active { transform: translateY(3px); box-shadow: none; }
 .quiz-option.right { border-color: var(--hit); background: color-mix(in oklab, var(--hit) 12%, white); box-shadow: 0 4px 0 color-mix(in oklab, var(--hit) 70%, black); animation: celebrate var(--dur-slow) var(--ease-pop); }
 .quiz-option.wrong { border-color: var(--miss); background: color-mix(in oklab, var(--miss) 9%, white); box-shadow: 0 4px 0 color-mix(in oklab, var(--miss) 60%, black); animation: shake 420ms ease-out; }
 .quiz-option.faded { opacity: 0.5; }
+.quiz-option.reveal { border: 2px dashed var(--hit); }
 .quiz-letter { display: grid; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0; border-radius: 10px; background: var(--muted); font-weight: 900; }
 .quiz-option.right .quiz-letter { background: var(--hit); color: #fff; }
 .quiz-option.wrong .quiz-letter { background: var(--miss); color: #fff; }

@@ -27,7 +27,7 @@ B. ✅ **Matrix** (done 2026-11-11: `lesson/Matrix.tsx`, heat in `lesson/heat.ts
    - Confusion: `.matrix-hit`/`.matrix-miss` from `cellOutcome(size, positiveOf(block), r, c)` plus a tag (`CheckIcon`/`CrossIcon` and TP/FP/FN/TN, or hit/miss with more than two classes). Plain numeric matrix: heat `color-mix(in oklab, var(--heat) X%, white)` with X = 6 + 70·t (t from min to max), white text when X > 55. Text cells stay white.
    - Focus: covered cells (`covers`) get `.lit`, the others `.dim`.
    - `MatrixScene`: SceneFrame kind "Confusion matrix" or "Matrix"; chips from `matrixFocuses(block)` (label, plus `formatRatio(metric.value)` for metrics), clicking toggles; an aria-live note with the label, `formula = worked` in mono for metrics, and the narration.
-C. **Quiz** (`viewer/src/lesson/Quiz.tsx`, `viewer/src/lesson/context.ts` with `LessonContext { progress; record(id, state) }`; outside a lesson a quiz keeps local state).
+C. ✅ **Quiz** (done 2026-11-11: `lesson/Quiz.tsx`, `lesson/context.ts`; a quiz's state lives in `QuizView` and goes to its option list or card, so the badge follows the pick outside a lesson) (`viewer/src/lesson/Quiz.tsx`, `viewer/src/lesson/context.ts` with `LessonContext { progress; record(id, state) }`; outside a lesson a quiz keeps local state).
    - Multiple choice: `.quiz-option` tiles with `.quiz-letter` A, B, …; a wrong pick gets `.wrong` (shake) and shows its `why`; footer "Not quite. Try another option." and "Show the answer" (marks the right option with a dashed green border: add `.quiz-option.reveal` CSS); the right pick gets `.right` (celebrate) and its `why`, the rest `.faded` and disabled, badge "Done"; `record(id, 'tried' | 'right')`; a saved `right` restores the solved state.
    - Flashcard (`answer`): dashed yellow card, badge "Review", "Show the answer" opens an `.animate-flip-in` box with `Prose`, then "Did you know it?" Yes → `known`, Not yet → `review` (badges "Known" / "Review again"); a saved state opens it.
    - Question and options through `InlineMarkdown`.
@@ -52,6 +52,7 @@ H. **Example and checks.** `examples/notebook/reviews.ipynb`: a small synthetic 
 
 ## Validation
 
+- 2026-11-11 C: typecheck 0, lint 0, build OK, server 132/132, viewer 64/64. In Chromium at 1440 and 390 px: a wrong pick shakes, shows its why, "Not quite" and "Show the answer" (dashed green on the right option); the right pick turns green with "Done", the rest fade; a flashcard opens its answer and asks "Did you know it?". No console errors. Saving to the lesson is checked with E.
 - 2026-11-11 B: typecheck 0, lint 0, build OK, server 132/132, viewer 64/64. Confusion matrix (metric chips, worked formula, error focus) at 1440 px and a 3×4 heat matrix with a column focus at 390 px checked in Chromium: no console errors, focus outlines not clipped.
 - 2026-11-11 A (cloud, Linux, Node 22.23): typecheck 0, lint 0, build OK, server 132/132, viewer 63/63. Charts checked in Chromium (Playwright) at 1440 and 390 px with a scratch scene (grouped bars with highlight, diverging hbars, two-series line, one-series bars): no console errors, labels do not collide, keyboard focus shows the tooltip.
 
