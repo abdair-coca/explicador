@@ -6,7 +6,7 @@ import { topicKey, type CachedScene, type SceneCache } from './cache/index.ts';
 import { describeClick, describeExplain, describeExplainFile, describeQuestion, findClickTarget } from './clicks/index.ts';
 import { readProjectFile } from './files.ts';
 import { parseExl, formatErrors } from './parser/index.ts';
-import type { Answer, FileChange, Question, TrailEntry } from './scene.ts';
+import type { Answer, Block, FileChange, Question, TrailEntry } from './scene.ts';
 import { withAnswerLines, withSnippets } from './snippets.ts';
 
 /** A click forwarded to Claude: the next scene rendered within this time is its answer. */
@@ -53,7 +53,7 @@ export class Navigator {
     status: 'fresh' | 'stale',
     changes: FileChange[],
     trail?: TrailEntry[],
-  ): { ok: true } | { ok: false; errors: string } {
+  ): { ok: true; blocks: Block[] } | { ok: false; errors: string } {
     const parsed = parseExl(scene.exl);
     if (!parsed.ok) return { ok: false, errors: formatErrors(parsed.errors) };
     const current = this.bridge.current;
@@ -73,7 +73,7 @@ export class Navigator {
       },
       withAnswerLines(this.cache.root, scene.questions ?? []),
     );
-    return { ok: true };
+    return { ok: true, blocks: parsed.scene.blocks };
   }
 
   /** POST /api/click {block, node}. */

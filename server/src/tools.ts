@@ -7,6 +7,7 @@ import { buildStandalone, ExportError } from './export/index.ts';
 import { appendFinding } from './findings/index.ts';
 import { isNotebookPath, readProjectFile } from './files.ts';
 import { describeIndex, ensureIndex } from './index/index.ts';
+import { lessonHint, needsLesson } from './lessons.ts';
 import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
 import { formatErrors, limits, parseExl, parseRefString } from './parser/index.ts';
@@ -109,12 +110,13 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           ].join('\n'),
         );
       }
+      const oldNotebook = needsLesson(shown.blocks, Object.keys(lookup.scene.files));
       if (lookup.status === 'fresh') {
         return text(
           [
             `Scene "${topic}" is fresh: none of its ${Object.keys(lookup.scene.files).length} referenced files changed since ${lookup.scene.savedAt}.`,
             `Shown at ${bridge.url}`,
-            'Answer from this EXL; do not read code or regenerate it unless the user asks for more.',
+            oldNotebook ? lessonHint : 'Answer from this EXL; do not read code or regenerate it unless the user asks for more.',
             '',
             lookup.scene.exl,
           ].join('\n'),
@@ -125,7 +127,9 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           `Scene "${topic}" is stale; the viewer shows it with a warning at ${bridge.url}`,
           'Changed files:',
           ...changes.map((c) => `- ${c.path} (${c.change})`),
-          'Re-read only these files (and the index if files moved), update the EXL below and call render_scene with the same topic.',
+          oldNotebook
+            ? lessonHint
+            : 'Re-read only these files (and the index if files moved), update the EXL below and call render_scene with the same topic.',
           '',
           lookup.scene.exl,
         ].join('\n'),

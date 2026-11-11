@@ -14,6 +14,7 @@ import {
   type StatsBlock,
   type TraceBlock,
 } from '../src/parser/index.ts';
+import { needsLesson } from '../src/lessons.ts';
 import { boxesWithoutRange } from '../src/ranges.ts';
 import type { ScenePayload } from '../src/scene.ts';
 import { withSnippets } from '../src/snippets.ts';
@@ -382,5 +383,16 @@ describe('the example lesson', () => {
     });
     assert.ok(numbers.length > 20);
     for (const value of numbers) assert.ok(printed.includes(value), `${value} is not in any output of reviews.ipynb`);
+  });
+});
+
+describe('needsLesson', () => {
+  it('asks for a lesson only for a notebook scene without chapters', () => {
+    const arch = parseExl('<arch title="A">\n<node id="n" label="N" ref="a.ipynb:1-2" />\n</arch>');
+    const lessonScene = parseExl('<chapter title="C" ref="a.ipynb:1-2" />\n\n<quiz question="Q?">\n<answer>A.</answer>\n</quiz>');
+    assert.ok(arch.ok && lessonScene.ok);
+    assert.equal(needsLesson(arch.scene.blocks, ['a.ipynb']), true);
+    assert.equal(needsLesson(arch.scene.blocks, ['a.py']), false);
+    assert.equal(needsLesson(lessonScene.scene.blocks, ['a.ipynb']), false);
   });
 });
