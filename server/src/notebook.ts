@@ -86,9 +86,11 @@ function convertOutput(raw: unknown, budget: { images: number }): NotebookOutput
     return [{ kind: 'image', mime, data: base64 }];
   }
   const html = joined(data['text/html']);
-  // Scripts and widgets cannot run here; a plain-text version, if there is one, tells the same.
-  if (html && html.length <= notebookLimits.htmlChars && !/<script|<iframe|<object|<embed/i.test(html)) return [{ kind: 'html', html }];
   const plain = joined(data['text/plain']) || joined(data['text/markdown']);
+  // Scripts and widgets cannot run here; a plain-text version, if there is one, tells the same.
+  if (html && html.length <= notebookLimits.htmlChars && !/<script|<iframe|<object|<embed/i.test(html)) {
+    return [{ kind: 'html', html, ...(plain ? { text: clip(plain.replace(ANSI, ''), notebookLimits.textChars) } : {}) }];
+  }
   if (plain) return [{ kind: 'text', stream: 'result', text: clip(plain.replace(ANSI, ''), notebookLimits.textChars) }];
   const kinds = Object.keys(data);
   return kinds.length > 0 ? [{ kind: 'omitted', label: kinds[0] ?? 'output' }] : [];
@@ -103,14 +105,20 @@ export function quoteCells(notebook: Notebook, start: number, end: number): Note
 export function describeNotebook(path: string, notebook: Notebook, range?: { start: number; end: number }): string {
   const header = `Notebook ${path}: ${notebook.language}, ${notebook.cells.length} cells. Refs use cell numbers, e.g. "${path}:3-5".`;
   const flat = (text: string): string => text.replace(/\s+/g, ' ').trim();
-  const outputText = (cell: NotebookCell): string =>
+  // The outline shows a glimpse of each output; a range read shows them whole (as kept, up to notebookLimits.textChars),
+  // and a table as its plain-text version, so every printed number can be copied.
+  const outputText = (cell: NotebookCell, whole: boolean): string =>
     (cell.outputs ?? [])
-      .map((o) => (o.kind === 'text' ? `${o.stream}: ${clip(flat(o.text), 160)}` : o.kind === 'image' ? 'image' : o.kind === 'html' ? 'table/html' : `omitted ${o.label}`))
-      .join(' | ');
+      .map((o) => {
+        if (o.kind === 'text') return `${o.stream}: ${whole ? o.text.trimEnd() : clip(flat(o.text), 160)}`;
+        if (o.kind === 'html') return whole && o.text ? `table:\n${o.text.trimEnd()}` : 'table/html';
+        return o.kind === 'image' ? 'image' : `omitted ${o.label}`;
+      })
+      .join(whole ? '\n' : ' | ');
 
   if (!range) {
     const lines = notebook.cells.map((cell) => {
-      const out = outputText(cell);
+      const out = outputText(cell, false);
       return `[${cell.n}] ${cell.type}${cell.count !== undefined ? ` In[${cell.count}]` : ''}: ${clip(flat(cell.source), 200) || '(empty)'}${out ? `  => ${out}` : ''}`;
     });
     return [header, 'Outline (first 200 characters of each cell). Ask for a range with cells "3-5" to read them whole.', ...lines].join('\n');
@@ -120,7 +128,7 @@ export function describeNotebook(path: string, notebook: Notebook, range?: { sta
   return [
     header,
     ...picked.map((cell) => {
-      const out = outputText(cell);
+      const out = outputText(cell, true);
       return [`--- [${cell.n}] ${cell.type}${cell.count !== undefined ? ` In[${cell.count}]` : ''}`, clip(cell.source, 3000), out ? `=> ${out}` : ''].filter(Boolean).join('\n');
     }),
   ].join('\n');

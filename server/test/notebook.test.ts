@@ -60,7 +60,7 @@ describe('parseNotebook', () => {
     const [, code] = parseNotebook(notebookJson)?.cells ?? [];
     assert.deepEqual(code?.outputs, [
       { kind: 'text', stream: 'stdout', text: 'loaded\n5 rows\n' },
-      { kind: 'html', html: '<table><tr><td>1</td></tr></table>' },
+      { kind: 'html', html: '<table><tr><td>1</td></tr></table>', text: '   a\n0  1' },
       { kind: 'image', mime: 'image/png', data: png },
     ]);
   });
@@ -146,6 +146,22 @@ describe('describeNotebook', () => {
   it('returns a range of cells whole', () => {
     const text = describeNotebook('nb/a.ipynb', notebook, { start: 2, end: 2 });
     assert.match(text, /--- \[2\] code In\[3\]\nimport pandas as pd\ndf = pd\.read_csv/);
+    // Outputs whole, one per line, and a table as its plain text, so every printed number can be copied.
+    assert.match(text, /=> stdout: loaded\n5 rows\ntable:\n {3}a\n0 {2}1\nimage/);
+  });
+
+  it('reads a long printed output whole, not clipped like the outline', () => {
+    const weights = Array.from({ length: 30 }, (_, i) => `word${i} ${(i / 10).toFixed(3)}`).join('\n');
+    const long = parseNotebook(
+      JSON.stringify({
+        nbformat: 4,
+        nbformat_minor: 5,
+        metadata: { kernelspec: { language: 'python' } },
+        cells: [{ cell_type: 'code', metadata: {}, execution_count: 1, source: ['print(weights)'], outputs: [{ output_type: 'stream', name: 'stdout', text: [weights] }] }],
+      }),
+    )!;
+    assert.match(describeNotebook('w.ipynb', long, { start: 1, end: 1 }), /word29 2\.900/);
+    assert.doesNotMatch(describeNotebook('w.ipynb', long), /word29/);
     assert.match(describeNotebook('nb/a.ipynb', notebook, { start: 9, end: 9 }), /No cells in 9-9/);
   });
 });

@@ -38,7 +38,8 @@ export type NotebookOutput =
   | { kind: 'text'; stream: 'stdout' | 'stderr' | 'result' | 'error'; text: string }
   | { kind: 'image'; mime: 'image/png' | 'image/jpeg'; data: string }
   /** HTML without scripts; the viewer shows it in a sandboxed frame. */
-  | { kind: 'html'; html: string }
+  /** `text` is the output's plain-text version (a DataFrame as text), which the agent reads instead of the HTML. */
+  | { kind: 'html'; html: string; text?: string }
   /** Something too big or not showable; `label` says what it was. */
   | { kind: 'omitted'; label: string };
 
