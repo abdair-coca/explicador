@@ -36,7 +36,7 @@ claude --plugin-dir ../..
 
 The first run reads the index and the code, then renders the scene and opens the viewer. Asking again with no changes serves the cached scene without reading code. Editing a referenced file marks the scene stale, and the next explanation refreshes it.
 
-**Present** turns the scene into full-screen slides, one per block, revealed part by part: each →, Space or PageDown shows the next part (a sentence group, a list item, a flow step, a matrix highlight, a quiz's answer) and then the next slide. ← goes back, Shift+→ skips to the next slide, F toggles full screen (the bars hide while the mouse rests), M turns the sounds on or off (off by default), and Esc leaves.
+**Present** turns the scene into full-screen slides for a speaker: the title as the cover, then one per component (prose and narration stay on the page), revealed part by part: each →, Space or PageDown shows the next part (a sentence group, a list item, a flow step, a matrix highlight, a quiz's answer) and then the next slide. ← goes back, Shift+→ skips to the next slide, F toggles full screen (the bars hide while the mouse rests), M turns the sounds on or off (off by default), and Esc leaves.
 
 **Export** downloads the scene as one `.html` file with everything inline. It opens from disk in any browser with no server or network (a CSP blocks all requests); playback, group zoom, presentation and the detail panel (with its key code) work; "Go deeper" and questions do not. Claude can also write it with the `export_scene` tool (to `.explicador/exports/<topic>.html`), e.g. "export the login scene so I can share it".
 

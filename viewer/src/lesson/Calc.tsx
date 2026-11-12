@@ -7,6 +7,7 @@ import { SceneFrame, StepControls, StepProgress } from '../components/scenes';
 import { cn } from '@/lib/utils';
 import { useWidth } from './Chart';
 import { calcModel, sigmoidCurve, waterfall, type CalcModel } from './calcMath';
+import { useSpeaker } from './context';
 import { useFirstVisible, useFollowCode } from './hooks';
 
 /** What step `index` says: the part it adds, the score, the probability or the decision. */
@@ -152,6 +153,7 @@ function SigmoidView({ model, index }: { model: CalcModel; index: number }) {
 export function CalcView({ block, index }: { block: CalcBlock; index: number }) {
   const model = useMemo(() => calcModel(block), [block]);
   const said = calcNarration(block, model, index);
+  const speaker = useSpeaker();
   return (
     <div className="space-y-4">
       <WaterfallView model={model} index={index} />
@@ -161,7 +163,7 @@ export function CalcView({ block, index }: { block: CalcBlock; index: number }) 
         <p key={`t-${index}`} className="animate-fade-up font-mono text-base font-bold tabular-nums">
           {said.title}
         </p>
-        {said.text && <p className="mt-1 max-w-3xl text-base font-semibold leading-relaxed">{said.text}</p>}
+        {said.text && !speaker && <p className="mt-1 max-w-3xl text-base font-semibold leading-relaxed">{said.text}</p>}
       </div>
     </div>
   );

@@ -5,6 +5,8 @@
 // each line of a derivation. A scatter shows its axes, each class, its boundary and the points on the wrong side;
 // a comparison its two names, each row and the tally; a timeline each event.
 // Each → reveals the next part; with none left, → opens the next slide.
+// The slides back a speaker, who does the explaining: prose is not a slide, except the scene's `#` title as its cover,
+// unless the scene has nothing but prose (then each Markdown block is a slide, so Present is never empty).
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calcMath.ts';
 import { compareParts } from '../lesson/compareTally.ts';
@@ -20,6 +22,17 @@ export interface Slide {
   parts: number;
   /** 0 before the first <chapter>, then the number of the chapter the slide belongs to. */
   chapter: number;
+  /** On the cover slide (a Markdown block), the scene's title alone. */
+  cover?: string;
+}
+
+/** Blocks that frame the components; a scene with nothing else keeps its prose slides. */
+const FRAMING = new Set<Block['type']>(['markdown', 'theme', 'chapter']);
+
+/** The text of a `#` heading that opens a Markdown block, if it does. */
+export function coverTitle(markdown: string): string | undefined {
+  const first = markdown.split(/\r?\n/).find((line) => line.trim() !== '');
+  return /^#\s+(.+)$/.exec(first?.trim() ?? '')?.[1]?.trim();
 }
 
 function partsOf(block: Block): number {
@@ -62,11 +75,17 @@ function partsOf(block: Block): number {
 }
 
 export function buildSlides(blocks: Block[]): Slide[] {
+  const onlyProse = blocks.every((block) => FRAMING.has(block.type));
   let chapter = 0;
-  return blocks.flatMap((block, i) => {
+  let prose = 0;
+  return blocks.flatMap((block, i): Slide[] => {
     // The theme decorates the slides; it is not one.
     if (block.type === 'theme') return [];
     if (block.type === 'chapter') chapter += 1;
+    if (block.type === 'markdown' && !onlyProse) {
+      const title = prose++ === 0 && chapter === 0 ? coverTitle(block.text) : undefined;
+      return title === undefined ? [] : [{ kind: 'markdown', block: i, parts: 1, chapter, cover: title }];
+    }
     return [{ kind: block.type, block: i, parts: Math.max(1, partsOf(block)), chapter }];
   });
 }

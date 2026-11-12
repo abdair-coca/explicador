@@ -6,6 +6,7 @@ import { SceneFrame } from '../components/scenes';
 import { CheckIcon, CrossIcon } from '../components/icons';
 import { cn } from '@/lib/utils';
 import { cellOutcome, covers, formatRatio } from './confusion';
+import { useSpeaker } from './context';
 import { heatOf, isNumeric } from './heat';
 import { matrixFocuses, positiveOf, type ViewFocus } from './focuses';
 
@@ -77,6 +78,7 @@ export function MatrixGrid({ block, focus, large = false }: { block: MatrixBlock
 
 /** What a focus says: its label, the worked formula of a metric, and the narration. */
 export function FocusNote({ focus }: { focus: ViewFocus }) {
+  const speaker = useSpeaker();
   return (
     <div className="animate-fade-up space-y-1.5">
       <p className="text-lg font-extrabold">
@@ -88,7 +90,7 @@ export function FocusNote({ focus }: { focus: ViewFocus }) {
           {focus.metric.formula} = {focus.metric.worked}
         </p>
       )}
-      {focus.narration && <p className="max-w-3xl text-base font-semibold leading-relaxed">{focus.narration}</p>}
+      {focus.narration && !speaker && <p className="max-w-3xl text-base font-semibold leading-relaxed">{focus.narration}</p>}
     </div>
   );
 }

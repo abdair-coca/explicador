@@ -1,5 +1,5 @@
 // Events in order along a line. In Present mode (`shown` is the current part) each event is a part: the line reaches
-// it, its dot lands and its narration shows large below. On the page every event shows, with the narrations in a list.
+// it and its dot lands; the speaker tells what happened. On the page every event shows, with the narrations in a list.
 import type { TimelineBlock } from '../../../server/src/scene.ts';
 import { InlineMarkdown } from '../components/Prose';
 import { SceneFrame } from '../components/scenes';
@@ -11,7 +11,6 @@ export function TimelineView({ block, shown }: { block: TimelineBlock; shown?: n
   const reached = presenting ? shown : count - 1;
   // The line runs between the centers of the first and the last event.
   const fill = count > 1 ? (reached / (count - 1)) * 100 : 100;
-  const current = presenting ? block.events[shown] : undefined;
   return (
     <div className={cn('timeline', presenting && 'timeline-slide')}>
       <div className="timeline-scroll">
@@ -35,13 +34,8 @@ export function TimelineView({ block, shown }: { block: TimelineBlock; shown?: n
           ))}
         </ol>
       </div>
-      {presenting ? (
-        current && (
-          <p key={shown} className="timeline-note animate-fade-up" aria-live="polite">
-            <InlineMarkdown text={current.narration} />
-          </p>
-        )
-      ) : (
+      {/* In Present the speaker tells each event; the page lists them. */}
+      {!presenting && (
         <ol className="plot-notes">
           {block.events.map((event, i) => (
             <li key={i}>

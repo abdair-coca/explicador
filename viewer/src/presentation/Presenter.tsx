@@ -1,4 +1,5 @@
-// Full-screen presentation of the current scene: a slide per block whose steps are revealed one per →. Slides move in
+// Full-screen presentation of the current scene: a slide per component whose steps are revealed one per →. The slides
+// back a speaker: they show titles, diagrams and values, and leave the paragraphs (prose, narration, notes) to the page. Slides move in
 // the direction of travel, and each chapter opens with a yellow wipe onto a night-blue card. Advances only when the
 // presenter asks.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -9,10 +10,10 @@ import { staggerIn } from '../animation/reveal';
 import { play, setSound, soundEnabled } from '../animation/sound';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon } from '../components/icons';
 import { DiagramFitContext } from '../components/Diagram';
-import { ArchScene, FlowDiagram, formatRef, stepRoute } from '../components/scenes';
+import { ArchScene, FlowDiagram } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
+import { DataScene, StateDiagram, StateScene } from '../components/views';
 import { CalcView } from '../lesson/Calc';
 import { ChartView } from '../lesson/Chart';
 import { CompareView } from '../lesson/Compare';
@@ -21,9 +22,9 @@ import { DeriveView } from '../lesson/Derive';
 import { PlotView } from '../lesson/Plot';
 import { ScatterView } from '../lesson/Scatter';
 import { matrixFocuses } from '../lesson/focuses';
-import { JourneyTrack, stageRoute } from '../lesson/Journey';
+import { JourneyTrack } from '../lesson/Journey';
 import { FocusNote, MatrixGrid } from '../lesson/Matrix';
-import { LessonContext } from '../lesson/context';
+import { LessonContext, SpeakerContext } from '../lesson/context';
 import { progressKey } from '../lesson/progress';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdView } from '../lesson/Threshold';
@@ -38,6 +39,7 @@ import { runParts } from './choreo';
 import { planParts } from './partPlan';
 import { ProgressBar } from './ProgressBar';
 import { SlideProse } from './SlideProse';
+import { InlineMarkdown } from '../components/Prose';
 import { buildSlides, keyAction, move, type Move, type Position, type Segment, type Slide } from './slides';
 
 /** A diagram never gets smaller than this to make a slide fit; past it, the slide scrolls. */
@@ -279,7 +281,9 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
           <DiagramFitContext.Provider value={true}>
             {/* Checks answered here count in the lesson's progress, like on the page. */}
             <LessonContext.Provider value={lesson}>
-              {slide && <SlideView scene={scene} slide={slide} part={at.part} chapters={chapterTitles.length} theme={theme} />}
+              <SpeakerContext.Provider value={true}>
+                {slide && <SlideView scene={scene} slide={slide} part={at.part} chapters={chapterTitles.length} theme={theme} />}
+              </SpeakerContext.Provider>
             </LessonContext.Provider>
           </DiagramFitContext.Provider>
         </div>
@@ -300,16 +304,8 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   );
 }
 
-function StepSlide(props: {
-  title: string;
-  step: number;
-  of: number;
-  route: string;
-  kind?: LinkKind | undefined;
-  refText?: string | undefined;
-  narration?: string | undefined;
-  children: React.ReactNode;
-}) {
+/** A diagram played step by step under its title; the speaker tells each step. */
+function StepSlide(props: { title: string; step: number; of: number; kind?: LinkKind | undefined; children: React.ReactNode }) {
   return (
     <div className="space-y-6">
       <h2 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight">
@@ -321,17 +317,6 @@ function StepSlide(props: {
         {props.kind === 'async' && <Badge variant="info">Async</Badge>}
       </h2>
       <div className="rounded-2xl border border-border-soft bg-card p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">{props.children}</div>
-      {props.narration && (
-        <div key={props.step} className="animate-fade-up" aria-live="polite">
-          <p className="flex flex-wrap items-center gap-2 text-base font-bold text-muted-foreground">
-            {props.route}
-            {props.refText && (
-              <code className="rounded-lg bg-subtle px-2 py-0.5 font-mono text-sm font-semibold text-foreground">{props.refText}</code>
-            )}
-          </p>
-          <p className="mt-2 text-3xl font-bold leading-snug">{props.narration}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -367,26 +352,30 @@ function MatrixSlide({ block, part }: { block: MatrixBlock; part: number }) {
   );
 }
 
+/** The scene's title alone, as large as a chapter's: the question the presentation answers. */
+function CoverSlide({ title }: { title: string }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl py-6">
+      <span className="chapter-rule mb-8 block h-2 w-28 rounded-full bg-primary" aria-hidden="true" />
+      <h1 className="text-[clamp(2.6rem,6.5vw,5.25rem)] font-black leading-[1.05] tracking-tight" data-part={0} data-fx="split">
+        <InlineMarkdown text={title} />
+      </h1>
+    </div>
+  );
+}
+
 function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayload; slide: Slide; part: number; chapters: number; theme: Theme }) {
   const block = scene.blocks[slide.block];
   if (!block) return null;
   switch (block.type) {
     case 'markdown':
-      return <SlideProse text={block.text} part={part} />;
+      return slide.cover !== undefined ? <CoverSlide title={slide.cover} /> : <SlideProse text={block.text} part={part} />;
     case 'arch':
       return <ArchScene block={block} />;
     case 'flow': {
       const step = block.steps[part];
       return (
-        <StepSlide
-          title={block.title}
-          step={part}
-          of={slide.parts}
-          route={stepRoute(block, part)}
-          kind={step?.kind}
-          refText={step?.ref ? formatRef(step.ref) : undefined}
-          narration={step?.narration}
-        >
+        <StepSlide title={block.title} step={part} of={slide.parts} kind={step?.kind}>
           <FlowDiagram block={block} index={part} />
         </StepSlide>
       );
@@ -396,7 +385,7 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
     case 'state':
       if (block.walk.length === 0) return <StateScene block={block} />;
       return (
-        <StepSlide title={block.title} step={part} of={slide.parts} route={walkRoute(block, part)} narration={block.walk[part]?.narration}>
+        <StepSlide title={block.title} step={part} of={slide.parts}>
           <StateDiagram block={block} step={part} />
         </StepSlide>
       );
@@ -408,21 +397,12 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
           <StatsView block={block} shown={part} />
         </div>
       );
-    case 'journey': {
-      const stage = block.stages[part];
+    case 'journey':
       return (
-        <StepSlide
-          title={block.title}
-          step={part}
-          of={slide.parts}
-          route={stageRoute(block, part)}
-          refText={stage?.ref ? formatRef(stage.ref) : undefined}
-          narration={stage?.narration}
-        >
+        <StepSlide title={block.title} step={part} of={slide.parts}>
           <JourneyTrack block={block} index={part} />
         </StepSlide>
       );
-    }
     case 'trace':
       return (
         <div className="space-y-6">

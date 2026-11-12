@@ -7,6 +7,7 @@ import { SceneFrame, StepControls, formatRef } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
 import { cn } from '@/lib/utils';
 import { changeCounts, diffWords, words, type Token } from './diff';
+import { useSpeaker } from './context';
 import { useFirstVisible, useFollowCode } from './hooks';
 
 /** Changes appear one after another, but never take longer than this to finish appearing. */
@@ -44,6 +45,7 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   const value = block.values[index];
   const previous = block.values[index - 1];
   const tokens = useMemo(() => (previous && value ? diffWords(previous.text, value.text) : undefined), [previous, value]);
+  const speaker = useSpeaker();
   if (!value) return null;
   const after = words(value.text).length;
   const before = previous ? words(previous.text).length : undefined;
@@ -82,7 +84,7 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
           {changes.added > 0 && <span className="rounded-full bg-primary px-2.5 py-1 text-foreground">+{changes.added} added</span>}
         </p>
       )}
-      {value.note && (
+      {value.note && !speaker && (
         <p key={`note-${index}`} className="animate-fade-up max-w-3xl text-lg font-semibold leading-relaxed">
           {value.note}
         </p>

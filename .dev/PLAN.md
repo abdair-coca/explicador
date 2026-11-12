@@ -448,6 +448,15 @@ The user asked for instructions that let even small models build spectacular pre
   - Examples: the example scenes render without these warnings.
   - Criterion: tests of the warnings; typecheck, lint, test and build pass.
 
+### F19: Present as the visual support of a speaker (user, 2026-11-12)
+
+After seeing the INF672 "segundo parcial" lesson rebuilt with F18, the user found Present still had text-only slides and was boring. Choices through two quizzes the same day: the page stays as it is; Present is **what a speaker shows while explaining, like a video**: little text, every slide a reusable component (charts, tables, flows), beautiful, never a text slide and never decorative icons; **one short sentence per slide, taken from the component's `title`**; the explanatory prose lives **only on the page**; slides still advance by click; a new kind of animation where **one real example travels the whole process and visibly changes at each step, for any code** (not only ML); the audience uses **technical vocabulary made easy to understand** (this replaces F18's non-technical default).
+
+- [x] **F19a. Present without text slides.** Done 2026-11-12: `buildSlides` keeps the first `#` title as a cover slide and drops the other Markdown blocks unless the scene has nothing else; a `SpeakerContext` makes trace notes, calc and focus narration, plot marks, timeline events and derivation notes stay on the page; flow, state and journey slides lose their narration line. Checked in headless Chrome on the example lesson (42 slides, cover, journey, trace, quiz). Typecheck 0, lint 0, build OK, server 180/180, viewer 135/135. Original scope: Markdown blocks are no longer slides in Present (the page is unchanged). Chapter cards stay. Each slide shows its component with the component's `title` as its one sentence. Narration of flow steps, stages, events and notes stays on the page; in Present the parts still advance (tokens travel, boxes light, values change) without the paragraphs. Concept cards and quizzes stay as they are. A scene with no component keeps its prose slides, so Present is never empty.
+- [ ] **F19b. One example travels the whole process.** `<trace>` grows into it: each `<value>` takes `kind` = `text` (default, today's word diff), `list` (chips), `table` (`name=value` rows), `bars` (`name=value` as bars) or `number` (one big value). The pieces that survive from one step to the next keep their identity and glide into their new form (a word from the sentence into its chip, the chip into its bar, the bars into the total), with GSAP, and the new ones arrive. Works for a request through middleware, an order through its states, a row through a pipeline, a review through a model.
+- [ ] **F19c. Skill, warnings and examples.** The slide warnings drop the prose-length rules (prose is page-only now) and keep: no `<theme>`; a section without a component; plus a `title` longer than 12 words. The guide teaches titles as short claims ("The model gets 5 of 6 right"), technical words introduced and made easy, and one `<trace>` that follows a real example through the whole flow or notebook. Examples updated; then the INF672 session rebuilds "segundo parcial".
+- Criterion: parser, slide and viewer tests; checked in headless Chrome in Present mode on the example lesson and on a code scene; typecheck, lint, test and build pass.
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -554,3 +563,4 @@ Open points:
 | F16 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
 | F17 | done (2026-11-12), user review pending |
 | F18 | done (2026-11-12), user review pending |
+| F19 | in progress: F19a done (2026-11-12) |

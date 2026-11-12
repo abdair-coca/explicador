@@ -147,13 +147,9 @@ export function PlotView({ block, shown }: { block: PlotBlock; shown?: number })
           ))}
         </ul>
       )}
-      {presenting
-        ? current?.narration && (
-            <p key={shown} className="plot-note animate-fade-up" aria-live="polite">
-              <InlineMarkdown text={current.narration} />
-            </p>
-          )
-        : model.marks.some((mark) => mark.narration) && (
+      {/* In Present the speaker tells what each mark means; the page lists it. */}
+      {!presenting &&
+        model.marks.some((mark) => mark.narration) && (
             <ol className="plot-notes">
               {model.marks.map((mark, i) => (
                 <li key={i}>

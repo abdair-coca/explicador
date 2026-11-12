@@ -13,3 +13,13 @@ export const LessonContext = createContext<Lesson | undefined>(undefined);
 export function useLesson(): Lesson | undefined {
   return useContext(LessonContext);
 }
+
+/**
+ * True in Present mode, where a speaker does the explaining: components leave out their paragraphs (narration, notes)
+ * and keep their titles, labels and values. The page shows everything.
+ */
+export const SpeakerContext = createContext(false);
+
+export function useSpeaker(): boolean {
+  return useContext(SpeakerContext);
+}

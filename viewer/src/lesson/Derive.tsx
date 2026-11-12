@@ -54,7 +54,7 @@ export function DeriveView({ block, shown }: { block: DeriveBlock; shown?: numbe
           <div className="derive-formula">
             <Tex tex={line.tex} display />
           </div>
-          {line.note && (
+          {line.note && !presenting && (
             <p className="derive-note">
               <InlineMarkdown text={line.note} />
             </p>

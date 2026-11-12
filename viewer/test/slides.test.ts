@@ -21,13 +21,33 @@ const blocks: Block[] = [
 ];
 
 describe('buildSlides', () => {
-  it('makes one slide per block, in document order, with each <flow> step as a part', () => {
+  it('makes one slide per component, in document order, with each <flow> step as a part, and the title as the cover', () => {
     assert.deepEqual(buildSlides(blocks), [
-      { kind: 'markdown', block: 0, parts: 1, chapter: 0 },
+      { kind: 'markdown', block: 0, parts: 1, chapter: 0, cover: 'Intro' },
       { kind: 'arch', block: 1, parts: 1, chapter: 0 },
       { kind: 'flow', block: 2, parts: 2, chapter: 0 },
-      { kind: 'markdown', block: 3, parts: 1, chapter: 0 },
     ]);
+  });
+
+  it('leaves prose to the speaker: no cover without a leading # title, none after a chapter, all prose when there is nothing else', () => {
+    const arch = blocks[1] as Block;
+    const chapter: Block = { type: 'chapter', id: 'c', title: 'C' };
+    assert.deepEqual(
+      buildSlides([{ type: 'markdown', text: 'Plain intro.\n\n# Late title' }, arch]).map((slide) => slide.kind),
+      ['arch'],
+    );
+    assert.deepEqual(
+      buildSlides([chapter, { type: 'markdown', text: '# Inside' }, arch]).map((slide) => slide.kind),
+      ['chapter', 'arch'],
+    );
+    assert.deepEqual(
+      buildSlides([{ type: 'markdown', text: '# Only' }, chapter, { type: 'markdown', text: 'Words.' }]).map((slide) => [slide.kind, slide.cover]),
+      [
+        ['markdown', undefined],
+        ['chapter', undefined],
+        ['markdown', undefined],
+      ],
+    );
   });
 });
 
@@ -71,7 +91,7 @@ describe('buildSlides with <concept>', () => {
 });
 
 describe('buildSlides parts that build up', () => {
-  it('reveals prose part by part, stats card by card, then a chart highlight and a quiz answer', () => {
+  it('shows the cover at once, stats card by card, then a chart highlight and a quiz answer', () => {
     const lesson: Block[] = [
       { type: 'markdown', text: '# Title\n\nOne.\n\nTwo.' },
       { type: 'stats', id: 's', stats: [{ value: '1', label: 'a' }, { value: '2', label: 'b' }, { value: '3', label: 'c' }] },
@@ -81,7 +101,7 @@ describe('buildSlides parts that build up', () => {
     ];
     assert.deepEqual(
       buildSlides(lesson).map((slide) => slide.parts),
-      [3, 3, 2, 1, 2],
+      [1, 3, 2, 1, 2],
     );
   });
 });
@@ -148,7 +168,7 @@ describe('segmentsOf and segmentFill', () => {
   it('gives each slide a segment when the scene has no chapters', () => {
     assert.deepEqual(
       segmentsOf(buildSlides(blocks)).map((segment) => segment.first),
-      [0, 1, 2, 3],
+      [0, 1, 2],
     );
   });
 });
