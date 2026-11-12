@@ -19,9 +19,12 @@ function useRunner(model: PlotModel, shown: number | undefined) {
   const dot = useRef<SVGGElement>(null);
   const reading = useRef<SVGTextElement>(null);
   const at = useRef<{ x: number; curve: number } | undefined>(undefined);
+  const mounted = useRef(false);
   useLayoutEffect(() => {
     const group = dot.current;
     const mark = shown === undefined || shown === 0 ? undefined : model.marks[shown - 1];
+    const arrivedBuilt = !mounted.current;
+    mounted.current = true;
     if (!group) return;
     if (!mark) {
       at.current = undefined;
@@ -39,7 +42,8 @@ function useRunner(model: PlotModel, shown: number | undefined) {
     const from = at.current && at.current.curve === mark.curve ? at.current.x : model.domain[0];
     at.current = { x: mark.x, curve: mark.curve };
     gsap.killTweensOf(group);
-    if (reducedMotion()) {
+    // A slide reached with ← arrives built: nothing travels.
+    if (arrivedBuilt || reducedMotion()) {
       gsap.set(group, { autoAlpha: 0 });
       return;
     }

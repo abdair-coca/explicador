@@ -136,6 +136,27 @@ One short paragraph of context.
 
 Give every scene a `<theme name="…" />` right after its title, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
 
+## Which visual for what
+
+Pick a block because it answers a question the reader has, never to decorate:
+
+| The reader asks | Use |
+|---|---|
+| What is this idea? | `<concept>` |
+| Where does this number fall on the function? | `<plot>` with `<mark>`s |
+| How did this series evolve (loss, accuracy per epoch)? | `<plot>` with `<curve points>` |
+| How do I get from the formula to this result? | `<derive>` |
+| How does the model separate the classes? | `<scatter>` with a `<boundary>` |
+| Which of the two options is better, and in what? | `<compare>` |
+| In what order did things happen? | `<timeline>` |
+| How does the data change shape? | `<journey>` |
+| How was this value transformed? | `<trace>` |
+| How do these numbers compare? | `<chart>` |
+| What is in this table or matrix? | `<matrix>` |
+| How did the model score this input? | `<calc>` |
+
+One of each kind per chapter at most, and not all of them in one lesson: three or four different visuals carry a lesson better than ten.
+
 ## Good scenes
 
 - Pick the view that answers the question: `<arch>` for parts, `<flow>` for a sequence, `<data>` for stored data, `<state>` for a lifecycle. One or two per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.

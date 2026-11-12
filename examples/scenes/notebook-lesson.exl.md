@@ -96,6 +96,12 @@ The notebook uses `ngram_range=(1, 2)`: besides single words, it also counts **p
 > [!TIP]
 > **TF-IDF** is the same table with smarter numbers: a word that appears in many reviews (like "film") gets a smaller weight than a rare, telling word. The notebook tries both.
 
+<compare id="counts-vs-tfidf" title="Two ways to fill the table" a="Word counts" b="TF-IDF" ref="reviews.ipynb:9-11">
+<pair label="What a cell holds" a="How many times the word appears" b="The count, scaled down for words that are everywhere" />
+<pair label="A word in every review" a="Weighs as much as any other" b="Weighs **less**" winner="b" />
+<pair label="Reading the table" a="Whole numbers, easy to check by hand" b="Decimals" winner="a" />
+</compare>
+
 <quiz id="q-shape" question="The training matrix has shape (18, 70). What are the 70?">
 <option why="There are 18 training reviews; they are the rows.">The reviews</option>
 <option correct="true" why="One column per word or word pair in the training vocabulary.">The words and word pairs the vectorizer found</option>
@@ -197,6 +203,19 @@ The model starts from its **intercept** (its score before reading any word) and 
 <part label="year" value="+0.175" />
 <part label="year really" value="+0.175" />
 </calc>
+
+<plot id="sigmoid-plot" title="Where this review falls on the sigmoid" x="score" y="probability of positive" ref="reviews.ipynb:19">
+<curve fn="sigmoid" />
+<mark x="0" label="undecided">A score of 0 sits exactly on the threshold.</mark>
+<mark x="0.438" label="our review">The review's score is a little to the right of 0, so its probability lands just above one half: enough to be called positive.</mark>
+</plot>
+
+<derive id="score-to-prob" title="From the score to the probability" ref="reviews.ipynb:19">
+<line>p = \sigma(z)</line>
+<line note="The definition of the **sigmoid**.">p = \frac{1}{1 + e^{-z}}</line>
+<line note="The score cell 19 printed for this review.">p = \frac{1}{1 + e^{-0.438}}</line>
+<line note="The probability cell 19 printed: above 0.5, so the model answers positive.">p = 0.608</line>
+</derive>
 
 > [!WARNING]
 > **Why it went wrong.** Five neutral words each push a little towards positive and together outvote "bad". The word that carries the meaning, "worst", has no weight at all. With more training data, "worst" would get a strong negative weight.
