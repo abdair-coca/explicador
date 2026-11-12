@@ -1,5 +1,7 @@
 # The shop's data
 
+<theme name="database" />
+
 Everything lives in memory: users in a fixed list, sessions and carts in `Map`s keyed by id.
 
 <data id="shop-data" title="Shop data model">

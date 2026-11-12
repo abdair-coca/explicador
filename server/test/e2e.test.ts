@@ -59,7 +59,7 @@ describe('MCP server over stdio', () => {
 
     const rendered = await call('render_scene', { topic: 'login', exl });
     assert.equal(rendered.isError, false, rendered.text);
-    assert.match(rendered.text, /Rendered "login" \(<arch id="login-architecture">, <flow id="login-flow">\)/);
+    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <flow id="login-flow">\)/);
     viewerUrl = /at (http:\/\/127\.0\.0\.1:\d+\/\?t=[a-f0-9]+)/.exec(rendered.text)?.[1] ?? '';
     assert.ok(viewerUrl);
 
@@ -84,10 +84,10 @@ describe('MCP server over stdio', () => {
     assert.deepEqual(body.scene.changes, [{ path: 'src/auth/sessions.js', change: 'modified' }]);
     assert.deepEqual(
       body.scene.blocks.map((b) => b.type),
-      ['markdown', 'arch', 'flow', 'markdown'],
+      ['markdown', 'theme', 'markdown', 'arch', 'flow', 'markdown'],
     );
     // Key code arrives with the real lines, read from the project when the scene is shown.
-    const password = body.scene.blocks[1]?.codes?.find((c) => c.node === 'password');
+    const password = body.scene.blocks[3]?.codes?.find((c) => c.node === 'password');
     assert.match(password?.lines?.join('\n') ?? '', /timingSafeEqual\(key, Buffer\.from\(expected, 'hex'\)\)/);
     assert.equal((await fetch(new URL('/api/scene', url), { headers: { 'x-token': 'nope' } })).status, 403);
     assert.equal((await fetch(new URL('/api/scene', url))).status, 403);

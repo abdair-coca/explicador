@@ -1,5 +1,7 @@
 # Session lifecycle
 
+<theme name="security" />
+
 A visitor is anonymous until a login succeeds. The session then lives for one hour, ends on logout, or disappears when the server restarts.
 
 <state id="session-lifecycle" title="A visitor's session">

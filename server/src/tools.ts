@@ -13,6 +13,7 @@ import type { Navigator } from './navigation.ts';
 import { formatErrors, limits, parseExl, parseRefString } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
+import { slideWarnings } from './slides.ts';
 import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
 import { buildTour, tourLimits } from './tours.ts';
@@ -173,6 +174,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       if (!hidden) navigator.show(saved.scene, 'fresh', []);
       const blocks = parsed.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => `<${b.type} id="${b.id}">`);
       const unfocused = boxesWithoutRange(root, parsed.scene.blocks);
+      const slides = slideWarnings(parsed.scene.blocks);
       return text(
         [
           hidden
@@ -183,6 +185,9 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           unfocused.length > 0
             ? `Warning: these boxes point at a whole file, so the code window cannot focus their code: ${unfocused.slice(0, 12).join(', ')}${unfocused.length > 12 ? ', …' : ''}. ` +
               'Give each a line range (path:start-end; for a notebook, cell numbers) and render again.'
+            : '',
+          slides.length > 0
+            ? `Warning: some slides would be text alone (see presenting.md in the explicador skill); fix these and render again:\n${slides.map((w) => `- ${w}`).join('\n')}`
             : '',
         ]
           .filter(Boolean)

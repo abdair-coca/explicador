@@ -1,5 +1,7 @@
 # How login works
 
+<theme name="security" />
+
 The browser form posts the credentials as JSON. The auth routes validate the input, the auth service checks the password with scrypt and opens an in-memory session, and the session id comes back as an `HttpOnly` cookie that later guards the cart.
 
 <arch id="login-architecture" title="Login: the parts involved">

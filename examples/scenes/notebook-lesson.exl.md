@@ -21,12 +21,18 @@ This notebook teaches a computer to read a short movie review and say whether it
 
 <chapter id="load" title="The reviews" goal="Know what the model learns from: 24 sentences, each with a 0 or a 1." ref="reviews.ipynb:2-4" />
 
-A **dataset** for this task is just a table: one column with the text, one with the answer we want the model to learn, called the **label**. Think of a stack of exam papers that already have the correct grade written on the back.
+Before any model, there is a table of examples with their answers.
 
+<concept id="c-dataset" term="Labelled dataset" ref="reviews.ipynb:3">
+<define>A table with one column for the text and one for the answer the model must learn, called the **label**.</define>
+<analogy>A stack of exam papers that already have the correct grade written on the back.</analogy>
+<example>
 | text | label |
 |---|---|
 | A great movie, I loved it | 1 (positive) |
 | A boring movie, I hated it | 0 (negative) |
+</example>
+</concept>
 
 The notebook writes 24 reviews by hand: 12 with label 1 and 12 with label 0. Having the same number of each matters: a model that always said "positive" would only be right half of the time, so any score above 0.5 is real learning.
 

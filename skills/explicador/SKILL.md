@@ -1,11 +1,13 @@
 ---
 name: explicador
-description: Explains how a software system works (a feature, request flow, module or architecture) with animated diagrams shown in a local browser tab. Use when the user asks how some code works, what happens when X, how parts connect, or asks for a diagram or walkthrough of the codebase.
+description: Explains how a software system works (a feature, request flow, module or architecture) with animated diagrams shown in a local browser tab. Use when the user asks how some code works, what happens when X, how parts connect, or asks for a diagram, walkthrough, lesson or presentation of the codebase or a notebook.
 ---
 
 # Explicador
 
 You explain code with **scenes**: an EXL document (Markdown plus a few diagram tags) that the Explicador MCP server validates, caches and plays in a local viewer tab. Always answer the user in their language; write the scene text (titles, labels, narration, prose) in that language too.
+
+Every scene is also a slide presentation, by default for a **non-technical** audience. **Before writing any EXL, read [presenting.md](presenting.md)**: how slides are cut, a picture for every idea, which tag answers which question, templates to copy, LaTeX, and the checklist.
 
 ## Workflow
 
@@ -17,7 +19,7 @@ You explain code with **scenes**: an EXL document (Markdown plus a few diagram t
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes.
+5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line about slides (text without a picture) and render again until none is left.
 6. **Reply in the chat** with a short explanation (3–6 sentences) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -44,7 +46,7 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 2. **Intro** (before the first chapter): a `#` title that states the problem as a question ("Can a model tell a good review from a bad one?"), one short paragraph, then `<stats>` with 2–4 headline numbers (the result first) and a `<journey>` of the data's path: one `<stage>` per big step with its real size as `value` ("24 reviews", "18 × 70", "0.833") and the operation as `op` (`train_test_split()`).
 3. **One `<chapter>` per notebook section**, in notebook order: `ref` = the section's cells (a range), a `title` a beginner understands, and a `goal` ("Read a confusion matrix and compute precision from it"). The server attaches the cells with their outputs.
 4. **In each chapter**, short blocks, one idea each:
-   - **Prose that presents well**: Present mode reveals each paragraph, list item and callout on its own, and a long paragraph a few sentences at a time. Write one idea per paragraph in at most two sentences, put the key term in **bold** (it gets a marker stroke) and write numbers as digits (they count up).
+   - **Prose is a caption**: each Markdown block is a slide of text alone, so keep it to at most 3 short paragraphs, items or callouts right before the picture it introduces (see [presenting.md](presenting.md)). Write one idea per paragraph in at most two sentences, put the key term in **bold** (it gets a marker stroke) and write numbers as digits (they count up).
    - **Each new concept from zero**, as a `<concept term>` card before the code: `<define>` what it is in one sentence, `<analogy>` an everyday comparison (a jury where each word votes; exam answers hidden from the student), `<formula>` only when the notebook really uses one (TF-IDF, the sigmoid, precision), and `<example>` a tiny worked example (a sentence or a 2–3 row Markdown table). One card per new idea, 3–8 per lesson; in Present mode the term fills the slide and the pieces arrive one by one. A bigger worked example goes after the card as a small `<matrix>`.
    - **A function the model uses**: `<plot>` with the function (`<curve fn="sigmoid" />`) and a `<mark>` at each real input the notebook computed, so the reader sees where its numbers fall on the curve; or `<curve points>` for a series the notebook printed (loss per epoch). The viewer computes the heights: never write them yourself.
    - **A formula applied to a real case**: `<derive>`, one change per line: the definition, then the notebook's numbers substituted, then the result the notebook printed. Every number in it comes from an output; do not compute intermediate values the notebook did not print.
@@ -136,33 +138,12 @@ One short paragraph of context.
 
 Give every scene a `<theme name="…" />` right after its title, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
 
-## Which visual for what
-
-Pick a block because it answers a question the reader has, never to decorate:
-
-| The reader asks | Use |
-|---|---|
-| What is this idea? | `<concept>` |
-| Where does this number fall on the function? | `<plot>` with `<mark>`s |
-| How did this series evolve (loss, accuracy per epoch)? | `<plot>` with `<curve points>` |
-| How do I get from the formula to this result? | `<derive>` |
-| How does the model separate the classes? | `<scatter>` with a `<boundary>` |
-| Which of the two options is better, and in what? | `<compare>` |
-| In what order did things happen? | `<timeline>` |
-| How does the data change shape? | `<journey>` |
-| How was this value transformed? | `<trace>` |
-| How do these numbers compare? | `<chart>` |
-| What is in this table or matrix? | `<matrix>` |
-| How did the model score this input? | `<calc>` |
-
-One of each kind per chapter at most, and not all of them in one lesson: three or four different visuals carry a lesson better than ten.
-
 ## Good scenes
 
-- Pick the view that answers the question: `<arch>` for parts, `<flow>` for a sequence, `<data>` for stored data, `<state>` for a lifecycle. One or two per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
-- Labels are names a reader recognizes (file or concept), at most 80 characters; narration is one or two plain sentences per step.
-- Markdown tables (`| a | b |` with a `|---|---|` row) are fine in the prose between tags.
-- Formulas are LaTeX: `$\sigma(z) = \frac{1}{1+e^{-z}}$` inline, or a block between two `$$` lines. Use them for definitions the code really uses (TF-IDF, the sigmoid, precision), not as decoration; numbers inside them come from the outputs like any other number. Money stays text ("$5"); inside a tag write `<` as `\lt`. `render_scene` refuses a formula that is not valid LaTeX.
+- Pick each block because it answers a question the reader has: the table "Which picture for which question" in [presenting.md](presenting.md). Three or four different kinds carry a scene better than ten.
+- `<arch>` and `<flow>`: 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
+- Labels say what a part does in words the audience knows, at most 80 characters; narration is one or two plain sentences per step.
+- Formulas are LaTeX (the cheat sheet is in [presenting.md](presenting.md)). Use them for definitions the code really uses (TF-IDF, the sigmoid, precision), never as decoration; numbers inside them come from the outputs like any other number.
 - Explain what the code does, not what it might do; if you are unsure, say so in the prose.
 
 ## Flows that make sense

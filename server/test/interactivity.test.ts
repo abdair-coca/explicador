@@ -326,7 +326,7 @@ describe('clicks reach the monitor of the same session', () => {
     assert.ok(!whole.isError, whole.text);
     assert.match(whole.text, /Warning: these boxes point at a whole file.*Analysis \(analysis\.ipynb\)/);
     const ranged = await call('render_scene', { topic: 'notebook cells', exl: exl('analysis.ipynb:2-3') });
-    assert.ok(!ranged.isError && !ranged.text.includes('Warning'), ranged.text);
+    assert.ok(!ranged.isError && !ranged.text.includes('point at a whole file'), ranged.text);
     // The cached notebook scene has no chapters: show_scene asks for a lesson instead of answering from it.
     const shown = await call('show_scene', { topic: 'notebook cells' });
     assert.match(shown.text, /predates lessons\. Rebuild it as a lesson/);

@@ -430,6 +430,23 @@ After F16 the user asked for the decorative components to change on each slide a
   - Checked in a separate headless Chrome: a contact sheet of the 33 drawings, and the gallery scene in Present mode (consecutive slides, a chapter card) and on the page. Fixed from the sheet: tree branches entering their leaves, mesh links drawn twice, filled bands on cylinders, chip traces meeting.
   - Not checked: Safari and Firefox.
 
+### F18: presentations any model can make spectacular (user, 2026-11-12)
+
+The user asked for instructions that let even small models build spectacular presentations: how to use LaTeX and every tool, every slide illustrated (graphics make ideas easier, and they should be interactive and explanatory), focused on the understanding of non-technical people. Choices through a quiz the same day: **skill plus warnings** (the skill requires it and `render_scene` warns, without refusing, about text-only stretches, with how to fix them; no viewer change); **every scene** (lessons and code explanations alike); **non-technical audience by default**, raised only when the user says the audience is technical; **a separate guide with a template**, linked from `SKILL.md`, which stays short.
+
+- [x] **F18.** Done 2026-11-12.
+  - The guide moved the table "Which visual for what" and the LaTeX advice out of `SKILL.md` (one source), and extended the table to every tag with what the reader can do with it. Its two templates are tested: they parse and draw no warning.
+  - Warnings: a section with no visual but two or more `<quiz>` is a review and is not flagged; `<chapter>`, `<quiz>` and `<theme>` do not count as visuals; at most 8 warnings are listed.
+  - Examples: the three code scenes gained a theme (`security`, `database`, `security`); chapter 1 of the example lesson turned its paragraph and table into a `<concept>` card. Two e2e assertions follow the new block list of `login.exl.md`.
+  - Checks: typecheck 0, lint 0, build OK, server 179/179, viewer 134/134.
+  - Not checked: a small model actually writing a scene from the guide; the new concept card of the example lesson in a browser.
+  - Original scope:
+  - `skills/explicador/presenting.md`: the recipe step by step, a template to copy for a code scene and for a lesson chapter, plain-words rules for non-technical readers, which visual answers which question (all tags), what the reader can touch and how to invite it, a LaTeX cheat sheet, bad → good examples and a final checklist that includes reading the warnings.
+  - `SKILL.md`: read the guide before writing any scene; audience rule; links instead of duplicated text.
+  - `render_scene` warnings (`server/src/slides.ts`): a scene without `<theme>`; a section (the intro, a chapter, or a scene without chapters) with prose but no visual; a prose block with more than 3 ideas (paragraphs, list items, callouts, tables), which Present mode shows as text-only slides. Each says how to fix it.
+  - Examples: the example scenes render without these warnings.
+  - Criterion: tests of the warnings; typecheck, lint, test and build pass.
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -535,3 +552,4 @@ Open points:
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
 | F16 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
 | F17 | done (2026-11-12), user review pending |
+| F18 | done (2026-11-12), user review pending |
