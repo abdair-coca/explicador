@@ -4,7 +4,7 @@
 import type { Element } from './reader.ts';
 import { blockHead, bodyText, catalog, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
 import { curveParams, curveValue, plotDomain } from './plotMath.ts';
-import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot, type SpaceBlock, type SpaceCluster, type SpaceItem, compareWinners, type CompareBlock, type TimelineBlock } from './types.ts';
+import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot, type SpaceBlock, type SpaceCluster, type SpaceItem, type CosineBlock, type CosineDim, compareWinners, type CompareBlock, type TimelineBlock } from './types.ts';
 
 const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
 
@@ -343,5 +343,67 @@ export function buildSpace(element: Element, ordinal: number, report: Report): S
     items,
     query,
     ...readRef(a.ref, element, report),
+  };
+}
+
+const decimalsIn = (value: string): number => {
+  const mantissa = value.split(/[eE]/)[0] ?? '';
+  return mantissa.includes('.') ? (mantissa.split('.')[1]?.length ?? 0) : 0;
+};
+
+export function buildCosine(element: Element, ordinal: number, report: Report): CosineBlock {
+  const { id, title, attrs: h } = blockHead(element, spec('cosine'), ordinal, report);
+  const a = h.a === undefined ? '' : checkText(h.a, 'a', limits.rowLabelLength, element, report);
+  const b = h.b === undefined ? '' : checkText(h.b, 'b', limits.rowLabelLength, element, report);
+  const dims: CosineDim[] = [];
+  for (const child of childElements(element, spec('cosine'), report)) {
+    const d = readAttrs(child, spec('dim'), report);
+    if (!child.selfClosing) report(child.offset, '<dim> must be self-closing: <dim a="0.12" b="0.10" />');
+    const left = readNumber(d.a, 'a', child, report);
+    const right = readNumber(d.b, 'b', child, report);
+    if (left === undefined || right === undefined || d.a === undefined || d.b === undefined) continue;
+    const label = optionalText(d.label, 'label', limits.rowLabelLength, child, report);
+    dims.push({ a: d.a.trim(), b: d.b.trim(), ...(label ? { label } : {}) });
+  }
+  if (dims.length < 2) report(element.offset, '<cosine> needs at least two <dim>s: <dim a="0.12" b="0.10" />');
+  if (dims.length > limits.cosineDims) report(element.offset, `<cosine> shows at most ${limits.cosineDims} <dim>s; show the first ones and give the real size with dims="384" and the real score`);
+  const score = readNumber(h.score, 'score', element, report);
+  if (score !== undefined && (score < -1 || score > 1)) report(offsetOf(element, 'score'), `A cosine is between -1 and 1 (got ${h.score})`);
+  let size: number | undefined;
+  if (h.dims !== undefined) {
+    size = Number(h.dims);
+    if (!Number.isInteger(size) || size < dims.length || size > limits.vectorDims) {
+      report(offsetOf(element, 'dims'), `"dims" is the vectors' real size, a whole number from the count of <dim>s shown (${dims.length}) to ${limits.vectorDims}`);
+      size = undefined;
+    }
+  }
+  const hidden = size !== undefined && size > dims.length;
+  if (hidden && score === undefined) report(element.offset, `Only ${dims.length} of ${size} dimensions are shown, so the viewer cannot compute the cosine: give the real one with score="0.83"`);
+  if (!hidden && score !== undefined && h.score !== undefined && dims.length >= 2) {
+    // The numbers shown are rounded, so the check allows a little more than the score's own rounding.
+    let dot = 0;
+    let na = 0;
+    let nb = 0;
+    for (const dim of dims) {
+      dot += Number(dim.a) * Number(dim.b);
+      na += Number(dim.a) ** 2;
+      nb += Number(dim.b) ** 2;
+    }
+    const exact = na === 0 || nb === 0 ? undefined : dot / Math.sqrt(na * nb);
+    if (exact === undefined) report(element.offset, 'One of the vectors is all zeros: it has no direction, so it has no cosine');
+    else if (Math.abs(exact - score) > Math.max(0.02, 0.5 * 10 ** -decimalsIn(h.score))) {
+      report(offsetOf(element, 'score'), `score="${h.score}" is not the cosine of these numbers (${exact.toFixed(3)}); leave score out and the viewer computes it, or show the real numbers`);
+    }
+  }
+  return {
+    type: 'cosine',
+    id,
+    title,
+    a,
+    b,
+    dims,
+    ...(hidden ? { size } : {}),
+    ...(score !== undefined && h.score !== undefined ? { score: h.score.trim() } : {}),
+    ...readRef(h.ref, element, report),
   };
 }

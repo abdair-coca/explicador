@@ -155,6 +155,18 @@ const effects: Record<string, Effect> = {
     const bars = element.querySelectorAll('.space-rank-bar');
     timeline.from(bars, { scaleX: 0, transformOrigin: '0% 50%', duration: dur.slow, ease: ease.out, stagger: staggerOf(bars.length, stagger.base) }, 0.15);
   },
+  /** The products of a cosine: each one pops under its pair, left to right. */
+  products: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const cells = element.querySelectorAll('.cosine-product, .cosine-more, .cosine-name');
+    timeline.from(cells, { autoAlpha: 0, y: -18, scale: 0.6, duration: dur.base, ease: ease.pop, stagger: staggerOf(cells.length, stagger.base) }, 0);
+  },
+  /** A result on a gauge: the line rises, then the marker slides from 0 to its value. */
+  gauge: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, y: 18, duration: dur.base, ease: ease.out }, 0);
+    const marker = element.querySelector('.cosine-gauge-marker');
+    if (marker) timeline.from(marker, { left: '50%', duration: dur.slow * 1.6, ease: ease.move }, dur.base);
+  },
   /** A chapter card: the number drops in, the rule draws, the title rises word by word and the goal follows. */
   chapter: (element, timeline) => {
     const pick = (selector: string): HTMLElement | null => element.querySelector<HTMLElement>(selector);

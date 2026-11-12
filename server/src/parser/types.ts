@@ -612,8 +612,35 @@ export interface SpaceBlock {
   ref?: Ref;
 }
 
+/** One dimension of the two vectors a cosine compares, as written. */
+export interface CosineDim {
+  a: string;
+  b: string;
+  label?: string;
+}
+
+/**
+ * The cosine similarity of two vectors worked out step by step: the products of each pair of numbers, their sum (the
+ * dot product), the length of each vector and the division. The viewer does the arithmetic. When the vectors are longer
+ * than what is shown (`size`), the real `score` is the result.
+ */
+export interface CosineBlock {
+  type: 'cosine';
+  id: string;
+  title: string;
+  /** The names of the two vectors ("question", "Refunds take 5 days"). */
+  a: string;
+  b: string;
+  dims: CosineDim[];
+  /** The vectors' real size when only their first numbers are shown. */
+  size?: number;
+  /** The real cosine, as printed; required when `size` hides numbers. */
+  score?: string;
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

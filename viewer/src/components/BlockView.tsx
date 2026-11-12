@@ -9,6 +9,7 @@ import { MatrixScene } from '../lesson/Matrix';
 import { PlotScene } from '../lesson/Plot';
 import { ScatterScene } from '../lesson/Scatter';
 import { SpaceScene } from '../lesson/Space';
+import { CosineScene } from '../lesson/Cosine';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
 import { TimelineScene } from '../lesson/Timeline';
@@ -61,6 +62,8 @@ export function BlockView({ block }: { block: Block }) {
       return <ScatterScene block={block} />;
     case 'space':
       return <SpaceScene block={block} />;
+    case 'cosine':
+      return <CosineScene block={block} />;
     case 'compare':
       return <CompareScene block={block} />;
     case 'timeline':

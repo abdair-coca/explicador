@@ -860,3 +860,30 @@ body {
 .space-svg { overflow: visible; }
 .space-question { display: flex; align-items: center; gap: 0.5rem; }
 .space-question svg { flex: none; }
+
+/* Cosines (F20d): two vectors column by column, their products, the sum, the lengths, and the result on a gauge. */
+.cosine { display: grid; gap: 1rem; }
+.cosine-formula .math-block { margin: 0; }
+.cosine-grid { display: grid; gap: 0.5rem 0.4rem; align-items: center; overflow-x: auto; }
+.cosine-name { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; line-height: 1.25; min-width: 0; }
+.cosine-tag { display: inline-grid; place-items: center; flex: none; width: 1.7rem; height: 1.7rem; border-radius: 0.5rem; color: #fff; font-family: var(--font-mono); }
+.cosine-tag.a { background: var(--primary-dark); }
+.cosine-tag.b { background: var(--foreground); }
+.cosine-cell { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.cosine-cell .trace-vector-swatch { width: 100%; max-width: 3.6rem; height: 1.9rem; animation: none; }
+.cosine-more { justify-self: center; font-family: var(--font-mono); font-weight: 800; color: var(--muted-foreground); }
+.cosine-products { border-top: 2px dashed var(--border); padding-top: 0.7rem; }
+.cosine-product { justify-self: center; border-radius: 0.6rem; background: var(--primary-light); padding: 0.25rem 0.45rem; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; }
+.cosine-product.negative { background: color-mix(in oklab, var(--miss) 14%, white); color: var(--miss); }
+.cosine-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.9rem; font-family: var(--font-mono); font-size: 1rem; line-height: 1.5; }
+.cosine-line strong { font-weight: 900; }
+.cosine-step { font-family: var(--font-sans, inherit); font-size: 0.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 9999px; background: var(--primary); padding: 0.15rem 0.65rem; }
+.cosine-value { font-size: 1.6em; }
+.cosine-result { display: grid; gap: 1.4rem; }
+.cosine-gauge { position: relative; height: 4.6rem; margin: 0 4.5rem; }
+.cosine-gauge-track { position: absolute; left: 0; right: 0; top: 1.9rem; height: 0.7rem; border-radius: 9999px; background: linear-gradient(90deg, var(--miss), var(--muted) 50%, var(--diverge-pos)); }
+.cosine-gauge-marker { position: absolute; left: calc(var(--at) * 100%); top: 0; transform: translateX(-50%); border-radius: 9999px; background: var(--foreground); color: #fff; padding: 0.1rem 0.6rem; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; }
+.cosine-gauge-marker::after { content: ''; position: absolute; left: 50%; top: 100%; width: 3px; height: 1.1rem; background: var(--foreground); transform: translateX(-50%); }
+.cosine-gauge-tick { position: absolute; top: 3rem; transform: translateX(-50%); white-space: nowrap; font-size: 0.8rem; font-weight: 800; color: var(--muted-foreground); }
+.presenter .cosine-line { font-size: clamp(1.05rem, 1.7vw, 1.35rem); }
+.presenter .cosine-name { font-size: 1.15rem; }
