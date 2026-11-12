@@ -23,6 +23,10 @@ import {
   type Report,
 } from './common.ts';
 import {
+  accentNames,
+  themeNames,
+  type ThemeBlock,
+  type ThemeName,
   calcKinds,
   chartTypes,
   confusionMetrics,
@@ -85,7 +89,16 @@ export function buildChapter(element: Element, ordinal: number, report: Report):
   } else if (ref?.start !== undefined && (ref.end ?? ref.start) - ref.start + 1 > limits.chapterSpan) {
     report(refOffset, `A chapter covers at most ${limits.chapterSpan} cells or lines; split it`);
   }
-  return { type: 'chapter', id: a.id ?? `chapter-${ordinal}`, title, ...(goal ? { goal } : {}), ...(ref ? { ref } : {}) };
+  const theme = a.theme === undefined ? undefined : readEnum<ThemeName>(a.theme, themeNames, 'plain', 'theme', element, report);
+  return { type: 'chapter', id: a.id ?? `chapter-${ordinal}`, title, ...(goal ? { goal } : {}), ...(ref ? { ref } : {}), ...(theme ? { theme } : {}) };
+}
+
+export function buildTheme(element: Element, _ordinal: number, report: Report): ThemeBlock {
+  const a = readAttrs(element, spec('theme'), report);
+  requireSelfClosing(element, '<theme name="ml" />', report);
+  const name = readEnum<ThemeName>(a.name, themeNames, 'plain', 'name', element, report);
+  const accent = a.accent === undefined ? undefined : readEnum(a.accent, accentNames, 'blue', 'accent', element, report);
+  return { type: 'theme', id: 'theme', name, ...(accent ? { accent } : {}) };
 }
 
 export function buildStats(element: Element, ordinal: number, report: Report): StatsBlock {

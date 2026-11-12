@@ -36,6 +36,8 @@ export function planLesson(blocks: Block[]): LessonPlan | undefined {
       chapters.push({ block, index, number: chapters.length + 1, items: [], checks: [] });
       return;
     }
+    // The theme dresses the page; it is not content.
+    if (block.type === 'theme') return;
     const current = chapters.at(-1);
     (current ? current.items : intro).push({ block, index });
   });

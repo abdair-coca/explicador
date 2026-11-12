@@ -1,5 +1,7 @@
 # Can a model tell a good review from a bad one?
 
+<theme name="ml" />
+
 This notebook teaches a computer to read a short movie review and say whether it is **positive** or **negative**. It never understands the words: it counts them, and learns how much each one pushes towards "positive". Here is how far that gets with 24 reviews.
 
 <stats id="headline">
@@ -37,7 +39,7 @@ The notebook writes 24 reviews by hand: 12 with label 1 and 12 with label 0. Hav
 <option why="Reviews are not scored by length.">The review is short</option>
 </quiz>
 
-<chapter id="clean" title="Cleaning the text" goal="See why the cleaning drops filler words but keeps &quot;not&quot;." ref="reviews.ipynb:5-6" />
+<chapter id="clean" theme="text" title="Cleaning the text" goal="See why the cleaning drops filler words but keeps &quot;not&quot;." ref="reviews.ipynb:5-6" />
 
 The model will count words, so two spellings of the same word should count as one: "Not" and "not" must become the same thing. Cleaning is like sorting coins before counting them: same coin, same pile.
 
@@ -59,7 +61,7 @@ The function `clean()` does three things: it lowercases, it replaces anything th
 <option why="Other words like &quot;waste&quot; would still be there.">It would become an empty text</option>
 </quiz>
 
-<chapter id="split" title="Train and test" goal="Understand why 6 reviews are hidden from the model." ref="reviews.ipynb:7-8" />
+<chapter id="split" theme="data" title="Train and test" goal="Understand why 6 reviews are hidden from the model." ref="reviews.ipynb:7-8" />
 
 If a student sees the exam questions while studying, a perfect grade proves nothing. So the notebook hides some reviews: the model **trains** on 18 and is **tested** on the other 6, which it never sees while learning.
 
@@ -173,7 +175,7 @@ Two of the eight are **word pairs with "not"**: "not bad" pushes towards positiv
 <option why="Both words push up; nothing pushes down.">Negative</option>
 </quiz>
 
-<chapter id="scoring" title="How the model scored one review" goal="Follow the arithmetic behind one prediction, from word weights to a probability." ref="reviews.ipynb:18-19" />
+<chapter id="scoring" theme="math" title="How the model scored one review" goal="Follow the arithmetic behind one prediction, from word weights to a probability." ref="reviews.ipynb:18-19" />
 
 Chapter 6 showed one mistake: **"worst film year really bad"** was called positive. Now open the model and watch it decide. Cell 19 prints every word and word pair of that review that the model knows, with its weight; "worst" is not among them, because it never appeared in the training reviews.
 

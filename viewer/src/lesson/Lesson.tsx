@@ -10,6 +10,8 @@ import { useSelection } from '../components/selection';
 import { cn } from '@/lib/utils';
 import { ChapterCells } from './ChapterCells';
 import { Practice } from './Practice';
+import { Backdrop, ThemeGlyph } from '../theme/Backdrop';
+import { themeAt, type Theme } from '../theme/themes';
 import { chapterAnchor, type Chapter, type LessonPlan } from './chapters';
 import { LessonContext } from './context';
 import { chapterDone, isDone, lessonSummary, progressKey, type Progress } from './progress';
@@ -147,8 +149,8 @@ function Pills({ plan, progress, active, practise }: { plan: LessonPlan; progres
   );
 }
 
-function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter | undefined; progress: Progress; version: number }) {
-  const { chapter, total, next, progress } = props;
+function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter | undefined; progress: Progress; version: number; theme: Theme; seed: string }) {
+  const { chapter, total, next, progress, theme } = props;
   const selection = useSelection();
   const done = chapterDone(chapter, progress);
   const checks = chapter.checks.length;
@@ -161,7 +163,9 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
       aria-labelledby={`${chapterAnchor(chapter.block.id)}-title`}
       className="scroll-mt-24 space-y-6 outline-none"
     >
-      <header className="space-y-3">
+      <header className="relative isolate space-y-3">
+        {/* The chapter's own decoration, beside its title on screens wide enough to leave the text alone. */}
+        <Backdrop theme={theme} seed={`${props.seed}:${chapter.block.id}`} variant="band" className="absolute right-0 top-0 -z-10 hidden h-[110px] w-[260px] md:block" />
         <div className="flex items-center gap-3">
           <span
             className={cn(
@@ -173,6 +177,7 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
             {done ? <CheckIcon size={20} /> : chapter.number}
           </span>
           <span className="text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
+            {theme.name !== 'plain' && <ThemeGlyph theme={theme} size={15} className="mr-1.5 inline-block align-[-2px]" />}
             Chapter {chapter.number} of {total}
             {done && <span className="ml-2 text-success">· done</span>}
           </span>
@@ -269,7 +274,7 @@ export function Lesson({ scene, plan }: { scene: ScenePayload; plan: LessonPlan 
           ))}
           <Pills plan={plan} progress={progress} active={active} practise={practise} />
           {plan.chapters.map((chapter, i) => (
-            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} />
+            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} theme={themeAt(scene.blocks, chapter.index)} seed={scene.key} />
           ))}
           <EndCard plan={plan} progress={progress} practise={practise} />
         </div>

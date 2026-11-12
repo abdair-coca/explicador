@@ -596,3 +596,24 @@ body {
 /* The flash: yellow covers the whole word, then settles as a marker stroke under it. */
 @keyframes term-flash { 0% { background-size: 0% 100%; background-position: 0 50%; } 55% { background-size: 100% 100%; background-position: 0 50%; } 100% { background-size: 100% 0.34em; background-position: 0 88%; } }
 .concept-slide [data-stage='future'] { visibility: hidden; }
+
+/* Theme decoration (F16b): flat line art in the theme's accent, faint enough to sit behind content. */
+.motif { color: var(--accent, var(--info)); }
+.motif-line { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.26; vector-effect: non-scaling-stroke; }
+.motif-solid { fill: currentColor; stroke: none; opacity: 0.2; }
+.motif-night { color: var(--primary); }
+.motif-night .motif-line { opacity: 0.3; }
+.motif-night .motif-solid { opacity: 0.24; }
+.motif-page .motif-line, .motif-band .motif-line { stroke-width: 2; }
+.motif-part { display: block; width: 100%; height: auto; overflow: visible; }
+.motif-slide .motif-part, .motif-night .motif-part { position: absolute; }
+.motif-slide .motif-part-0 { top: 4.25rem; right: 1.5rem; width: clamp(200px, 28vw, 420px); }
+.motif-slide .motif-part-1 { bottom: 5.25rem; left: 1.5rem; width: clamp(150px, 20vw, 300px); }
+.motif-night .motif-part-0 { top: 14%; right: 4%; width: clamp(220px, 36vw, 540px); }
+.motif-night .motif-part-1 { bottom: 6.5rem; left: 2rem; width: clamp(140px, 18vw, 280px); }
+/* On a phone the slide needs all its room: only the chapter card keeps its drawing, smaller. */
+@media (max-width: 640px) {
+  .motif-slide { display: none; }
+  .motif-night .motif-part-0 { top: 4.5rem; right: 0.75rem; width: 46vw; }
+  .motif-night .motif-part-1 { display: none; }
+}

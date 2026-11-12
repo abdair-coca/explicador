@@ -26,6 +26,8 @@ import { ThresholdView } from '../lesson/Threshold';
 import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
+import { Backdrop } from '../theme/Backdrop';
+import { themeAt, type Theme } from '../theme/themes';
 import { ChapterCard } from './ChapterCard';
 import { runParts } from './choreo';
 import { planParts } from './partPlan';
@@ -143,6 +145,8 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const slide = slides[Math.min(at.slide, slides.length - 1)];
   const atEnd = at.slide >= slides.length - 1 && at.part >= (slide?.parts ?? 1) - 1;
   useFitToStage(stage, at.slide);
+  const night = slide?.kind === 'chapter';
+  const theme = useMemo(() => themeAt(scene.blocks, slide?.block ?? 0), [scene.blocks, slide?.block]);
 
   // The parts that were just revealed play; the ones just taken back rewind.
   const shown = useRef<Position | undefined>(undefined);
@@ -236,10 +240,13 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       role="dialog"
       aria-modal="true"
       aria-label={`Presenting ${scene.topic}`}
-      data-tone={slide?.kind === 'chapter' ? 'night' : undefined}
+      data-tone={night ? 'night' : undefined}
+      style={{ '--accent': theme.accent } as React.CSSProperties}
       data-idle={idle ? '' : undefined}
       className="presenter fixed inset-0 z-50 flex flex-col overflow-hidden bg-background text-foreground outline-none"
     >
+      {/* Outside the stage, so the decoration stays put while slides move; it redraws when the chapter changes. */}
+      <Backdrop key={`${theme.name}-${slide?.chapter ?? 0}-${night}`} theme={theme} seed={`${scene.key}:${slide?.chapter ?? 0}`} variant={night ? 'night' : 'slide'} className="absolute inset-0 h-full w-full" />
       <header className="presenter-bar presenter-header relative z-10 flex items-center gap-3 border-b border-border-soft bg-card px-6 py-2.5 text-sm">
         <span className="min-w-0 truncate font-black">{scene.topic}</span>
         <span className="shrink-0 whitespace-nowrap font-bold tabular-nums text-muted-foreground" aria-live="polite">
@@ -262,12 +269,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       </header>
       {/* Auto margins center the slide when it fits and let it start at the top when it does not:
           align-items/justify-content center would push its top out of reach of the scrollbar. */}
-      <main ref={stage} className="presenter-stage flex min-h-0 flex-1 flex-col overflow-auto px-6 py-6">
+      <main ref={stage} className="presenter-stage relative z-[1] flex min-h-0 flex-1 flex-col overflow-auto px-6 py-6">
         <div key={at.slide} className="m-auto w-full max-w-7xl">
           <DiagramFitContext.Provider value={true}>
             {/* Checks answered here count in the lesson's progress, like on the page. */}
             <LessonContext.Provider value={lesson}>
-              {slide && <SlideView scene={scene} slide={slide} part={at.part} chapters={chapterTitles.length} />}
+              {slide && <SlideView scene={scene} slide={slide} part={at.part} chapters={chapterTitles.length} theme={theme} />}
             </LessonContext.Provider>
           </DiagramFitContext.Provider>
         </div>
@@ -355,7 +362,7 @@ function MatrixSlide({ block, part }: { block: MatrixBlock; part: number }) {
   );
 }
 
-function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slide: Slide; part: number; chapters: number }) {
+function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayload; slide: Slide; part: number; chapters: number; theme: Theme }) {
   const block = scene.blocks[slide.block];
   if (!block) return null;
   switch (block.type) {
@@ -389,7 +396,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
         </StepSlide>
       );
     case 'chapter':
-      return <ChapterCard block={block} number={slide.chapter} of={chapters} />;
+      return <ChapterCard block={block} number={slide.chapter} of={chapters} theme={theme} />;
     case 'stats':
       return (
         <div className="mx-auto max-w-5xl">

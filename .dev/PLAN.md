@@ -348,7 +348,15 @@ Parts, one commit each:
   - Elements shared by two slides move from one to the other (Flip): a chapter's number and title into the progress header, a concept's term into the next slide that names it, a block's title when the next slide keeps it.
   - Headings split by SplitText (characters for short titles, words otherwise) replace the word-rise effect.
   - Criterion: tests for the timeline controller (forward, backward, skip, reduced motion); typecheck, lint, test and build; Chrome at 1440 and 390 px, reduced motion and an export; export size recorded.
-- [ ] **F16b. Themes and decoration.**
+- [x] **F16b. Themes and decoration.**
+  - Done 2026-11-12.
+    - `<theme>` travels as a block of type `theme` (the scene payload did not change); the page, the lesson plan and the slides skip it. It must be the first tag; Markdown may come before it.
+    - `accent` is a closed list of seven colors, not a free color.
+    - Motifs are generated in code (`viewer/src/theme/motifs.ts`) from a random source seeded with the scene's key, so every scene gets its own arrangement and keeps it. In Present mode the seed also takes the chapter, so each chapter redraws.
+    - Where it shows: the top right of the page (from 1024 px), a band beside each chapter header (from 768 px), two corners of the presenter behind the slide, and larger on the night chapter card with the theme's glyph and name. Under 640 px only the chapter card keeps its drawing.
+    - Not done from the plan: the themed divider, and a separate icon set per theme for chips (each theme has one glyph, shown on chapter headers and cards).
+    - Text over a motif: the lines are the accent at 26 % over the cream background. Computed: the worst case is body text over the red accent's line, at 7.0 : 1 (10.0 : 1 over the bare background).
+  - Checked in a separate headless Chrome on a gallery scene with one chapter per theme: the page, slides and chapter cards at 1000 and 390 px, no console errors.
   - `<theme name accent? />`, top level, at most once, before the first block. `<chapter theme="…">` overrides it for that chapter, so a part of the system can look different.
   - Closed catalog of names: `data`, `ml`, `math`, `text`, `web`, `network`, `database`, `security`, `code`, `hardware`, `business`, `plain` (default, today's look).
   - Each theme gives: an accent color, a background motif that draws itself in (dot grid, graph of nodes, circuit traces, axes and curves, rows of tokens…), an illustration on chapter cards, corner ornaments on slides, a divider, and the icon set of chips.
@@ -483,4 +491,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | in progress (plan approved 2026-11-12); F16a done |
+| F16 | in progress (plan approved 2026-11-12); F16a and F16b done |

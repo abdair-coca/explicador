@@ -238,11 +238,28 @@ export interface JourneyBlock {
 /** Blocks with clickable items (nodes, entities, states, stages), drills and key code. */
 export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock | JourneyBlock;
 
+/** What a scene is about, which picks its decoration: a background motif, an accent color and a glyph. */
+export const themeNames = ['plain', 'data', 'ml', 'math', 'text', 'web', 'network', 'database', 'security', 'code', 'hardware', 'business'] as const;
+export type ThemeName = (typeof themeNames)[number];
+export const accentNames = ['blue', 'green', 'purple', 'red', 'orange', 'teal', 'pink'] as const;
+export type AccentName = (typeof accentNames)[number];
+
+/** The scene's theme. It draws nothing by itself: the viewer decorates the page and the slides with it. */
+export interface ThemeBlock {
+  type: 'theme';
+  id: string;
+  name: ThemeName;
+  /** Replaces the theme's own accent color. */
+  accent?: AccentName;
+}
+
 /** Starts a chapter of a lesson; the chapter runs until the next one. */
 export interface ChapterBlock {
   type: 'chapter';
   id: string;
   title: string;
+  /** A theme for this chapter alone, when its subject differs from the scene's. */
+  theme?: ThemeName;
   /** What the reader will understand by the end of the chapter. */
   goal?: string;
   /** The cells (or lines) the chapter explains; always a range. */
@@ -435,7 +452,7 @@ export interface ConceptBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

@@ -111,7 +111,8 @@ One short paragraph of context.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
-  - `<chapter id? title goal? ref="nb.ipynb:5-9" />` self-closing; runs until the next chapter.
+  - `<theme name="ml" accent? />` once, right after the title (see "Theme" below).
+  - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? />` self-closing; runs until the next chapter.
   - `<stats><stat value="0.833" label="test accuracy" ref? /></stats>` (1–6).
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
   - `<trace title ref?>` with `<value label code? note? ref?>the value</value>` (2–12; the first is the input).
@@ -121,6 +122,10 @@ One short paragraph of context.
   - `<threshold title classes="negative|positive" at="0.5"? ref?>` with `<point score="0.608" actual="negative" label? />` (2–200; `score` is the probability of the second class).
   - `<quiz question>` with 2–5 `<option correct="true"? why?>text</option>` (exactly one correct), or one `<answer>Markdown</answer>` for a flashcard.
   - `<concept term id? ref?>` with `<define>one sentence</define>` (required), `<analogy>…</analogy>`, `<formula>LaTeX without $</formula>` and `<example>Markdown</example>` (each at most once).
+
+## Theme
+
+Give every scene a `<theme name="…" />` right after its title, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
 
 ## Good scenes
 

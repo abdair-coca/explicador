@@ -49,9 +49,11 @@ function partsOf(block: Block): number {
 
 export function buildSlides(blocks: Block[]): Slide[] {
   let chapter = 0;
-  return blocks.map((block, i) => {
+  return blocks.flatMap((block, i) => {
+    // The theme decorates the slides; it is not one.
+    if (block.type === 'theme') return [];
     if (block.type === 'chapter') chapter += 1;
-    return { kind: block.type, block: i, parts: Math.max(1, partsOf(block)), chapter };
+    return [{ kind: block.type, block: i, parts: Math.max(1, partsOf(block)), chapter }];
   });
 }
 

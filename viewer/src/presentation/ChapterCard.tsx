@@ -4,9 +4,11 @@
 // transition name).
 import type { ChapterBlock } from '../../../server/src/scene.ts';
 import { FlagIcon } from '../components/icons';
+import { ThemeGlyph } from '../theme/Backdrop';
+import { themes, type Theme } from '../theme/themes';
 import { RollingNumber } from './effects';
 
-export function ChapterCard({ block, number, of }: { block: ChapterBlock; number: number; of: number }) {
+export function ChapterCard({ block, number, of, theme }: { block: ChapterBlock; number: number; of: number; theme: Theme }) {
   return (
     <div className="mx-auto w-full max-w-5xl py-6" data-part={0} data-fx="chapter">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
@@ -15,6 +17,12 @@ export function ChapterCard({ block, number, of }: { block: ChapterBlock; number
         </span>
         <span className="chapter-count pb-[0.9em] text-sm font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
           Chapter {number} of {of}
+          {theme.name !== 'plain' && (
+            <span className="ml-3 inline-flex items-center gap-1.5 text-primary">
+              <ThemeGlyph theme={theme} size={16} />
+              {themes[theme.name].label}
+            </span>
+          )}
         </span>
       </div>
       <span className="chapter-rule mt-4 block h-2 w-28 rounded-full bg-primary" aria-hidden="true" />

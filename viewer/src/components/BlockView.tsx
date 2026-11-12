@@ -49,6 +49,8 @@ export function BlockView({ block }: { block: Block }) {
       return <ConceptView block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
+    // The theme dresses the page and the slides; it draws nothing in the flow.
+    case 'theme':
       return null;
   }
 }

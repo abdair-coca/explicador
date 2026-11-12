@@ -19,7 +19,7 @@ import {
   withCodes,
   type Report,
 } from './common.ts';
-import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildThreshold, buildTrace } from './lesson.ts';
+import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildTheme, buildThreshold, buildTrace } from './lesson.ts';
 import {
   cardinalities,
   fieldKeys,
@@ -51,7 +51,7 @@ import {
 
 export { catalog, limits, parseRefString } from './common.ts';
 
-const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold', 'concept'];
+const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold', 'concept', 'theme'];
 
 // A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
 const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;
@@ -141,8 +141,9 @@ export function parseExl(source: string): ParseResult {
   }
   flushMarkdown(src.length);
 
+  checkTheme(blocks, errors);
   checkBlockIds(blocks, errors);
-  if (!blocks.some((block) => block.type !== 'markdown') && errors.length === 0) {
+  if (!blocks.some((block) => block.type !== 'markdown' && block.type !== 'theme') && errors.length === 0) {
     errors.push({ line: 1, column: 1, message: 'A scene needs at least one scene tag, such as <arch>, <flow>, <journey> or <chapter>' });
   }
   if (blocks.filter((block) => block.type === 'chapter').length > limits.chapters) {
@@ -165,6 +166,7 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   calc: buildCalc,
   threshold: buildThreshold,
   concept: buildConcept,
+  theme: buildTheme,
 };
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
@@ -355,6 +357,16 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   const kind = parseKind(a.kind, element, report);
   const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
   return { id: a.id, label, ...desc, ...about, kind, ...(ref ? { ref } : {}) };
+}
+
+/** One <theme> at most, and before every other tag: it dresses the whole scene. */
+function checkTheme(blocks: Block[], errors: ExlError[]): void {
+  const tags = blocks.filter((block) => block.type !== 'markdown');
+  const themes = tags.filter((block) => block.type === 'theme');
+  if (themes.length > 1) errors.push({ line: 1, column: 1, message: 'Only one <theme> per scene; a chapter can take its own with <chapter theme="…">' });
+  else if (themes.length === 1 && tags[0]?.type !== 'theme') {
+    errors.push({ line: 1, column: 1, message: 'Put <theme> before every other tag, right after the title' });
+  }
 }
 
 function checkBlockIds(blocks: Block[], errors: ExlError[]): void {
