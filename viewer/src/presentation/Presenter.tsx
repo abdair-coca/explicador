@@ -4,7 +4,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { ChapterBlock, LinkKind, MatrixBlock, ScenePayload } from '../../../server/src/scene.ts';
-import { reducedMotion, staggerIn } from '../animation/reveal';
+import { reducedMotion } from '../animation/motion';
+import { staggerIn } from '../animation/reveal';
 import { play, setSound, soundEnabled } from '../animation/sound';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon } from '../components/icons';
 import { DiagramFitContext } from '../components/Diagram';
@@ -26,6 +27,8 @@ import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
 import { ChapterCard } from './ChapterCard';
+import { runParts } from './choreo';
+import { planParts } from './partPlan';
 import { ProgressBar } from './ProgressBar';
 import { SlideProse } from './SlideProse';
 import { buildSlides, keyAction, move, type Move, type Position, type Segment, type Slide } from './slides';
@@ -140,6 +143,13 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const slide = slides[Math.min(at.slide, slides.length - 1)];
   const atEnd = at.slide >= slides.length - 1 && at.part >= (slide?.parts ?? 1) - 1;
   useFitToStage(stage, at.slide);
+
+  // The parts that were just revealed play; the ones just taken back rewind.
+  const shown = useRef<Position | undefined>(undefined);
+  useLayoutEffect(() => {
+    if (stage.current) runParts(stage.current, planParts(shown.current, at, reducedMotion()));
+    shown.current = at;
+  }, [at]);
 
   const goTo = useCallback(
     (next: Position) => {
@@ -404,7 +414,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
     case 'trace':
       return (
         <div className="space-y-6">
-          <h2 className="text-2xl font-black tracking-tight">{block.title}</h2>
+          <h2 className="slide-title w-fit text-2xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-5 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <TraceView block={block} index={part} />
           </div>
@@ -413,7 +423,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
     case 'chart':
       return (
         <div className="space-y-6">
-          <h2 className="text-3xl font-black tracking-tight">{block.title}</h2>
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             {/* With a highlight, the first part shows every row and the second dims the rest. */}
             <ChartView block={slide.parts > 1 && part === 0 ? { ...block, highlight: undefined } : block} />
@@ -439,7 +449,7 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
     case 'threshold':
       return (
         <div className="space-y-6">
-          <h2 className="text-3xl font-black tracking-tight">{block.title}</h2>
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <ThresholdView block={block} />
           </div>

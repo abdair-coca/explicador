@@ -13,7 +13,10 @@ export function ProgressBar(props: { slides: Slide[]; at: Position; label: (segm
   return (
     <nav aria-label="Slides" className="flex min-w-0 flex-1 flex-col gap-0.5">
       {chaptered && here && (
-        <p key={current} className="animate-fade-up truncate text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+        <p
+          key={current}
+          className={cn('truncate text-xs font-extrabold uppercase tracking-wide text-muted-foreground', slides[at.slide]?.kind === 'chapter' ? 'animate-fade-up' : 'progress-chapter w-fit max-w-full')}
+        >
           {label(here)}
         </p>
       )}

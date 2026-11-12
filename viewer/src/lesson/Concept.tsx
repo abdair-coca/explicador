@@ -1,69 +1,35 @@
 // A concept card: the term, what it is, an everyday analogy, its formula and a tiny worked example.
 // In Present mode (`shown` is the current part) the term first stands alone, giant, in the middle of the slide with a
-// yellow flash. On the next part it flies to the top (FLIP) and the pieces arrive one per part: the definition rises,
-// the analogy swings in, the formula's atoms pop in from left to right and the example fades up.
-import { useEffect, useLayoutEffect, useRef } from 'react';
+// yellow flash. On the next part it flies to the top (GSAP Flip) and the pieces arrive one per part, each a part that
+// `choreo.ts` plays and rewinds: the definition rises, the analogy swings in, the formula's atoms pop in from left to
+// right and the example rises.
+import { useLayoutEffect, useRef } from 'react';
 import type { ConceptBlock } from '../../../server/src/scene.ts';
-import { motion, reducedMotion } from '../animation/reveal';
+import { Flip, reducedMotion, tokens } from '../animation/motion';
 import { BulbIcon, SparkIcon } from '../components/icons';
 import { InlineMarkdown, Prose } from '../components/Prose';
 import { Tex } from '../components/Tex';
 import { cn } from '@/lib/utils';
 import { conceptPieces, type ConceptPiece } from './conceptParts';
 
-/** Longest a formula takes to assemble, however many atoms it has. */
-const ATOMS_SPREAD = 900;
-
-/** Pops the formula's atoms in, left to right. An atom is a top-level symbol or group of KaTeX's layout. */
-function assemble(formula: HTMLElement): void {
-  if (reducedMotion()) return;
-  const atoms = [...formula.querySelectorAll<HTMLElement>('.katex-html > span > span')].filter((atom) => atom.getBoundingClientRect().width > 0);
-  const step = atoms.length > 1 ? Math.min(70, ATOMS_SPREAD / (atoms.length - 1)) : 0;
-  atoms.forEach((atom, i) => {
-    atom.animate(
-      [
-        { opacity: 0, transform: 'translateY(0.35em) scale(0.5)' },
-        { opacity: 1, transform: 'none' },
-      ],
-      { duration: motion.slow, easing: motion.pop, delay: 120 + i * step, fill: 'backwards' },
-    );
-  });
-}
-
-/** Moves the term from where it was drawn last to where it is now. */
+/** Moves the term from where it was drawn last to where it is now, whenever `hero` changes. */
 function useFlip(hero: boolean) {
   const element = useRef<HTMLHeadingElement>(null);
-  const last = useRef<DOMRect | undefined>(undefined);
+  const last = useRef<Flip.FlipState | undefined>(undefined);
   const wasHero = useRef(hero);
   useLayoutEffect(() => {
     const term = element.current;
     if (!term) return;
-    const now = term.getBoundingClientRect();
-    const before = last.current;
-    if (before && wasHero.current !== hero && !reducedMotion() && now.width > 0) {
-      term.animate(
-        [
-          { transformOrigin: '0 0', transform: `translate(${before.left - now.left}px, ${before.top - now.top}px) scale(${before.width / now.width})` },
-          { transformOrigin: '0 0', transform: 'none' },
-        ],
-        { duration: 620, easing: 'cubic-bezier(0.65, 0, 0.2, 1)' },
-      );
+    if (last.current && wasHero.current !== hero && !reducedMotion()) {
+      Flip.from(last.current, { targets: term, duration: tokens.dur.slow, ease: tokens.ease.move, scale: true, absolute: false });
     }
     wasHero.current = hero;
-    last.current = now;
+    last.current = Flip.getState(term);
   }, [hero]);
-  // The slide may be resized or scrolled between parts.
-  useEffect(() => {
-    const measure = (): void => {
-      last.current = element.current?.getBoundingClientRect();
-    };
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
   return element;
 }
 
-function Formula({ tex, live }: { tex: string; live: boolean }) {
+function Formula({ tex }: { tex: string }) {
   const element = useRef<HTMLDivElement>(null);
   // A formula wider than its card shrinks to fit instead of scrolling.
   useLayoutEffect(() => {
@@ -80,9 +46,6 @@ function Formula({ tex, live }: { tex: string; live: boolean }) {
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
   }, [tex]);
-  useEffect(() => {
-    if (live && element.current) assemble(element.current);
-  }, [live]);
   return (
     <div ref={element} className="concept-formula">
       <Tex tex={tex} display />
@@ -95,13 +58,12 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
   const hero = presenting && shown === 0;
   const term = useFlip(hero);
   const pieces = conceptPieces(block);
-  /** Present mode: the piece's part is its position plus one, after the term. */
-  const stage = (piece: ConceptPiece): string | false => {
-    if (!presenting) return false;
-    const part = pieces.indexOf(piece) + 1;
-    return part > shown ? 'future' : part === shown ? 'current' : 'past';
+  /** Present mode: a piece's part is its position plus one, after the term; `fx` is how it comes in. */
+  const part = (piece: ConceptPiece, fx: string) => {
+    if (!presenting) return {};
+    const index = pieces.indexOf(piece) + 1;
+    return { 'data-part': index, 'data-fx': fx, 'data-stage': index > shown ? 'future' : 'shown' };
   };
-  const live = (piece: ConceptPiece): boolean => stage(piece) === 'current';
 
   return (
     <section aria-label={`Concept: ${block.term}`} className={cn('concept', presenting && 'concept-slide', hero && 'concept-hero')}>
@@ -116,13 +78,13 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
       </header>
       {!hero && (
         <div className="concept-body">
-          <p className={cn('concept-define', stage('define'))}>
+          <p className="concept-define" {...part('define', 'rise')}>
             <InlineMarkdown text={block.define} />
           </p>
           {(block.analogy || block.formula) && (
             <div className="concept-pair">
               {block.analogy && (
-                <aside className={cn('concept-analogy', stage('analogy'))}>
+                <aside className="concept-analogy" {...part('analogy', 'swing')}>
                   <span className="concept-analogy-icon" aria-hidden="true">
                     <BulbIcon size={18} />
                   </span>
@@ -133,15 +95,15 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
                 </aside>
               )}
               {block.formula && (
-                <div className={cn('concept-math', stage('formula'))}>
+                <div className="concept-math" {...part('formula', 'formula')}>
                   <span className="concept-label">Formula</span>
-                  <Formula tex={block.formula} live={live('formula')} />
+                  <Formula tex={block.formula} />
                 </div>
               )}
             </div>
           )}
           {block.example && (
-            <div className={cn('concept-example', stage('example'))}>
+            <div className="concept-example" {...part('example', 'rise')}>
               <span className="concept-label">Example</span>
               <div className="prose-exl">
                 <Prose>{block.example}</Prose>

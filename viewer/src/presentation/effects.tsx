@@ -1,26 +1,5 @@
-// Present-mode text effects in CSS only, so reduced motion shows them in place: words that rise one after another
-// and numbers that roll in like an odometer.
+// A Present-mode text effect in CSS only, so reduced motion shows it in place: numbers that roll in like an odometer.
 import type { CSSProperties } from 'react';
-
-/** Each word rises into view after the one before it. The text stays whole for screen readers and copying. */
-export function RisingWords({ text, delay = 0, step = 40 }: { text: string; delay?: number; step?: number }) {
-  let word = 0;
-  return (
-    <>
-      {text.split(/(\s+)/).map((piece, i) => {
-        if (piece.trim() === '') return piece;
-        const style: CSSProperties = { animationDelay: `${delay + step * word++}ms` };
-        return (
-          <span key={i} className="rise">
-            <span className="rise-inner" style={style}>
-              {piece}
-            </span>
-          </span>
-        );
-      })}
-    </>
-  );
-}
 
 const DIGITS = [...'01234567890123456789'];
 

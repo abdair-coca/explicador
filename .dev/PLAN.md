@@ -324,7 +324,7 @@ Choices through a quiz (user, 2026-11-12):
 - **Animation library:** "add the best there is in animation". Confirmed by the user on 2026-11-12: **GSAP** (3.15.1 on npm, standard no-charge license, all plugins included), which reverses F5's "no GSAP". Used: the core timelines, Flip, SplitText, DrawSVG, MorphSVG and MotionPath.
 - **Who chooses the decoration:** confirmed the same day: the agent picks a theme from a closed catalog.
 
-Detailed plan (written 2026-11-12, waiting for the user's approval; no code before it):
+Detailed plan (written 2026-11-12; approved by the user the same day with "complete all of F16", so the parts run one after another without stopping at F16b):
 
 Defaults:
 - **GSAP only in the viewer.** It is bundled, so exports still load nothing; they grow by about 0.15 MB (measured in F16a). The Web Animations code that works stays until its part is migrated.
@@ -336,7 +336,14 @@ Defaults:
 
 Parts, one commit each:
 
-- [ ] **F16a. Motion system.** GSAP, the tokens, and Present mode moved onto timelines.
+- [x] **F16a. Motion system.** GSAP, the tokens, and Present mode moved onto timelines.
+  - Done 2026-11-12.
+    - `viewer/src/animation/motion.ts` registers GSAP and holds the tokens. `presentation/partPlan.ts` decides which parts play or rewind after a move; `presentation/choreo.ts` plays them. An element names its part with `data-part` and its entrance with `data-fx` (rise, fade, pop, stamp, swing, split, rows, formula, chapter).
+    - On timelines, both ways: prose parts, stats cards, the chapter card and the concept's pieces; the concept's term flies with GSAP Flip. A quiz's answer is not in the page until it is revealed, so it only plays forward. Flows, journeys, traces, matrices, charts and calcs keep their own step animations.
+    - Headings split by words, not letters: letters as separate boxes lose their kerning and the heading wrapped differently while it moved.
+    - Elements shared by two slides use shared view-transition names instead of Flip, because the slide change already is a view transition: a chapter's title flies into the progress bar's label, and a slide's title (or a concept's term) glides into the next slide's title. A concept's term does not look for the next slide that names it.
+    - The viewer's script grew from 2272 KB to 2402 KB (+130 KB); exports grow by the same.
+  - Checked in a separate headless Chrome on the example lesson: frames in the middle of each timeline, a rewind with ←, the chapter title in flight, 390 px, and reduced motion (no inline transforms, parts in their final state). Not checked: an export opened from disk (checked once at the end of F16).
   - Slide parts, the chapter card, stats, quiz reveal and the concept hero become timelines that play both ways.
   - Elements shared by two slides move from one to the other (Flip): a chapter's number and title into the progress header, a concept's term into the next slide that names it, a block's title when the next slide keeps it.
   - Headings split by SplitText (characters for short titles, words otherwise) replace the word-rise effect.
@@ -476,4 +483,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | planned (2026-11-12): GSAP and agent-chosen themes confirmed; detailed plan waiting for the user's approval |
+| F16 | in progress (plan approved 2026-11-12); F16a done |

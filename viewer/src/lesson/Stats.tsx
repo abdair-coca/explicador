@@ -1,5 +1,6 @@
 // Headline numbers: Titi tiles whose numbers count up; the first one is the hero, in yellow. In Present mode `shown`
-// is the last card revealed so far; later cards keep their place, invisible.
+// is the last card revealed so far; later cards keep their place, invisible, and each card is a part that `choreo.ts`
+// pops in.
 import type { StatsBlock } from '../../../server/src/scene.ts';
 import { cn } from '@/lib/utils';
 import { CountUp } from './CountUp';
@@ -16,11 +17,12 @@ export function StatsView({ block, shown }: { block: StatsBlock; shown?: number 
             <li
               key={`${i}-${hidden}`}
               className={cn(
-                hidden ? 'invisible' : 'animate-pop-in',
+                hidden ? 'invisible' : shown === undefined && 'animate-pop-in',
                 'rounded-2xl border-2 px-5 py-4',
                 i === 0 ? 'border-primary-dark bg-primary-light shadow-[0_4px_0_var(--primary-dark)]' : 'border-border bg-card shadow-[0_4px_0_var(--border)]',
               )}
               style={shown === undefined ? { animationDelay: `${i * 70}ms` } : undefined}
+              {...(shown === undefined ? {} : { 'data-part': i, 'data-fx': 'pop' })}
             >
               {hidden ? <span className={value}>{stat.value}</span> : <CountUp text={stat.value} className={value} />}
               <p className="mt-1.5 text-sm font-bold leading-snug text-muted-foreground">{stat.label}</p>
