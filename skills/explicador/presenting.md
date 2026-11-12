@@ -9,7 +9,7 @@ Every scene is two things. The **page** explains in full, for someone reading al
 - **On the slide**: titles, labels, values, boxes, arrows, bars, numbers, concept cards and quizzes.
 - **Only on the page**: Markdown prose and callouts, and the narration of steps, stages, events and marks, the notes of traces, derivations and calcs, the narration of matrix highlights.
 - So what the audience must **see** goes into a component, and what the speaker **says** goes into prose and narration.
-- **A component** is every tag except `<chapter>`, `<quiz>` and `<theme>`. A quiz checks the slide before it; it never replaces one.
+- **A component** is every tag except `<chapter>`, `<quiz>` and `<theme>` (so `<stats>` is one). A quiz checks the slide before it; it never replaces one.
 
 ## Audience
 
@@ -23,7 +23,7 @@ Every scene is two things. The **page** explains in full, for someone reading al
 1. **The question.** Start with a `#` title that is the question the scene answers ("What happens when you log in?"), then `<theme>`. Done when the title has at most 12 words.
 2. **The ideas.** List for yourself 3 to 7 ideas, each one sentence. Done when each one could be a slide.
 3. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
-4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs.
+4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label`, `code` and `note` of a value: the first two show on the slide, the note only on the page.
 5. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
 6. **The page.** Around each component, write for a reader alone: 1–3 short paragraphs, the narration of each step, the notes. Done when the page makes sense without a speaker.
 7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when no warning is left. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
