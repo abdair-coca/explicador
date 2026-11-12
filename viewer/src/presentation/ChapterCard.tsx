@@ -1,14 +1,16 @@
 // The card that opens a chapter in Present mode, on the night surface. `choreo.ts` plays it as one timeline (the
 // `chapter` effect): the number drops in while its digits roll, a yellow rule draws, the title rises word by word
-// and the goal follows. When the next slide opens, the title travels into the progress bar's label (a shared view
+// and the goal follows; in a deep dive the map of the whole process arrives last, with this chapter's stage lit. When the next slide opens, the title travels into the progress bar's label (a shared view
 // transition name).
 import type { ChapterBlock } from '../../../server/src/scene.ts';
 import { FlagIcon } from '../components/icons';
 import { ThemeGlyph } from '../theme/Backdrop';
 import { themes, type Theme } from '../theme/themes';
 import { RollingNumber } from './effects';
+import type { StageMap } from '../lesson/stageMap';
+import { StageMapView } from '../lesson/StageMapView';
 
-export function ChapterCard({ block, number, of, theme }: { block: ChapterBlock; number: number; of: number; theme: Theme }) {
+export function ChapterCard({ block, number, of, theme, map }: { block: ChapterBlock; number: number; of: number; theme: Theme; map?: StageMap | undefined }) {
   return (
     <div className="mx-auto w-full max-w-5xl py-6" data-part={0} data-fx="chapter">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
@@ -32,6 +34,11 @@ export function ChapterCard({ block, number, of, theme }: { block: ChapterBlock;
           <FlagIcon size={26} className="mt-1 shrink-0 text-primary" />
           {block.goal}
         </p>
+      )}
+      {map && (
+        <div className="chapter-map mt-10">
+          <StageMapView map={map} night />
+        </div>
       )}
     </div>
   );

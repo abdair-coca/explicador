@@ -887,3 +887,22 @@ body {
 .cosine-gauge-tick { position: absolute; top: 3rem; transform: translateX(-50%); white-space: nowrap; font-size: 0.8rem; font-weight: 800; color: var(--muted-foreground); }
 .presenter .cosine-line { font-size: clamp(1.05rem, 1.7vw, 1.35rem); }
 .presenter .cosine-name { font-size: 1.15rem; }
+
+/* "You are here" (F20e): the whole process as stops; past ones ticked, the chapter's stage lit, the next ones faint. */
+.stage-map { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0; }
+.stage-map-stop { display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px; padding: 0.3rem 0.8rem 0.3rem 0.35rem; font-size: 0.9rem; font-weight: 800; border: 2px solid var(--border); background: var(--card); color: var(--muted-foreground); }
+.stage-map-stop + .stage-map-stop { margin-left: 1.6rem; position: relative; }
+.stage-map-stop + .stage-map-stop::before { content: ''; position: absolute; right: calc(100% + 0.3rem); top: 50%; width: 1rem; height: 2px; background: var(--border); }
+.stage-map-dot { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); }
+.stage-map-stop.past { color: var(--foreground); }
+.stage-map-stop.past .stage-map-dot { background: var(--hit); color: #fff; }
+.stage-map-stop.here { border-color: var(--primary-dark); background: var(--primary); color: var(--foreground); box-shadow: 0 3px 0 var(--primary-dark); font-weight: 900; }
+.stage-map-stop.here .stage-map-dot { background: var(--foreground); color: var(--primary); }
+.stage-map-stop.next { opacity: 0.6; }
+.stage-map.night .stage-map-stop { font-size: clamp(0.95rem, 1.5vw, 1.15rem); background: transparent; border-color: var(--night-line); color: var(--night-muted); }
+.stage-map.night .stage-map-dot { background: var(--night-line); color: var(--night-foreground); }
+.stage-map.night .stage-map-stop.past { color: var(--night-foreground); }
+.stage-map.night .stage-map-stop.past .stage-map-dot { background: var(--hit); }
+.stage-map.night .stage-map-stop.here { background: var(--primary); border-color: var(--primary); color: var(--night); }
+.stage-map.night .stage-map-stop.here .stage-map-dot { background: var(--night); color: var(--primary); }
+.stage-map.night .stage-map-stop + .stage-map-stop::before { background: var(--night-line); }

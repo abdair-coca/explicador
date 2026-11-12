@@ -144,6 +144,7 @@ export function parseExl(source: string): ParseResult {
 
   checkTheme(blocks, errors);
   checkBlockIds(blocks, errors);
+  checkChapterStages(blocks, errors);
   if (!blocks.some((block) => block.type !== 'markdown' && block.type !== 'theme') && errors.length === 0) {
     errors.push({ line: 1, column: 1, message: 'A scene needs at least one scene tag, such as <arch>, <flow>, <journey> or <chapter>' });
   }
@@ -383,6 +384,22 @@ function checkBlockIds(blocks: Block[], errors: ExlError[]): void {
     if (block.type === 'markdown') continue;
     if (seen.has(block.id)) errors.push({ line: 1, column: 1, message: `Duplicate scene id "${block.id}"` });
     seen.add(block.id);
+  }
+}
+
+/** A chapter's `stage` names a stage of a <journey> in the scene: the map its card shows. */
+function checkChapterStages(blocks: Block[], errors: ExlError[]): void {
+  const stages = blocks.flatMap((block) => (block.type === 'journey' ? block.stages.map((stage) => stage.id) : []));
+  for (const block of blocks) {
+    if (block.type !== 'chapter' || block.stage === undefined || stages.includes(block.stage)) continue;
+    errors.push({
+      line: 1,
+      column: 1,
+      message:
+        stages.length === 0
+          ? `Chapter "${block.title}" names stage="${block.stage}", but the scene has no <journey>: add one in the intro with a <stage> per step of the process`
+          : `Chapter "${block.title}" names stage="${block.stage}", which no <journey> has; the stages are ${stages.join(', ')}`,
+    });
   }
 }
 

@@ -32,7 +32,7 @@ export const catalog: Record<string, TagSpec> = {
   step: { attrs: { from: 'required', to: 'optional', label: 'optional', kind: 'optional', ref: 'optional' }, text: true },
   // Lessons.
   theme: { attrs: { name: 'required', accent: 'optional' } },
-  chapter: { attrs: { id: 'optional', title: 'required', goal: 'optional', ref: 'optional', theme: 'optional' } },
+  chapter: { attrs: { id: 'optional', title: 'required', goal: 'optional', ref: 'optional', theme: 'optional', stage: 'optional' } },
   stats: { attrs: { id: 'optional', title: 'optional' }, children: ['stat'] },
   stat: { attrs: { value: 'required', label: 'required', ref: 'optional' } },
   journey: { attrs: { id: 'optional', title: 'required' }, children: ['stage', 'drill', 'code'] },

@@ -12,6 +12,8 @@ import { ChapterCells } from './ChapterCells';
 import { Practice } from './Practice';
 import { Backdrop, ThemeGlyph } from '../theme/Backdrop';
 import { themeAt, type Theme } from '../theme/themes';
+import { stageMapOf, type StageMap } from './stageMap';
+import { StageMapView } from './StageMapView';
 import { chapterAnchor, type Chapter, type LessonPlan } from './chapters';
 import { LessonContext } from './context';
 import { chapterDone, isDone, lessonSummary, progressKey, type Progress } from './progress';
@@ -149,7 +151,7 @@ function Pills({ plan, progress, active, practise }: { plan: LessonPlan; progres
   );
 }
 
-function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter | undefined; progress: Progress; version: number; theme: Theme; seed: string }) {
+function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter | undefined; progress: Progress; version: number; theme: Theme; seed: string; map: StageMap | undefined }) {
   const { chapter, total, next, progress, theme } = props;
   const selection = useSelection();
   const done = chapterDone(chapter, progress);
@@ -191,6 +193,7 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
             <span>{chapter.block.goal}</span>
           </p>
         )}
+        {props.map && <StageMapView map={props.map} />}
         {/* Offline copies cannot reach Claude. */}
         {selection && staticScene === null && (
           <button
@@ -274,7 +277,7 @@ export function Lesson({ scene, plan }: { scene: ScenePayload; plan: LessonPlan 
           ))}
           <Pills plan={plan} progress={progress} active={active} practise={practise} />
           {plan.chapters.map((chapter, i) => (
-            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} theme={themeAt(scene.blocks, chapter.index)} seed={scene.key} />
+            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} theme={themeAt(scene.blocks, chapter.index)} seed={scene.key} map={stageMapOf(scene.blocks, chapter.block)} />
           ))}
           <EndCard plan={plan} progress={progress} practise={practise} />
         </div>

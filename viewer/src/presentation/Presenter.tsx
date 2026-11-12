@@ -23,6 +23,7 @@ import { DeriveView } from '../lesson/Derive';
 import { PlotView } from '../lesson/Plot';
 import { ScatterView } from '../lesson/Scatter';
 import { SpaceView } from '../lesson/Space';
+import { stageMapOf } from '../lesson/stageMap';
 import { CosineView } from '../lesson/Cosine';
 import { matrixFocuses } from '../lesson/focuses';
 import { JourneyTrack } from '../lesson/Journey';
@@ -418,7 +419,7 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
         </StepSlide>
       );
     case 'chapter':
-      return <ChapterCard block={block} number={slide.chapter} of={chapters} theme={theme} />;
+      return <ChapterCard block={block} number={slide.chapter} of={chapters} theme={theme} map={stageMapOf(scene.blocks, block)} />;
     case 'stats':
       return (
         <div className="mx-auto max-w-5xl">

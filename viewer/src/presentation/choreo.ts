@@ -179,6 +179,12 @@ const effects: Record<string, Effect> = {
     const revert = title ? splitRise(title, timeline, start + 0.25) : undefined;
     const goal = pick('.chapter-goal');
     if (goal) timeline.from(goal, { autoAlpha: 0, y: 14, duration: dur.base, ease: ease.out }, '>-0.25');
+    const stops = element.querySelectorAll('.stage-map-stop');
+    if (stops.length > 0) {
+      timeline.from(stops, { autoAlpha: 0, y: 12, duration: dur.base, ease: ease.out, stagger: staggerOf(stops.length, stagger.base) }, '>-0.1');
+      const here = element.querySelector('.stage-map-stop.here .stage-map-dot');
+      if (here) timeline.from(here, { scale: 0.4, duration: dur.slow, ease: ease.spring }, '>-0.05');
+    }
     return revert;
   },
 };

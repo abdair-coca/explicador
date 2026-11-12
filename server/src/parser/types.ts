@@ -263,6 +263,8 @@ export interface ChapterBlock {
   theme?: ThemeName;
   /** What the reader will understand by the end of the chapter. */
   goal?: string;
+  /** The id of the <journey> stage this chapter explains: its card shows the whole journey with this stage lit. */
+  stage?: string;
   /** The cells (or lines) the chapter explains; always a range. */
   ref?: Ref;
   /** Filled by the server when the scene is shown: the chapter's notebook cells, with their outputs. */

@@ -93,7 +93,16 @@ export function buildChapter(element: Element, ordinal: number, report: Report):
     report(refOffset, `A chapter covers at most ${limits.chapterSpan} cells or lines; split it`);
   }
   const theme = a.theme === undefined ? undefined : readEnum<ThemeName>(a.theme, themeNames, 'plain', 'theme', element, report);
-  return { type: 'chapter', id: a.id ?? `chapter-${ordinal}`, title, ...(goal ? { goal } : {}), ...(ref ? { ref } : {}), ...(theme ? { theme } : {}) };
+  const stage = a.stage?.trim();
+  return {
+    type: 'chapter',
+    id: a.id ?? `chapter-${ordinal}`,
+    title,
+    ...(goal ? { goal } : {}),
+    ...(stage ? { stage } : {}),
+    ...(ref ? { ref } : {}),
+    ...(theme ? { theme } : {}),
+  };
 }
 
 export function buildTheme(element: Element, _ordinal: number, report: Report): ThemeBlock {
