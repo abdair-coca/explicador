@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { formatErrors, parseExl, type ArchBlock, type FlowBlock } from '../src/parser/index.ts';
+import { formatErrors, parseExl, parseRefString, type ArchBlock, type FlowBlock } from '../src/parser/index.ts';
 
 const valid = `# Login
 
@@ -114,6 +114,12 @@ describe('parseExl: invalid documents', () => {
       '2:40 Invalid ref "../secret.txt": the path must stay inside the project',
       '3:3 <node> is missing the "id" attribute',
     ]);
+  });
+
+  it('reads refs to files whose names have spaces', () => {
+    assert.deepEqual(parseRefString('data/IMDB Dataset.csv:2-4'), { path: 'data/IMDB Dataset.csv', start: 2, end: 4 });
+    assert.deepEqual(parseRefString(' My Notebook.ipynb '), { path: 'My Notebook.ipynb' });
+    assert.equal(parseRefString('a.csv\nb.csv'), 'expected "path", "path:line" or "path:start-end"');
   });
 
   it('reports edges and steps that point to unknown nodes', () => {

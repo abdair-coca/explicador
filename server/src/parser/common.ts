@@ -145,7 +145,8 @@ export const limits = {
 export type Report = (offset: number, message: string) => void;
 
 const ID = new RegExp(`^[A-Za-z][A-Za-z0-9_-]{0,${limits.idLength - 1}}$`);
-const REF = /^([^:\s]+?)(?::(\d+)(?:-(\d+))?)?$/;
+/** A path (spaces allowed inside file names, not line breaks or tabs), then an optional line or line range. */
+const REF = /^([^:\r\n\t]+?)(?::(\d+)(?:-(\d+))?)?$/;
 
 export function readAttrs(element: Element, spec: TagSpec, report: Report): Record<string, string | undefined> {
   const values: Record<string, string | undefined> = {};

@@ -4,7 +4,8 @@ Every scene is also a presentation: the viewer's **Present** button turns it int
 
 ## How the slides are cut
 
-- Each tag is one slide, and its pieces arrive one per click: flow steps, journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights.
+- Each tag is one slide, and its pieces arrive one per click: flow steps (every `<step>`, with or without `to`; a step without `to` lights its box and shows its narration), journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights.
+- **A picture** is every tag except `<chapter>`, `<quiz>` and `<theme>`. A quiz checks the picture before it; it never replaces it.
 - Each Markdown block (the prose between two tags) is one slide of **text alone**. So prose is only the short caption that leads into the next picture.
 - The explanation lives **inside** the visuals, where it shows large: step and stage narration, `note`s, `<mark>` and `<focus>` narration, the pieces of a `<concept>`, `<pair>` rows, `<event>` narration.
 - The theme draws line art on every slide; it decorates, it does not explain. The pictures that explain are your tags.
@@ -13,7 +14,8 @@ Every scene is also a presentation: the viewer's **Present** button turns it int
 
 - By default the audience is **non-technical**: a manager, a client, a student on day one. Raise the level only when the user says the audience is technical ("for my team of engineers", "they know Python").
 - Name things by what they do for a person: "Checks who you are", not `AuthService.login()`. Technical names go in `desc`, `ref`, `<code>` and the long descriptions, which open on click.
-- A technical word appears on a slide only after a `<concept>` card introduced it, with an `<analogy>` from everyday life.
+- A technical word the reader must learn appears on a slide only after a `<concept>` card introduced it, with an `<analogy>` from everyday life. Any other technical word becomes plain words ("word counts", not "BoW"; "share of right answers", not "accuracy").
+- The cover (everything before the first chapter: title, `<stats>`, `<journey>`) uses plain words only; each technical name arrives in the chapter whose `<concept>` introduces it.
 - Numbers come with a comparison a person feels: "5 of the 6 hidden reviews", "one hour, then you log in again".
 
 ## Recipe
@@ -21,7 +23,7 @@ Every scene is also a presentation: the viewer's **Present** button turns it int
 1. **The question.** Write the `#` title as the question a non-technical person would ask ("What happens when you log in?"), then `<theme>`. Done when the title has no jargon.
 2. **The ideas.** List for yourself 3 to 7 ideas, each one sentence in plain words. Done when a stranger could repeat each one.
 3. **A picture per idea.** Pick a tag for each idea from the table below. Done when every idea has its tag, and no tag is there only to decorate.
-4. **Write.** Follow the template that fits: a short caption (at most 3 short paragraphs, items or callouts), then the picture, then a 1-sentence takeaway or a `<quiz>`. Done when no two Markdown blocks touch and every caption sits right before or after a picture.
+4. **Write.** Follow the template that fits: a short caption (at most 3 short paragraphs, items or callouts), then the picture, then a 1-sentence takeaway or a `<quiz>`. Done when every caption sits right before or after a picture. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 5. **Render.** Call `render_scene`. Fix every `EXL errors` line; then fix every `Warning:` line about slides and render again. Done when the result has no slide warnings.
 6. **Check** against the checklist at the end. Done when every line is true.
 

@@ -87,7 +87,7 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - Groups share the id namespace with nodes and need at least one node. Nodes inside a group still count as nodes of the block.
 - `<drill node topic>`: `node` names a `<node>` (not a group) of the same block, at most one drill per node; `topic` is one line of up to 80 characters, the topic under which the deeper scene is explained and cached.
 - Narration: plain text, whitespace collapsed, up to 600 characters. Write `&lt;` for a literal `<`.
-- `ref`: `path`, `path:line` or `path:start-end`. Relative to the project root, forward slashes, no `..`, and the file must exist when the scene is rendered.
+- `ref`: `path`, `path:line` or `path:start-end`. Relative to the project root, forward slashes, no `..`, and the file must exist when the scene is rendered. File names may contain spaces (`data/IMDB Dataset.csv:1-5`), not line breaks or tabs.
 - `<field key>`: `pk`, `fk` or `unique`; `name` and `type` are one line of up to 60 characters; field names are unique within an entity; up to 40 fields.
 - `<relation card>`: `1-1`, `1-n`, `n-1` or `n-n`; `from` and `to` name entities of the same `<data>`.
 - `<status role>`: `initial` or `final`; exactly one state is `initial`. Transitions may loop on one state.
