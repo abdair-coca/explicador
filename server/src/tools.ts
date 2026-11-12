@@ -187,7 +187,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
               'Give each a line range (path:start-end; for a notebook, cell numbers) and render again.'
             : '',
           slides.length > 0
-            ? `Warning: some slides would be text alone (see presenting.md in the explicador skill); fix these and render again:\n${slides.map((w) => `- ${w}`).join('\n')}`
+            ? `Warning: the presentation would suffer (see presenting.md in the explicador skill); fix these and render again:\n${slides.map((w) => `- ${w}`).join('\n')}`
             : '',
         ]
           .filter(Boolean)

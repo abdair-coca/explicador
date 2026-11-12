@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl } from '../src/parser/index.ts';
-import { proseIdeas, slideWarnings } from '../src/slides.ts';
+import { slideWarnings } from '../src/slides.ts';
 
 const warningsOf = (source: string): string[] => {
   const parsed = parseExl(source);
@@ -12,37 +12,30 @@ const warningsOf = (source: string): string[] => {
 
 const CONCEPT = '<concept term="Label">\n<define>The answer the model learns.</define>\n</concept>';
 const QUIZ = (n: number): string => `<quiz question="Q${n}?">\n<answer>A.</answer>\n</quiz>`;
-
-describe('proseIdeas', () => {
-  it('counts paragraphs, list items, callouts, tables and blocks, not headings', () => {
-    assert.equal(proseIdeas('# Title\n\nOne paragraph\nstill the same one.'), 1);
-    assert.equal(proseIdeas('Intro:\n- one\n- two\n\n1. three'), 4);
-    assert.equal(proseIdeas('> [!NOTE]\n> A note\n> on two lines.\n\n| a | b |\n|---|---|\n| 1 | 2 |'), 2);
-    assert.equal(proseIdeas('$$\nx = 1\n\ny = 2\n$$\n\n```\ncode\n\nmore\n```'), 2);
-    assert.equal(proseIdeas('## Only a heading'), 0);
-  });
-});
+const COMPARE = (title: string): string => `<compare title="${title}" a="A" b="B">\n<pair label="x" a="1" b="2" />\n<pair label="y" a="3" b="4" />\n</compare>`;
 
 describe('slideWarnings', () => {
-  it('says nothing about a themed scene whose prose sits next to its pictures', () => {
-    assert.deepEqual(warningsOf(`# Title\n\n<theme name="ml" />\n\nShort intro.\n\n${CONCEPT}\n\nWhat it means.\n\n${QUIZ(1)}`), []);
+  it('says nothing about a themed scene with a cover, components and short titles, however long its prose', () => {
+    const prose = Array.from({ length: 6 }, (_, i) => `Paragraph ${i}.`).join('\n\n');
+    assert.deepEqual(warningsOf(`# Title\n\n<theme name="ml" />\n\n${prose}\n\n${CONCEPT}\n\n${QUIZ(1)}`), []);
   });
 
-  it('asks for a theme', () => {
+  it('asks for a theme and for a "#" title as the cover', () => {
     assert.match(warningsOf(`# Title\n\nIntro.\n\n${CONCEPT}`)[0] ?? '', /No <theme>/);
+    assert.match(warningsOf(`<theme name="ml" />\n\nIntro without a title.\n\n${CONCEPT}`)[0] ?? '', /No "# " title at the top/);
+    assert.match(warningsOf(`<theme name="ml" />\n\n<chapter title="One" />\n\n${CONCEPT}`)[0] ?? '', /No "# " title at the top/);
   });
 
-  it('names a chapter with text but no picture, but lets a review of checks be', () => {
-    const scene = `# T\n\n<theme name="ml" />\n\n${CONCEPT}\n\n<chapter title="Words only" />\n\nSome text.\n\n${QUIZ(1)}\n\n<chapter title="Review" />\n\nCheck yourself.\n\n${QUIZ(2)}\n\n${QUIZ(3)}`;
-    assert.deepEqual(warningsOf(scene), ['chapter 1 "Words only" has text but no picture: give its main idea a visual (<concept>, <compare>, <flow>, a chart…).']);
+  it('names a chapter without a component, but lets a review of checks and a lesson intro be', () => {
+    const scene = `# T\n\n<theme name="ml" />\n\nIntro.\n\n<chapter title="Words only" />\n\nSome text.\n\n${QUIZ(1)}\n\n<chapter title="Review" />\n\n${QUIZ(2)}\n\n${QUIZ(3)}\n\n<chapter title="Shown" />\n\n${CONCEPT}`;
+    assert.deepEqual(warningsOf(scene), ['chapter 1 "Words only" has no component, so Present shows only its title: give its main idea one (<trace>, <flow>, <compare>, <concept>, a chart…).']);
   });
 
-  it('flags a wall of text and prose far from any picture', () => {
-    const wall = warningsOf(`# T\n\n<theme name="ml" />\n\nOne.\n\nTwo.\n\n- three\n- four\n\n${CONCEPT}`);
-    assert.equal(wall.length, 1);
-    assert.match(wall[0] ?? '', /the scene, "One\.": 4 paragraphs, items or callouts on one text slide; keep at most 3/);
-    const far = warningsOf(`# T\n\n<theme name="ml" />\n\n${CONCEPT}\n\n${QUIZ(1)}\n\nLonely **text**.\n\n${QUIZ(2)}`);
-    assert.deepEqual(far, ['the scene, "Lonely text.": text with no picture before or after it; put it right before the visual it introduces.']);
+  it('flags a title too long to be the slide sentence', () => {
+    const long = 'How the two vectorizers compare on every metric we computed in the notebook';
+    assert.deepEqual(warningsOf(`# T\n\n<theme name="ml" />\n\n${COMPARE(long)}`), [
+      `The title "${long}" has 13 words; it is the slide's one sentence, so keep it to 12 (say the rest on the page).`,
+    ]);
   });
 
   it('caps the list', () => {

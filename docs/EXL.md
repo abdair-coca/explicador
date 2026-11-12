@@ -156,7 +156,7 @@ line 7, column 1: Unclosed <arch>: expected </arch>
 
 Syntax errors (unclosed tags, input that ends inside a tag, bad quoting) stop parsing at the first one; validation errors are all reported together.
 
-After a scene is saved, `render_scene` may add warnings, which never block it (`server/src/slides.ts`). Besides boxes whose ref has no line range, it warns about slides that would be text alone in Present mode: a scene without `<theme>`; a section (the intro, a chapter, or the whole scene without chapters) with prose but no visual, unless it holds two or more `<quiz>` (a review); a Markdown block with more than 3 paragraphs, list items, callouts, tables or code and formula blocks; and a Markdown block with no visual right before or after it. `<chapter>`, `<quiz>` and `<theme>` are not visuals. The skill's `presenting.md` says how to fix each one.
+After a scene is saved, `render_scene` may add warnings, which never block it (`server/src/slides.ts`). Besides boxes whose ref has no line range, it warns about what would weaken the presentation, where a speaker shows the `#` title as the cover and one component per slide with its `title` as its sentence: a scene without `<theme>`; a scene that does not open with a `# ` title; a chapter (or a scene without chapters) with no component, unless it holds two or more `<quiz>` (a review); and a block or chapter `title` of more than 12 words. `<chapter>`, `<quiz>` and `<theme>` are not components. The skill's `presenting.md` says how to fix each one.
 
 ## Example
 
