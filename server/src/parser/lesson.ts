@@ -6,6 +6,7 @@ import {
   bodyText,
   catalog,
   checkId,
+  checkMath,
   checkText,
   childElements,
   limits,
@@ -316,6 +317,7 @@ export function buildQuiz(element: Element, ordinal: number, report: Report): Qu
   if (element.selfClosing) report(element.offset, '<quiz> needs <option>s or an <answer>');
   if (a.id !== undefined) checkId(a.id, element, report);
   const question = a.question === undefined ? '' : checkText(a.question, 'question', limits.questionLength, element, report);
+  checkMath(question, element.attrs.get('question')?.offset ?? element.offset, report);
   const children = childElements(element, spec('quiz'), report);
   const options: QuizOption[] = [];
   for (const child of named(children, 'option')) {
@@ -327,6 +329,8 @@ export function buildQuiz(element: Element, ordinal: number, report: Report): Qu
       report(child.attrs.get('correct')?.offset ?? child.offset, 'Write correct="true" on the right option and leave it out on the others');
     }
     const why = optionalText(o.why, 'why', limits.noteLength, child, report);
+    checkMath(text, child.offset, report);
+    if (why) checkMath(why, child.attrs.get('why')?.offset ?? child.offset, report);
     options.push({ text, ...(o.correct === 'true' ? { correct: true as const } : {}), ...(why ? { why } : {}) });
   }
   const answers = named(children, 'answer');

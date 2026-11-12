@@ -255,6 +255,68 @@ Defaults (approved by the user with the plan on 2026-11-11, who then asked for t
   - Criterion: tests for the sound switch (silent without Web Audio, remembered choice); the same checks; heard in Chrome.
 - One commit per part, like F13. The user reviews at the end of F14.
 
+### F15: formulas and concept cards (user, 2026-11-11)
+
+After F14 the user asked for LaTeX formulas and for the concepts on the slides to look spectacular. Their exam lesson has no formula: concepts such as TF-IDF or logistic regression are bold words inside paragraphs.
+
+Choices through a quiz (user, 2026-11-11):
+- **KaTeX renders the formulas.** It is a new dependency, approved: about 0.6 MB more in the viewer and in each export. Its woff2 fonts are inlined like Nunito, so exports still load nothing.
+- **A `<concept>` tag.** The agent marks each new concept with its term, a one-sentence definition, an analogy, an optional formula and an optional example. This grows the closed EXL catalog (decision 8), and lessons are regenerated to use it.
+- **Term hero in Present mode.** The term appears giant in the center with a yellow flash, then rises to the top. The definition, the analogy, the formula (assembled symbol by symbol) and the example then arrive one per →.
+
+Defaults (taken with the plan):
+- **Math syntax**, as in Pandoc, outside code:
+  - `$…$` is inline math. An opening `$` is followed by a non-space; a closing `$` follows a non-space and is not followed by a digit, so "$5 and $10" stay text.
+  - `\$` is a literal dollar.
+  - A line starting with `$$` opens a display block until the next `$$`. A `$$…$$` inside a line is display math too.
+  - Math works wherever Markdown does: prose, callouts, lists, tables, quiz questions, options, whys and answers, and concept fields.
+- **One shared reader for math.** It lives in the server's parser and the viewer imports it, so both agree on where a formula starts and ends.
+- **Formulas are checked.** `render_scene` refuses a scene whose formula KaTeX cannot parse, quoting the formula and KaTeX's message, so KaTeX also goes into the server.
+- **`<` inside a tag.** It must be written `\lt` or `&lt;`, because the EXL reader takes `<` as the start of a tag.
+- **`<concept term ref?>`** (top level) holds `<define>` (required, ≤ 300 characters), `<analogy>` (≤ 300), `<formula>` (LaTeX, ≤ 500) and `<example>` (Markdown, ≤ 1200). Each appears at most once, and they show in that order.
+- **Lesson page:** a concept card with the term, the definition, an analogy bubble, a formula card and the example.
+- **Present mode:** one slide per concept, one part per piece.
+  - The term moves from the center to the top with a FLIP animation.
+  - The formula's atoms pop in left to right, the analogy card swings in, and the example fades up.
+  - Reduced motion shows the final states.
+- **Skill:**
+  - A `<concept>` for each new idea of the recipe's "Each new concept from zero".
+  - Formulas only for definitions the notebook uses (TF-IDF, the sigmoid, precision).
+  - Numbers in formulas follow "numbers only from the notebook".
+- **Docs:** `docs/EXL.md` and the example lesson gain math and concepts.
+
+- [x] **F15a. Formulas.** KaTeX in the viewer and the server, the shared math reader, rendering in all Markdown, parser checks, docs and skill.
+  - Done 2026-11-12.
+    - The component is `viewer/src/components/Tex.tsx` (a file named `Math` would shadow the global).
+    - A Vite plugin drops KaTeX's woff and ttf sources, so only the inlined woff2 remain and the build emits no font file. The CSS grew from about 90 KB to 487 KB.
+    - A table cell, quiz option or question that is one formula alone is drawn in display style, because inline fractions are tiny.
+    - A formula in a quiz or a long description is reported at its tag, not at its own column; in prose the error points at the formula.
+  - Checked in a separate headless Chrome: 12 formulas on the page with no KaTeX error and "$5 … $10" kept as text; Present mode (list item, quiz reveal); the export opened from disk draws all 12 with no font file referenced.
+  - Criterion:
+    - Tests of the math reader: inline, display, dollars as money, escapes, code.
+    - Parser tests: a valid formula and a broken one.
+    - Typecheck, lint, test and build pass.
+    - Formulas checked in Chrome on the page, in Present mode and in an export opened from disk.
+- [ ] **F15b. Concept cards.** Parser, types, the page card, the Present slide (term hero), slide parts, skill, docs and the example lesson.
+  - Criterion:
+    - Parser tests: valid, missing `<define>`, unknown child, duplicate, too long.
+    - Slide-part tests.
+    - The same checks as F15a, and the hero walk-through checked in Chrome.
+- One commit per part. The user reviews at the end of F15, then the INF672 session regenerates the lesson.
+
+### F16: rigorous animation and spectacular components (user, 2026-11-12)
+
+While F15 was in progress the user asked again for more spectacular presentations: concepts that look spectacular, animations "much more rigorous", and more impressive visual components.
+
+Choices through a quiz (user, 2026-11-12):
+- **Order:** finish F15 as approved, then F16.
+- **Rigor means both:** a film-like choreography (one motion system, physical springs, exact timings and staggers, elements that turn into one another between slides) and animations faithful to the math (curves drawn on their axes, a point that travels the function, formulas that change step by step with each term tied to the real data).
+- **New components, all four offered:** an animated function plot; a formula that is derived step by step; a scatter plot with a decision boundary; comparison cards ("A against B") and a timeline or pipeline with flowing particles.
+- **Decorative components** (the user's own words): decoration chosen by the topic or by the context of the system or part being explained, so that every presentation and every diagram has its own distinction.
+- **Animation library:** "add the best there is in animation". Read as approval of a new dependency; the proposal is GSAP (timelines, Flip, SplitText, MorphSVG, DrawSVG, MotionPath), which reverses F5's "no GSAP". To confirm with the detailed plan.
+
+Not designed yet. Before any code: a detailed plan (EXL tags and limits, which data each component takes so numbers still come from the notebook, how decoration is chosen and by whom, the motion tokens, export size, reduced motion) and the user's approval. Open questions for that plan: whether decoration is a theme per scene chosen by the agent from a closed set, or derived by the viewer from the block kinds; how much the exports may grow.
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -357,3 +419,5 @@ Open points:
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
+| F15 | F15a done (2026-11-12); F15b in progress |
+| F16 | requested (2026-11-12); choices recorded, detailed plan pending |

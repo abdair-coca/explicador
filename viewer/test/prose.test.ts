@@ -74,6 +74,20 @@ describe('proseSlide', () => {
     assert.equal(groups.length, 1);
     assert.equal(proseSlide('').parts, 1);
   });
+
+  it('keeps a $$ block as one part and never cuts a sentence inside a formula', () => {
+    const { groups } = proseSlide('Antes.\n\n$$\na = b. C\n$$\n\nDespués.');
+    assert.deepEqual(groups, [
+      { kind: 'paragraph', chunks: [{ part: 0, text: 'Antes.' }] },
+      { kind: 'block', part: 1, text: '```math\na = b. C\n```', callout: false },
+      { kind: 'paragraph', chunks: [{ part: 2, text: 'Después.' }] },
+    ]);
+    const filler = 'Palabra '.repeat(30).trim();
+    const long = proseSlide(`${filler} con $a = b. C + d$ dentro. ${filler}.`);
+    const chunks = long.groups[0]?.kind === 'paragraph' ? long.groups[0].chunks : [];
+    assert.equal(chunks.length, 2);
+    assert.match(chunks[0]?.text ?? '', /a = b\. C \+ d` dentro\.$/);
+  });
 });
 
 describe('wrapNumbers', () => {

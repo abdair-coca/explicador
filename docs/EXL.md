@@ -11,6 +11,12 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - Attribute values are always quoted, with `"` or `'`. `attr={…}` is rejected. Entities `&amp; &lt; &gt; &quot; &apos;` are decoded.
 - `<!-- comments -->` are allowed inside blocks.
 - CRLF line endings are accepted.
+- **Formulas** are LaTeX, drawn by KaTeX, wherever Markdown is: prose, lists, callouts, table cells, long descriptions, quiz questions, options, whys and answers.
+  - `$…$` is inline math: `$\sigma(z) = \frac{1}{1+e^{-z}}$`. The opening `$` is followed by a non-space; the closing `$` follows a non-space and is not followed by a digit, so "$5 and $10" stay text. `\$` is a literal dollar.
+  - A line starting with `$$` opens a display block that runs to the next `$$`. `$$…$$` inside a line draws full-size fractions and sums in the text.
+  - Formulas are never read inside code spans or code fences.
+  - Inside a tag (an attribute or a body) write `<` as `\lt` or `&lt;`, because `<` starts a tag there. In a table cell write `|` as `\vert`.
+  - `render_scene` refuses a formula KaTeX cannot parse and quotes it with KaTeX's message.
 
 ## Tags
 

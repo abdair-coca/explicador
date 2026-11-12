@@ -4,7 +4,8 @@
 import { createElement, Fragment, useEffect, useMemo, useRef } from 'react';
 import Markdown from 'react-markdown';
 import { reducedMotion, staggerIn } from '../animation/reveal';
-import { InlineMarkdown, Prose } from '../components/Prose';
+import { markMath } from '../../../server/src/parser/math.ts';
+import { inlineComponents, InlineMarkdown, Prose } from '../components/Prose';
 import { CountUp } from '../lesson/CountUp';
 import { cn } from '@/lib/utils';
 import { RisingWords } from './effects';
@@ -29,11 +30,11 @@ function LiveInline({ text }: { text: string }) {
     <Markdown
       rehypePlugins={[rehypeCountNumbers]}
       components={{
-        p: ({ children }) => <Fragment>{children}</Fragment>,
+        ...inlineComponents,
         span: ({ className, children }) => (className === 'count' ? <CountUp text={String(children)} /> : <span className={className}>{children}</span>),
       }}
     >
-      {text}
+      {markMath(text)}
     </Markdown>
   );
 }

@@ -5,6 +5,7 @@ import {
   blockHead,
   catalog,
   checkId,
+  checkMath,
   checkText,
   childElements,
   limits,
@@ -85,8 +86,11 @@ export function parseExl(source: string): ParseResult {
   let fence: string | undefined;
 
   const flushMarkdown = (end: number): void => {
-    const text = src.slice(markdownStart, end).trim();
-    if (text) blocks.push({ type: 'markdown', text });
+    const raw = src.slice(markdownStart, end);
+    const text = raw.trim();
+    if (!text) return;
+    checkMath(text, markdownStart + raw.indexOf(text), (offset, message) => errors.push(at.error(offset, message)), true);
+    blocks.push({ type: 'markdown', text });
   };
 
   while (pos < src.length) {

@@ -1,5 +1,7 @@
 // The EXL catalog, its limits and the helpers every block builder shares: attributes, ids, text, refs,
 // child tags, narration, drills and key code.
+import katex from 'katex';
+import { findMath } from './math.ts';
 import type { Element } from './reader.ts';
 import type { CodeSnippet, Drill, Ref } from './types.ts';
 
@@ -163,6 +165,29 @@ export function checkText(value: string, attr: string, max: number, element: Ele
   return text;
 }
 
+/** Reports every `$…$` or `$$…$$` formula in `text` that KaTeX cannot parse. `offset` is where the text starts, when known. */
+export function checkMath(text: string, offset: number, report: Report, exact = false): void {
+  for (const span of findMath(text)) {
+    const problem = texProblem(span.tex);
+    if (problem) report(exact ? offset + span.start : offset, `Formula "${shorten(span.tex)}" is not valid LaTeX: ${problem}`);
+  }
+}
+
+/** Why KaTeX refuses the formula, or undefined when it parses. */
+export function texProblem(tex: string): string | undefined {
+  try {
+    katex.renderToString(tex, { throwOnError: true, strict: false, output: 'mathml' });
+    return undefined;
+  } catch (error) {
+    return (error instanceof Error ? error.message : String(error)).replace(/^KaTeX parse error:\s*/, '');
+  }
+}
+
+function shorten(tex: string): string {
+  const line = tex.replace(/\s+/g, ' ');
+  return line.length > 60 ? `${line.slice(0, 57)}…` : line;
+}
+
 /** An optional one-line attribute, checked only when present. */
 export function optionalText(value: string | undefined, attr: string, max: number, element: Element, report: Report): string | undefined {
   if (value === undefined) return undefined;
@@ -263,6 +288,7 @@ export function readAbout(element: Element, allowed: readonly string[], report: 
   if (about.length > limits.aboutLength) {
     report(element.offset, `The text inside <${element.name}> is longer than ${limits.aboutLength} characters`);
   }
+  checkMath(about, element.offset, report);
   return about ? { about } : {};
 }
 

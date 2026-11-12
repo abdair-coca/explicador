@@ -126,6 +126,7 @@ One short paragraph of context.
 - Pick the view that answers the question: `<arch>` for parts, `<flow>` for a sequence, `<data>` for stored data, `<state>` for a lifecycle. One or two per answer is usually enough; 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
 - Labels are names a reader recognizes (file or concept), at most 80 characters; narration is one or two plain sentences per step.
 - Markdown tables (`| a | b |` with a `|---|---|` row) are fine in the prose between tags.
+- Formulas are LaTeX: `$\sigma(z) = \frac{1}{1+e^{-z}}$` inline, or a block between two `$$` lines. Use them for definitions the code really uses (TF-IDF, the sigmoid, precision), not as decoration; numbers inside them come from the outputs like any other number. Money stays text ("$5"); inside a tag write `<` as `\lt`. `render_scene` refuses a formula that is not valid LaTeX.
 - Explain what the code does, not what it might do; if you are unsure, say so in the prose.
 
 ## Flows that make sense

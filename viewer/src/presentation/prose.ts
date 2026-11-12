@@ -1,6 +1,8 @@
 // Prose for Present mode: a Markdown block split into the parts revealed one per →, grouped as they render.
 // Headings, list items, callouts, tables and code blocks are a part each. A paragraph is one part or, when long, one
-// part per group of sentences, cut only at sentence ends outside code, bold, italics and links.
+// part per group of sentences, cut only at sentence ends outside code, formulas, bold, italics and links. Formulas are
+// marked first (`markMath`): a `$$` block becomes a fence, so it is one part, and inline math a code span.
+import { markMath } from '../../../server/src/parser/math.ts';
 import { splitNumbers, type Part as NumberPart } from '../lesson/numbers.ts';
 
 /** Paragraphs longer than this are revealed a few sentences at a time, each group at most this long when it can be. */
@@ -20,7 +22,7 @@ const HEADING = /^(#{1,6})\s+(.*)$/;
 const ITEM = /^(?:[-*+]|(\d+)[.)])\s+(.*)$/;
 
 export function proseSlide(markdown: string): { groups: ProseGroup[]; parts: number } {
-  const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
+  const lines = markMath(markdown.replace(/\r\n?/g, '\n')).split('\n');
   const groups: ProseGroup[] = [];
   let part = 0;
   let i = 0;
@@ -93,16 +95,17 @@ const LINK = /^\[[^\]]*\]\([^)]*\)/;
 export function sentences(text: string): string[] {
   const found: string[] = [];
   let start = 0;
-  let code = false;
   let strong = false;
   let em = false;
   for (let i = 0; i < text.length; i++) {
     const char = text[i] ?? '';
     if (char === '`') {
-      code = !code;
+      // Skip the code span: it closes at a run of backticks as long as the one that opens it.
+      const run = /^`+/.exec(text.slice(i))?.[0] ?? '`';
+      const close = text.indexOf(run, i + run.length);
+      i = close === -1 ? text.length : close + run.length - 1;
       continue;
     }
-    if (code) continue;
     if (char === '*') {
       if (text[i + 1] === '*') {
         strong = !strong;

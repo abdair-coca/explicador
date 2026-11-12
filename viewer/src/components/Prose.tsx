@@ -1,13 +1,25 @@
-// Markdown with tables and callouts. Wrap it in `.prose-exl` like plain react-markdown.
+// Markdown with tables, callouts and formulas. Wrap it in `.prose-exl` like plain react-markdown.
 import { Fragment } from 'react';
-import Markdown from 'react-markdown';
+import Markdown, { type Components } from 'react-markdown';
+import { findMath, markMath } from '../../../server/src/parser/math.ts';
 import { splitCallouts, type CalloutKind } from '../lib/callouts';
 import { splitTables } from '../lib/tables';
 import { AlertIcon, BulbIcon, InfoIcon, SparkIcon } from './icons';
+import { mathComponents, Tex } from './Tex';
 
-/** Inline Markdown (code, bold, links) without a paragraph around it: table cells, quiz questions and options. */
+/** Plain Markdown whose `$…$` and `$$…$$` formulas are drawn by KaTeX. */
+export function Md({ children }: { children: string }) {
+  return <Markdown components={mathComponents}>{markMath(children)}</Markdown>;
+}
+
+export const inlineComponents: Components = { ...mathComponents, p: ({ children }) => <Fragment>{children}</Fragment> };
+
+/** Inline Markdown (code, bold, links, formulas) without a paragraph around it: table cells, quiz questions and options. */
 export function InlineMarkdown({ text }: { text: string }) {
-  return <Markdown components={{ p: ({ children }) => <Fragment>{children}</Fragment> }}>{text}</Markdown>;
+  // A cell or an option that is one formula and nothing else gets full-size fractions and sums.
+  const only = findMath(text)[0];
+  if (only && text.slice(0, only.start).trim() === '' && text.slice(only.end).trim() === '') return <Tex tex={only.tex} big />;
+  return <Markdown components={inlineComponents}>{markMath(text)}</Markdown>;
 }
 
 const calloutIcon: Record<CalloutKind, React.ReactNode> = {
@@ -23,7 +35,7 @@ function Tables({ text }: { text: string }) {
     <>
       {splitTables(text).map((segment, i) =>
         segment.kind === 'markdown' ? (
-          <Markdown key={i}>{segment.text}</Markdown>
+          <Md key={i}>{segment.text}</Md>
         ) : (
           <div key={i} className="prose-table">
             <table>
