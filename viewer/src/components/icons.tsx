@@ -37,6 +37,7 @@ export const ExpandIcon = icon(['M8 3H3v5', 'M16 3h5v5', 'M8 21H3v-5', 'M16 21h5
 export const CloseIcon = icon(['M18 6 6 18', 'm6 6 12 12']);
 export const SoundIcon = icon(['M11 5 6 9H2v6h4l5 4Z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14']);
 export const MuteIcon = icon(['M11 5 6 9H2v6h4l5 4Z', 'm22 9-6 6', 'm16 9 6 6']);
+export const SubtitlesIcon = icon(['M3 6.5A1.5 1.5 0 0 1 4.5 5h15A1.5 1.5 0 0 1 21 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5Z', 'M7 15h4', 'M14 15h3', 'M7 11.5h10']);
 export const ZoomOutIcon = icon(['M4 14h6v6', 'M20 10h-6V4', 'm14 10 7-7', 'm3 21 7-7']);
 export const ArrowLeftIcon = icon(['M19 12H5', 'm12 19-7-7 7-7']);
 export const ArrowRightIcon = icon(['M5 12h14', 'm12 5 7 7-7 7']);

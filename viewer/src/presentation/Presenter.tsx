@@ -1,5 +1,6 @@
 // Full-screen presentation of the current scene: a slide per component whose steps are revealed one per →. The slides
-// back a speaker: they show titles, diagrams and values, and leave the paragraphs (prose, narration, notes) to the page. Slides move in
+// show titles, diagrams and values, and leave the paragraphs (prose, notes) to the page; the narration of the part on
+// screen shows as a subtitle under the slide, which a speaker turns off with S. Slides move in
 // the direction of travel, and each chapter opens with a yellow wipe onto a night-blue card. Advances only when the
 // presenter asks.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -8,7 +9,7 @@ import type { ChapterBlock, LinkKind, MatrixBlock, ScenePayload } from '../../..
 import { reducedMotion } from '../animation/motion';
 import { staggerIn } from '../animation/reveal';
 import { play, setSound, soundEnabled } from '../animation/sound';
-import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon } from '../components/icons';
+import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon, SubtitlesIcon } from '../components/icons';
 import { DiagramFitContext } from '../components/Diagram';
 import { ArchScene, FlowDiagram } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
@@ -41,6 +42,7 @@ import { ProgressBar } from './ProgressBar';
 import { SlideProse } from './SlideProse';
 import { InlineMarkdown } from '../components/Prose';
 import { buildSlides, keyAction, move, type Move, type Position, type Segment, type Slide } from './slides';
+import { rememberSubtitles, subtitleOf, subtitlesRemembered } from './subtitles';
 
 /** A diagram never gets smaller than this to make a slide fit; past it, the slide scrolls. */
 const MIN_FIT = 180;
@@ -144,6 +146,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const [at, setAt] = useState<Position>({ slide: 0, part: 0 });
   const [fullscreen, setFullscreen] = useState(false);
   const [sound, setSoundState] = useState(soundEnabled);
+  const [subtitles, setSubtitles] = useState(subtitlesRemembered);
   const root = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLElement>(null);
   const wipe = useRef<HTMLDivElement>(null);
@@ -154,6 +157,10 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   useFitToStage(stage, at.slide);
   const night = slide?.kind === 'chapter';
   const theme = useMemo(() => themeAt(scene.blocks, slide?.block ?? 0), [scene.blocks, slide?.block]);
+  const block = slide ? scene.blocks[slide.block] : undefined;
+  // The band keeps its height for the whole slide when any part of it speaks, so the diagram does not jump.
+  const speaks = useMemo(() => Array.from({ length: slide?.parts ?? 0 }, (_, i) => subtitleOf(block, i)).some(Boolean), [block, slide?.parts]);
+  const subtitle = subtitles ? subtitleOf(block, at.part) : undefined;
 
   // The parts that were just revealed play; the ones just taken back rewind.
   const shown = useRef<Position | undefined>(undefined);
@@ -196,6 +203,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
     if (document.fullscreenElement) void document.exitFullscreen();
     onExit();
   }, [onExit]);
+  const toggleSubtitles = useCallback(() => {
+    setSubtitles((on) => {
+      rememberSubtitles(!on);
+      return !on;
+    });
+  }, []);
   const toggleSound = useCallback(() => {
     const on = !soundEnabled();
     setSound(on);
@@ -224,13 +237,14 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       event.preventDefault();
       if (action === 'fullscreen') toggleFullscreen();
       else if (action === 'sound') toggleSound();
+      else if (action === 'subtitles') toggleSubtitles();
       else if (action === 'exit') {
         if (!document.fullscreenElement) exit();
       } else go(action);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, toggleFullscreen, toggleSound, exit]);
+  }, [go, toggleFullscreen, toggleSound, toggleSubtitles, exit]);
 
   const label = useCallback(
     (segment: Segment): string => {
@@ -261,9 +275,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
         </span>
         <span className="flex-1 sm:hidden" aria-hidden="true" />
         <span className="ml-auto hidden font-semibold text-muted-foreground lg:inline">
-          ← → to move · Shift+→ next slide · F full screen · M sound · Esc to leave
+          ← → to move · Shift+→ next slide · S subtitles · F full screen · M sound · Esc to leave
         </span>
-        <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · F · M · Esc</span>
+        <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · S · F · M · Esc</span>
+        <Button variant="ghost" size="icon-sm" onClick={toggleSubtitles} aria-label="Subtitles" aria-pressed={subtitles} title={subtitles ? 'Subtitles on (S)' : 'Subtitles off (S)'}>
+          <SubtitlesIcon size={16} className={subtitles ? undefined : 'opacity-50'} />
+        </Button>
         <Button variant="ghost" size="icon-sm" onClick={toggleSound} aria-label="Sound" aria-pressed={sound} title={sound ? 'Sound on (M)' : 'Sound off (M)'}>
           {sound ? <SoundIcon size={16} /> : <MuteIcon size={16} />}
         </Button>
@@ -288,6 +305,15 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
           </DiagramFitContext.Provider>
         </div>
       </main>
+      {subtitles && speaks && !night && (
+        <div className="presenter-subtitle relative z-[1] flex shrink-0 justify-center px-6 pb-3" aria-live="polite">
+          {subtitle && (
+            <p key={`${at.slide}-${at.part}`} className="subtitle-line">
+              <InlineMarkdown text={subtitle} />
+            </p>
+          )}
+        </div>
+      )}
       <footer className="presenter-bar presenter-footer relative z-10 flex items-center gap-4 border-t border-border-soft bg-card px-6 py-3">
         <Button size="sm" onClick={() => go('prev')} disabled={at.slide === 0 && at.part === 0}>
           <ArrowLeftIcon size={16} />

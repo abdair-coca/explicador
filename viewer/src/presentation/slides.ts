@@ -147,7 +147,7 @@ export function segmentFill(segment: Segment, slides: readonly Slide[], at: Posi
   return (at.slide - segment.first + (at.part + 1) / parts) / segment.count;
 }
 
-export type Key = 'next' | 'prev' | 'skip' | 'first' | 'last' | 'exit' | 'fullscreen' | 'sound';
+export type Key = 'next' | 'prev' | 'skip' | 'first' | 'last' | 'exit' | 'fullscreen' | 'sound' | 'subtitles';
 
 /** Keyboard map of the presenter; anything else is ignored. Shift with a forward key skips the remaining parts. */
 export function keyAction(key: string, shift = false): Key | undefined {
@@ -176,6 +176,9 @@ export function keyAction(key: string, shift = false): Key | undefined {
     case 'm':
     case 'M':
       return 'sound';
+    case 's':
+    case 'S':
+      return 'subtitles';
     default:
       return undefined;
   }

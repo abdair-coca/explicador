@@ -71,6 +71,32 @@ export function calcModel(block: CalcBlock): CalcModel {
   return model;
 }
 
+/** What step `index` says: the part it adds, the score, the probability or the decision. */
+export function calcNarration(block: CalcBlock, model: CalcModel, index: number): { title: string; text?: string | undefined } {
+  const parts = model.rows.length;
+  const row = model.rows[index];
+  if (row) {
+    return {
+      title: `${row.label}: ${row.text} → ${row.after.toFixed(model.decimals)}`,
+      text: row.note ?? (index === 0 ? 'The calculation starts here.' : row.value >= 0 ? 'It pushes the score up.' : 'It pushes the score down.'),
+    };
+  }
+  const logistic = model.logistic;
+  if (index === parts) return { title: `Score = ${model.totalText}`, text: model.roundingNote ?? 'The sum of every part.' };
+  if (!logistic) return { title: '' };
+  if (index === parts + 1) {
+    return {
+      title: `sigmoid(${model.totalText}) = ${logistic.probabilityText}`,
+      text: `The sigmoid squeezes any score into a probability between 0 and 1: here, a ${logistic.probabilityText} chance of "${logistic.classes[1]}".`,
+    };
+  }
+  const name = logistic.classes[logistic.decided];
+  return {
+    title: `${logistic.probabilityText} ${logistic.decided === 1 ? '≥' : '<'} ${logistic.threshold} → ${name}`,
+    text: `The model answers "${name}" because the probability is ${logistic.decided === 1 ? 'at or above' : 'below'} the threshold ${logistic.threshold}.`,
+  };
+}
+
 export interface WaterfallBar {
   label: string;
   full: string;
