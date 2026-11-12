@@ -363,7 +363,14 @@ Parts, one commit each:
   - It applies to lessons, to plain diagrams (`<arch>`, `<flow>`, `<data>`, `<state>`) and to exports. Decoration never sits behind text at more than a faint contrast, and it is still under reduced motion.
   - Skill: pick the theme from what the code is about; override per chapter only when the subject changes.
   - Criterion: parser tests (valid, unknown name, twice, late); each theme checked in Chrome on the page and in Present mode; contrast of text over motifs measured.
-- [ ] **F16c. `<plot>`: a function drawn on its axes.**
+- [x] **F16c. `<plot>`: a function drawn on its axes.**
+  - Done 2026-11-12.
+    - The functions and the domain live in `server/src/parser/plotMath.ts`, shared with the viewer like the math reader. `sigmoid`, `tanh`, `relu` and `log` take no parameters; `linear` takes `slope` and `intercept`, `quadratic` `a`, `b`, `c`, `exp` `rate`, `gaussian` `mean` and `std`.
+    - Several curves each need a label. A mark names its curve by label and must fall inside the plot; the parser says the domain when it does not.
+    - The travelling point is not MotionPath: its x is animated and its place computed from the function at every frame, so it is exactly on the curve and its reading is the real value.
+    - Not done: the sigmoid inside `<calc kind="logistic">` keeps its own drawing.
+    - On a phone the plot keeps a width of 30rem and scrolls sideways.
+  - Checked in a separate headless Chrome: the page with its notes, Present mode (curves drawing, the point in flight with its reading, guides and labels, a rewind) at 1440 and 390 px, with a function and with two curves of printed points.
   - `<plot title x? y? ref?>` with 1–4 `<curve>` and 0–8 `<mark>`.
   - `<curve fn label? />` with `fn` from a closed list (`sigmoid`, `tanh`, `relu`, `linear`, `quadratic`, `exp`, `log`, `gaussian`) and its parameters as attributes (`slope`, `intercept`, `mean`, `std`…), or `<curve points="x,y x,y …" />` for values the notebook printed (a loss per epoch).
   - `<mark x label>narration</mark>`: a real input. The viewer computes `y` on the curve.
@@ -491,4 +498,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | in progress (plan approved 2026-11-12); F16a and F16b done |
+| F16 | in progress (plan approved 2026-11-12); F16a, F16b and F16c done |

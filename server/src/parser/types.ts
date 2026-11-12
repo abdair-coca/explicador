@@ -451,8 +451,46 @@ export interface ConceptBlock {
   ref?: Ref;
 }
 
+export const curveFns = ['sigmoid', 'tanh', 'relu', 'linear', 'quadratic', 'exp', 'log', 'gaussian'] as const;
+export type CurveFn = (typeof curveFns)[number];
+
+/** A curve of a plot: a function from the closed list with its parameters, or points the notebook printed. */
+export interface PlotCurve {
+  label?: string;
+  fn?: CurveFn;
+  params?: Record<string, number>;
+  /** Left to right; the viewer joins them with straight lines. */
+  points?: [number, number][];
+}
+
+/** A real input marked on a curve; the viewer computes its height. */
+export interface PlotMark {
+  /** As the notebook prints it. */
+  x: string;
+  label: string;
+  /** Index of the curve it sits on; the first when absent. */
+  curve?: number;
+  narration?: string;
+}
+
+/** Functions drawn on their axes, with real inputs marked on them. */
+export interface PlotBlock {
+  type: 'plot';
+  id: string;
+  title: string;
+  /** Axis labels. */
+  x?: string;
+  y?: string;
+  /** The stretch of x shown; each function has a default. */
+  from?: number;
+  to?: number;
+  curves: PlotCurve[];
+  marks: PlotMark[];
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

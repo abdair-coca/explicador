@@ -41,6 +41,19 @@ const effects: Record<string, Effect> = {
     const atoms = [...element.querySelectorAll<HTMLElement>('.katex-html > span > span')].filter((atom) => atom.getBoundingClientRect().width > 0);
     if (atoms.length > 0) timeline.from(atoms, { autoAlpha: 0, y: '0.35em', scale: 0.5, duration: dur.base, ease: ease.pop, stagger: staggerOf(atoms.length, stagger.base) }, '<0.08');
   },
+  /** A plot: the grid fades in, the axes draw from the origin and each curve is traced. */
+  plot: (element, timeline) => {
+    timeline.from(element.querySelectorAll('.plot-grid, .plot-tick, .plot-label'), { autoAlpha: 0, duration: dur.base, ease: ease.out, stagger: stagger.tight }, 0);
+    timeline.from(element.querySelectorAll('.plot-draw'), { drawSVG: 0, duration: dur.slow, ease: ease.draw, stagger: stagger.loose }, 0.1);
+    timeline.from(element.querySelectorAll('.plot-curve'), { drawSVG: 0, duration: dur.draw, ease: ease.draw, stagger: stagger.loose }, 0.45);
+  },
+  /** A mark on a plot: once the travelling point arrives, its guides draw, its dot lands and its label rises. */
+  mark: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, dur.travel - 0.1);
+    timeline.from(element.querySelectorAll('.plot-guide'), { drawSVG: 0, duration: dur.base, ease: ease.draw, stagger: stagger.base }, dur.travel - 0.1);
+    timeline.from(element.querySelector('.plot-dot'), { scale: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.spring }, dur.travel - 0.1);
+    timeline.from(element.querySelector('.plot-tag'), { autoAlpha: 0, y: '+=10', duration: dur.base, ease: ease.out }, dur.travel + 0.05);
+  },
   /** A chapter card: the number drops in, the rule draws, the title rises word by word and the goal follows. */
   chapter: (element, timeline) => {
     const pick = (selector: string): HTMLElement | null => element.querySelector<HTMLElement>(selector);
@@ -81,7 +94,7 @@ function build(element: HTMLElement): Running {
   const cleanup = (): void => {
     revert?.();
     // Everything the timeline touched goes back to what the stylesheet says.
-    gsap.set([element, ...element.querySelectorAll('*')], { clearProps: 'opacity,visibility,transform,translate,rotate,scale' });
+    gsap.set([element, ...element.querySelectorAll('*')], { clearProps: 'opacity,visibility,transform,translate,rotate,scale,strokeDasharray,strokeDashoffset' });
   };
   const entry = { timeline, cleanup };
   running.set(element, entry);

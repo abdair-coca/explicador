@@ -4,6 +4,7 @@ import { CalcScene } from '../lesson/Calc';
 import { ChartScene } from '../lesson/Chart';
 import { ConceptView } from '../lesson/Concept';
 import { MatrixScene } from '../lesson/Matrix';
+import { PlotScene } from '../lesson/Plot';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
 import { JourneyScene } from '../lesson/Journey';
@@ -47,6 +48,8 @@ export function BlockView({ block }: { block: Block }) {
       return <ThresholdScene block={block} />;
     case 'concept':
       return <ConceptView block={block} />;
+    case 'plot':
+      return <PlotScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
     // The theme dresses the page and the slides; it draws nothing in the flow.

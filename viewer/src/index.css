@@ -595,7 +595,7 @@ body {
 @keyframes term-in { from { opacity: 0; transform: scale(0.72); } }
 /* The flash: yellow covers the whole word, then settles as a marker stroke under it. */
 @keyframes term-flash { 0% { background-size: 0% 100%; background-position: 0 50%; } 55% { background-size: 100% 100%; background-position: 0 50%; } 100% { background-size: 100% 0.34em; background-position: 0 88%; } }
-.concept-slide [data-stage='future'] { visibility: hidden; }
+[data-stage='future'] { visibility: hidden; }
 
 /* Theme decoration (F16b): flat line art in the theme's accent, faint enough to sit behind content. */
 .motif { color: var(--accent, var(--info)); }
@@ -617,3 +617,28 @@ body {
   .motif-night .motif-part-0 { top: 4.5rem; right: 0.75rem; width: 46vw; }
   .motif-night .motif-part-1 { display: none; }
 }
+
+/* Plots (F16c): a function on its axes with real inputs marked on it. */
+/* On a phone the plot keeps a readable size and scrolls sideways. */
+.plot { overflow-x: auto; }
+.plot-svg { display: block; width: 100%; min-width: 30rem; height: auto; max-height: min(58vh, 30rem); overflow: visible; }
+.plot-grid { stroke: var(--grid); stroke-width: 1; }
+.plot-axis { fill: none; stroke: var(--foreground); stroke-width: 2; stroke-linecap: round; }
+.plot-tick { fill: var(--muted-foreground); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.plot-label { fill: var(--foreground); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.plot-curve { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.plot-guide { fill: none; stroke: var(--foreground); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 0.55; }
+.plot-dot { fill: var(--primary); stroke: var(--foreground); stroke-width: 3; }
+.plot-tag text { font-size: 14px; paint-order: stroke; stroke: var(--card); stroke-width: 5px; stroke-linejoin: round; }
+.plot-tag-label { font-weight: 900; fill: var(--foreground); }
+.plot-tag-value { font-weight: 700; fill: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.presenter .plot-mark:not(.current) { opacity: 0.5; transition: opacity var(--dur-slow) var(--ease-out); }
+.plot-runner-ring { fill: var(--primary); opacity: 0.35; }
+.plot-runner-dot { fill: var(--foreground); }
+.plot-runner-reading { font-size: 15px; font-weight: 900; fill: var(--foreground); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--card); stroke-width: 5px; }
+.plot-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: 0.6rem; font-size: 0.9rem; font-weight: 700; }
+.plot-legend li { display: inline-flex; align-items: center; gap: 0.45rem; }
+.plot-swatch { width: 1.1rem; height: 0.3rem; border-radius: 9999px; }
+.plot-notes { margin-top: 0.9rem; padding-left: 1.3rem; list-style: decimal; display: grid; gap: 0.35rem; font-size: 0.95rem; line-height: 1.5; color: #374151; }
+.plot-notes strong { font-weight: 800; color: var(--foreground); }
+.plot-note { margin-top: 1rem; font-size: clamp(1.15rem, 2vw, 1.6rem); font-weight: 700; line-height: 1.35; }

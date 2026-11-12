@@ -1,7 +1,7 @@
 // Presentation order: one slide per block, in document order. A block's steps are the parts of its slide: the parts
 // of a prose block (`prose.ts`), <flow> steps, <walk> steps of a <state>, stats cards, journey stages, trace values,
-// calc steps, a chart then its highlight, the whole matrix then each of its highlights, a quiz then its answer, and a
-// concept's term then each of its pieces.
+// calc steps, a chart then its highlight, the whole matrix then each of its highlights, a quiz then its answer, a concept's
+// term then each of its pieces, and a plot's curves then each of its marks.
 // Each → reveals the next part; with none left, → opens the next slide.
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calcMath.ts';
@@ -42,6 +42,8 @@ function partsOf(block: Block): number {
       return 1 + matrixFocuses(block).length;
     case 'concept':
       return conceptParts(block);
+    case 'plot':
+      return 1 + block.marks.length;
     default:
       return 1;
   }
