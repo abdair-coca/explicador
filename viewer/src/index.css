@@ -812,3 +812,51 @@ body {
 .trace-large .trace-vector-swatch { width: 4.4rem; height: 3.2rem; }
 .trace-large .trace-vector-number { font-size: 1.05rem; }
 .trace-large .trace-vector-bracket { font-size: 3.2rem; line-height: 3.2rem; }
+
+/* Vector spaces (F20c): items as dots, a star for the query, faint zones for the index's clusters, arrows from the
+   origin with the angle between them, and the k nearest ringed and ranked. */
+.space-origin { fill: var(--foreground); }
+.space-zone { fill: var(--tint); fill-opacity: 0.08; stroke: var(--tint); stroke-opacity: 0.45; stroke-width: 2; stroke-dasharray: 6 6; transition: fill-opacity var(--dur-slow) var(--ease-out), stroke-opacity var(--dur-slow) var(--ease-out); }
+.space-centroid { stroke: var(--tint); stroke-width: 3.5; stroke-linecap: round; fill: none; }
+.space-cluster-label { font-size: 14px; font-weight: 900; fill: var(--tint); paint-order: stroke; stroke: var(--card); stroke-width: 5px; stroke-linejoin: round; }
+.space-svg.probing .space-cluster:not(.probed) { opacity: 0.35; }
+.space-svg.probing .space-cluster.probed .space-zone { fill-opacity: 0.16; stroke-opacity: 0.9; }
+.space-cluster { transition: opacity var(--dur-slow) var(--ease-out); }
+.space-dot { stroke: var(--card); stroke-width: 2; }
+.space-item { transition: opacity var(--dur-slow) var(--ease-out); }
+.space-svg.probing .space-item.outside { opacity: 0.22; }
+.space-item-label { font-size: 13px; font-weight: 700; fill: var(--foreground); paint-order: stroke; stroke: var(--card); stroke-width: 5px; stroke-linejoin: round; }
+.space-item.result .space-item-label { font-weight: 900; }
+.space-query { fill: var(--primary); stroke: var(--foreground); stroke-width: 1.8; stroke-linejoin: round; }
+.space-query-ring { fill: var(--primary); fill-opacity: 0.28; stroke: var(--primary-dark); stroke-width: 2; }
+.space-query-label { font-size: 14px; font-weight: 900; fill: var(--foreground); paint-order: stroke; stroke: var(--card); stroke-width: 6px; stroke-linejoin: round; }
+.space-probe { stroke: var(--foreground); stroke-width: 2.5; stroke-dasharray: 2 7; stroke-linecap: round; fill: none; }
+.space-arrow { stroke: var(--muted-foreground); stroke-width: 2.5; stroke-linecap: round; }
+.space-arrow.query { stroke: var(--primary-dark); stroke-width: 3.5; }
+.space-head { fill: context-stroke; }
+.space-arc { fill: none; stroke: var(--foreground); stroke-width: 3; stroke-linecap: round; }
+.space-arc-label { font-size: 15px; font-weight: 900; fill: var(--foreground); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--card); stroke-width: 6px; stroke-linejoin: round; }
+.space-angle { transition: opacity var(--dur-slow) var(--ease-out); }
+.space-angle.resting { opacity: 0; }
+.space-score-text { font-size: 13px; font-weight: 900; fill: var(--diverge-pos); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--card); stroke-width: 5px; stroke-linejoin: round; }
+.space-ring { fill: none; stroke: var(--primary-dark); stroke-width: 3.5; }
+.space-rank-number { font-size: 13px; font-weight: 900; fill: var(--foreground); paint-order: stroke; stroke: var(--primary); stroke-width: 7px; stroke-linejoin: round; }
+.space-facts { display: grid; gap: 0.3rem; margin-top: 0.4rem; }
+.space-fact { font-size: 1rem; font-weight: 600; line-height: 1.5; }
+.space-fact strong { font-weight: 900; }
+.space-note { font-size: 0.85rem; font-weight: 600; color: var(--muted-foreground); }
+.space-rank { display: grid; gap: 0.45rem; margin-top: 0.8rem; }
+.space-rank-row { display: grid; grid-template-columns: 2rem minmax(0, 16rem) minmax(4rem, 1fr) 4.5rem; align-items: center; gap: 0.7rem; }
+.space-rank-place { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 9999px; background: var(--primary); font-weight: 900; box-shadow: 0 2px 0 var(--primary-dark); }
+.space-rank-label { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.space-rank-track { position: relative; height: 0.9rem; border-radius: 9999px; background: var(--muted); overflow: hidden; }
+.space-rank-bar { position: absolute; inset: 0 auto 0 0; width: calc(var(--share) * 100%); border-radius: 9999px; background: var(--diverge-pos); }
+.space-rank-score { font-family: var(--font-mono); font-weight: 800; text-align: right; }
+.presenter .space-fact { font-size: clamp(1.05rem, 1.7vw, 1.35rem); }
+.presenter .space-rank-row { font-size: 1.15rem; }
+.space { display: grid; gap: 0.5rem 1.5rem; }
+@media (min-width: 1024px) { .space { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); align-items: center; } }
+.space .space-rank-row { grid-template-columns: 2rem minmax(0, 1fr) minmax(3rem, 5rem) 3.8rem; }
+.space-svg { overflow: visible; }
+.space-question { display: flex; align-items: center; gap: 0.5rem; }
+.space-question svg { flex: none; }

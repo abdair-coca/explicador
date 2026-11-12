@@ -121,6 +121,40 @@ const effects: Record<string, Effect> = {
     const note = element.querySelector('.derive-note');
     if (note) timeline.from(note, { autoAlpha: 0, y: 10, duration: dur.base, ease: ease.out }, '>-0.1');
   },
+  /** The items of a vector space: each drops onto its place with a little weight. */
+  'space-items': (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const items = element.querySelectorAll('.space-item');
+    timeline.from(items, { autoAlpha: 0, y: -24, duration: dur.slow, ease: ease.spring, stagger: staggerOf(items.length, stagger.tight) }, 0.15);
+  },
+  /** The query: it falls onto its place, then a ring pulses out from it. */
+  'space-query': (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelector('.space-query'), { y: -90, scale: 1.6, transformOrigin: '50% 50%', duration: dur.slow, ease: ease.spring }, 0);
+    timeline.from(element.querySelector('.space-query-ring'), { scale: 0.2, autoAlpha: 0, transformOrigin: '50% 50%', duration: dur.slow, ease: ease.out }, dur.base);
+  },
+  /** The index sends the query to its cluster: the line is drawn from the query to the centroid. */
+  'space-probe': (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelectorAll('.space-probe'), { drawSVG: 0, duration: dur.slow, ease: ease.draw }, 0);
+  },
+  /** A comparison: the arrows grow from the origin, then the angle between them opens and its value pops. */
+  'space-angle': (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelectorAll('.space-arrow'), { drawSVG: 0, duration: dur.slow, ease: ease.draw, stagger: stagger.base }, 0);
+    const arc = element.querySelector('.space-arc');
+    if (arc) timeline.from(arc, { drawSVG: 0, duration: dur.slow, ease: ease.draw }, dur.base);
+    const label = element.querySelector('.space-arc-label');
+    if (label) timeline.from(label, { autoAlpha: 0, scale: 0.4, transformOrigin: '50% 50%', duration: dur.base, ease: ease.pop }, dur.slow);
+  },
+  /** A ranking: the rows rise in order and their bars grow. */
+  rank: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const rows = element.querySelectorAll('.space-rank-row');
+    timeline.from(rows, { autoAlpha: 0, x: -16, duration: dur.base, ease: ease.out, stagger: staggerOf(rows.length, stagger.base) }, 0);
+    const bars = element.querySelectorAll('.space-rank-bar');
+    timeline.from(bars, { scaleX: 0, transformOrigin: '0% 50%', duration: dur.slow, ease: ease.out, stagger: staggerOf(bars.length, stagger.base) }, 0.15);
+  },
   /** A chapter card: the number drops in, the rule draws, the title rises word by word and the goal follows. */
   chapter: (element, timeline) => {
     const pick = (selector: string): HTMLElement | null => element.querySelector<HTMLElement>(selector);

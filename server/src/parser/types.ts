@@ -566,8 +566,54 @@ export interface DeriveBlock {
   ref?: Ref;
 }
 
+/** One item stored in a vector space (a chunk, a document, a product), at its place on the two axes shown. */
+export interface SpaceItem {
+  id: string;
+  label: string;
+  /** As written. With a real embedding of many dimensions, its 2-D projection. */
+  x: string;
+  y: string;
+  /** The index's cluster it belongs to. */
+  cluster?: string;
+  /** Its real similarity to the query, as the system printed it; absent when the viewer computes the cosine. */
+  score?: string;
+  /** Said when the query is compared with it. */
+  narration?: string;
+}
+
+/** A cluster of the index (its centroid): the query is compared only with the items of the cluster it falls in. */
+export interface SpaceCluster {
+  id: string;
+  label: string;
+  x: string;
+  y: string;
+  /** Said when the query is sent to this cluster. */
+  narration?: string;
+}
+
+/**
+ * A vector space: stored items as points, a query that lands among them, the index's clusters if there are any, and
+ * the k nearest items by cosine similarity. The viewer draws the angles and ranks the items; it computes the cosine
+ * from the coordinates unless the items carry their real `score`.
+ */
+export interface SpaceBlock {
+  type: 'space';
+  id: string;
+  title: string;
+  x?: string;
+  y?: string;
+  /** How many nearest items the search returns. */
+  k: number;
+  /** The real number of dimensions when the axes are a 2-D projection. */
+  dims?: number;
+  clusters: SpaceCluster[];
+  items: SpaceItem[];
+  query: { label: string; x: string; y: string; cluster?: string; narration?: string };
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

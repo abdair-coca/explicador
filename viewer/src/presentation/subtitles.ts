@@ -3,6 +3,7 @@
 // explanation one short line at a time; a speaker turns it off with S. Only text the scene wrote: nothing generated.
 import type { Block } from '../../../server/src/scene.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
+import { spaceModel } from '../lesson/spaceGeometry.ts';
 
 const KEY = 'explicador.subtitles';
 
@@ -60,6 +61,14 @@ export function subtitleOf(block: Block | undefined, part: number): string | und
       return said(block.lines[part]?.note);
     case 'timeline':
       return said(block.events[part]?.narration);
+    case 'space': {
+      const model = spaceModel(block);
+      const step = model.parts[part];
+      if (step?.kind === 'query') return said(block.query.narration);
+      if (step?.kind === 'index') return said(block.clusters[model.probed]?.narration);
+      if (step?.kind === 'compare' && step.items.length === 1) return said(block.items[step.items[0] ?? -1]?.narration);
+      return undefined;
+    }
     default:
       return undefined;
   }

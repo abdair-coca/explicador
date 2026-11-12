@@ -4,7 +4,7 @@
 import type { Element } from './reader.ts';
 import { blockHead, bodyText, catalog, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
 import { curveParams, curveValue, plotDomain } from './plotMath.ts';
-import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot, compareWinners, type CompareBlock, type TimelineBlock } from './types.ts';
+import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot, type SpaceBlock, type SpaceCluster, type SpaceItem, compareWinners, type CompareBlock, type TimelineBlock } from './types.ts';
 
 const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
 
@@ -231,4 +231,117 @@ export function buildTimeline(element: Element, ordinal: number, report: Report)
   if (events.length < 2) report(element.offset, '<timeline> needs at least two <event>s');
   if (events.length > limits.timelineEvents) report(element.offset, `<timeline> has more than ${limits.timelineEvents} events`);
   return { type: 'timeline', id, title, events, ...readRef(a.ref, element, report) };
+}
+
+/** The optional narration in a tag's body, checked like any narration. */
+function optionalNarration(child: Element, report: Report): { narration?: string } {
+  const narration = child.selfClosing ? '' : bodyText(child, report);
+  if (narration.length > limits.narrationLength) report(child.offset, `<${child.name}> narration is longer than ${limits.narrationLength} characters`);
+  checkMath(narration, child.offset, report);
+  return narration ? { narration } : {};
+}
+
+/** Both coordinates of a point as written, or undefined (reported) when one is not a number. */
+function readXY(a: Record<string, string | undefined>, element: Element, report: Report): { x: string; y: string } | undefined {
+  const x = readNumber(a.x, 'x', element, report);
+  const y = readNumber(a.y, 'y', element, report);
+  if (x === undefined || y === undefined || a.x === undefined || a.y === undefined) return undefined;
+  return { x: a.x.trim(), y: a.y.trim() };
+}
+
+const atOrigin = (point: { x: string; y: string }): boolean => Number(point.x) === 0 && Number(point.y) === 0;
+
+export function buildSpace(element: Element, ordinal: number, report: Report): SpaceBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('space'), ordinal, report);
+  const x = optionalText(a.x, 'x', limits.axisLength, element, report);
+  const y = optionalText(a.y, 'y', limits.axisLength, element, report);
+  const children = childElements(element, spec('space'), report);
+
+  const clusters: SpaceCluster[] = [];
+  for (const child of children.filter((item) => item.name === 'cluster')) {
+    const c = readAttrs(child, spec('cluster'), report);
+    const xy = readXY(c, child, report);
+    if (c.id === undefined || c.label === undefined || !xy) continue;
+    const clusterId = c.id.trim();
+    if (clusters.some((cluster) => cluster.id === clusterId)) report(child.offset, `Duplicate cluster id "${clusterId}"`);
+    clusters.push({ id: clusterId, label: checkText(c.label, 'label', limits.rowLabelLength, child, report), ...xy, ...optionalNarration(child, report) });
+  }
+  if (clusters.length === 1) report(element.offset, 'An index splits the space into at least two <cluster>s; leave them out for a search that compares every item');
+  if (clusters.length > limits.spaceClusters) report(element.offset, `<space> has more than ${limits.spaceClusters} clusters`);
+  const clusterIds = new Set(clusters.map((cluster) => cluster.id));
+  const checkCluster = (value: string | undefined, child: Element): { cluster?: string } => {
+    if (value === undefined) {
+      if (clusters.length > 0 && child.name === 'item') report(child.offset, `With <cluster>s, every <item> names its cluster: cluster="${clusters[0]?.id}"`);
+      return {};
+    }
+    const name = value.trim();
+    if (!clusterIds.has(name)) {
+      report(offsetOf(child, 'cluster'), clusters.length === 0 ? `"cluster" needs <cluster>s in the <space>` : `Unknown cluster "${name}"; the clusters are ${[...clusterIds].join(', ')}`);
+      return {};
+    }
+    return { cluster: name };
+  };
+
+  const items: SpaceItem[] = [];
+  for (const child of children.filter((item) => item.name === 'item')) {
+    const p = readAttrs(child, spec('item'), report);
+    const xy = readXY(p, child, report);
+    const score = readNumber(p.score, 'score', child, report);
+    if (p.id === undefined || p.label === undefined || !xy) continue;
+    const itemId = p.id.trim();
+    if (items.some((item) => item.id === itemId)) report(child.offset, `Duplicate item id "${itemId}"`);
+    items.push({
+      id: itemId,
+      label: checkText(p.label, 'label', limits.rowLabelLength, child, report),
+      ...xy,
+      ...checkCluster(p.cluster, child),
+      ...(score !== undefined && p.score !== undefined ? { score: p.score.trim() } : {}),
+      ...optionalNarration(child, report),
+    });
+  }
+  if (items.length < 2) report(element.offset, '<space> needs at least two <item>s');
+  if (items.length > limits.spaceItems) report(element.offset, `<space> has more than ${limits.spaceItems} items; show a sample and say so in the prose`);
+  const scored = items.filter((item) => item.score !== undefined).length;
+  if (scored > 0 && scored < items.length) report(element.offset, 'Give every <item> its real "score", or none (the viewer then computes the cosine from x and y)');
+  if (scored === 0) {
+    for (const item of items) if (atOrigin(item)) report(element.offset, `Item "${item.id}" is at 0,0: it has no direction, so it has no cosine`);
+  }
+
+  const queries = children.filter((item) => item.name === 'query');
+  if (queries.length !== 1) report(queries[1]?.offset ?? element.offset, '<space> needs exactly one <query>: <query label="your question" x="0.7" y="0.4" />');
+  let query: SpaceBlock['query'] = { label: '', x: '1', y: '0' };
+  const first = queries[0];
+  if (first) {
+    const q = readAttrs(first, spec('query'), report);
+    const xy = readXY(q, first, report);
+    if (q.label !== undefined && xy) {
+      query = { label: checkText(q.label, 'label', limits.rowLabelLength, first, report), ...xy, ...checkCluster(q.cluster, first), ...optionalNarration(first, report) };
+      if (scored === 0 && atOrigin(xy)) report(first.offset, 'The query is at 0,0: it has no direction, so it has no cosine');
+    }
+  }
+
+  let k = 3;
+  if (a.k !== undefined) {
+    k = Number(a.k);
+    if (!Number.isInteger(k) || k < 1 || k > limits.spaceK) report(offsetOf(element, 'k'), `"k" is how many nearest items the search returns, a whole number from 1 to ${limits.spaceK}`);
+  }
+  if (Number.isInteger(k) && k >= 1 && items.length >= 2 && k > items.length) report(offsetOf(element, 'k'), `"k" is ${k} but the space holds ${items.length} items`);
+  let dims: number | undefined;
+  if (a.dims !== undefined) {
+    dims = Number(a.dims);
+    if (!Number.isInteger(dims) || dims < 2 || dims > limits.vectorDims) report(offsetOf(element, 'dims'), `"dims" is the real number of dimensions, a whole number from 2 to ${limits.vectorDims}`);
+  }
+  return {
+    type: 'space',
+    id,
+    title,
+    ...(x ? { x } : {}),
+    ...(y ? { y } : {}),
+    k,
+    ...(dims !== undefined && dims > 2 ? { dims } : {}),
+    clusters,
+    items,
+    query,
+    ...readRef(a.ref, element, report),
+  };
 }

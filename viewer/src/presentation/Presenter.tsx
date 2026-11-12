@@ -22,6 +22,7 @@ import { ConceptView } from '../lesson/Concept';
 import { DeriveView } from '../lesson/Derive';
 import { PlotView } from '../lesson/Plot';
 import { ScatterView } from '../lesson/Scatter';
+import { SpaceView } from '../lesson/Space';
 import { matrixFocuses } from '../lesson/focuses';
 import { JourneyTrack } from '../lesson/Journey';
 import { FocusNote, MatrixGrid } from '../lesson/Matrix';
@@ -493,6 +494,15 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
           <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <ScatterView block={block} shown={part} />
+          </div>
+        </div>
+      );
+    case 'space':
+      return (
+        <div className="mx-auto w-full max-w-6xl space-y-5">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <SpaceView block={block} shown={part} />
           </div>
         </div>
       );
