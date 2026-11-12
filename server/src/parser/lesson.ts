@@ -14,6 +14,7 @@ import {
   optionalText,
   readAbout,
   readAttrs,
+  texProblem,
   readCode,
   readDrill,
   readEnum,
@@ -34,6 +35,7 @@ import {
   type ChapterBlock,
   type ChartBlock,
   type CodeSnippet,
+  type ConceptBlock,
   type ConfusionMetric,
   type DataRow,
   type Drill,
@@ -472,4 +474,60 @@ export function buildThreshold(element: Element, ordinal: number, report: Report
   if (points.length < 2) report(element.offset, '<threshold> needs at least two <point>s: the test inputs with their probability and real class');
   if (points.length > limits.thresholdPoints) report(element.offset, `<threshold> has more than ${limits.thresholdPoints} points`);
   return { type: 'threshold', id, title, classes, at, points, ...readRef(a.ref, element, report) };
+}
+
+/** A tag's body as Markdown: line breaks kept, the common indentation removed. Child tags are reported. */
+function markdownBody(element: Element, report: Report): string {
+  const lines = element.children
+    .map((c) => {
+      if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);
+      return c.kind === 'text' ? c.text : '';
+    })
+    .join('')
+    .replace(/[ \t]+$/gm, '')
+    .split('\n');
+  const indent = Math.min(...lines.filter((line) => line.trim()).map((line) => line.length - line.trimStart().length));
+  return lines
+    .map((line) => line.slice(Number.isFinite(indent) ? indent : 0))
+    .join('\n')
+    .trim();
+}
+
+const conceptPieces = ['define', 'analogy', 'formula', 'example'] as const;
+const conceptLimits = { define: limits.defineLength, analogy: limits.analogyLength, formula: limits.formulaLength, example: limits.exampleLength };
+
+export function buildConcept(element: Element, ordinal: number, report: Report): ConceptBlock {
+  const a = readAttrs(element, spec('concept'), report);
+  if (element.selfClosing) report(element.offset, '<concept> needs a <define>: <concept term="TF-IDF"><define>What it is, in one sentence.</define></concept>');
+  if (a.id !== undefined) checkId(a.id, element, report);
+  const term = a.term === undefined ? '' : checkText(a.term, 'term', limits.termLength, element, report);
+  const pieces: Partial<Record<(typeof conceptPieces)[number], string>> = {};
+  for (const child of childElements(element, spec('concept'), report)) {
+    const name = child.name as (typeof conceptPieces)[number];
+    if (child.attrs.size > 0) readAttrs(child, spec(name), report);
+    if (name in pieces) {
+      report(child.offset, `Only one <${name}> per <concept>`);
+      continue;
+    }
+    const text = name === 'example' ? markdownBody(child, report) : bodyText(child, report);
+    if (!text) report(child.offset, `<${name}> needs its text`);
+    else if (text.length > conceptLimits[name]) report(child.offset, `<${name}> is longer than ${conceptLimits[name]} characters`);
+    if (name === 'formula') {
+      const problem = text ? texProblem(text) : undefined;
+      if (/^\$|\$$/.test(text)) report(child.offset, '<formula> holds the LaTeX alone, without "$": <formula>\\sigma(z) = \\frac{1}{1+e^{-z}}</formula>');
+      else if (problem) report(child.offset, `<formula> is not valid LaTeX: ${problem}`);
+    } else checkMath(text, child.offset, report);
+    pieces[name] = text;
+  }
+  if (!element.selfClosing && pieces.define === undefined) report(element.offset, '<concept> needs a <define>: what the concept is, in one or two sentences');
+  return {
+    type: 'concept',
+    id: a.id ?? `concept-${ordinal}`,
+    term,
+    define: pieces.define ?? '',
+    ...(pieces.analogy ? { analogy: pieces.analogy } : {}),
+    ...(pieces.formula ? { formula: pieces.formula } : {}),
+    ...(pieces.example ? { example: pieces.example } : {}),
+    ...readRef(a.ref, element, report),
+  };
 }

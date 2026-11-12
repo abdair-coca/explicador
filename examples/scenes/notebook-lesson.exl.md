@@ -102,7 +102,13 @@ The notebook uses `ngram_range=(1, 2)`: besides single words, it also counts **p
 
 <chapter id="train" title="Training the model" goal="Know what logistic regression learns and read train against test accuracy." ref="reviews.ipynb:12-13" />
 
-**Logistic regression** gives every column a **weight**. To judge a review, it adds up the weights of the words it contains: if the total leans positive, it answers 1; if it leans negative, 0. It is like a jury where each word votes, and some words have louder voices than others. Training means finding the weights that best match the 18 labelled reviews.
+<concept id="c-logreg" term="Logistic regression" ref="reviews.ipynb:12">
+  <define>A model that gives every column a **weight** and judges a review by adding up the weights of the words it contains.</define>
+  <analogy>A jury where each word votes, and some words have louder voices than others.</analogy>
+  <example>If the total leans positive, the model answers 1; if it leans negative, 0.</example>
+</concept>
+
+Training means finding the weights that best match the 18 labelled reviews.
 
 The notebook trains one model on the word counts and one on TF-IDF, and measures **accuracy** (the share of right answers) on both parts:
 
@@ -171,7 +177,14 @@ Two of the eight are **word pairs with "not"**: "not bad" pushes towards positiv
 
 Chapter 6 showed one mistake: **"worst film year really bad"** was called positive. Now open the model and watch it decide. Cell 19 prints every word and word pair of that review that the model knows, with its weight; "worst" is not among them, because it never appeared in the training reviews.
 
-The model starts from its **intercept** (its score before reading any word) and adds the weight of each feature the review contains, like a jury where each word votes with its own loudness. Then the **sigmoid** squeezes the total into a probability between 0 and 1.
+The model starts from its **intercept** (its score before reading any word) and adds the weight of each feature the review contains, like a jury where each word votes with its own loudness.
+
+<concept id="c-sigmoid" term="Sigmoid" ref="reviews.ipynb:19">
+  <define>The function that squeezes any score $z$ into a probability between 0 and 1.</define>
+  <analogy>A dimmer switch: however hard you push, the light stays between off and fully on.</analogy>
+  <formula>\sigma(z) = \frac{1}{1 + e^{-z}}</formula>
+  <example>A score of exactly 0 gives a probability of one half; any positive score gives more than that.</example>
+</concept>
 
 <calc id="score-one" title="Scoring &quot;worst film year really bad&quot;" kind="logistic" total="0.438" classes="negative|positive" ref="reviews.ipynb:19">
 <part label="intercept" value="-0.075" note="Where every review starts, before any word is read." />

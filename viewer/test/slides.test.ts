@@ -57,6 +57,19 @@ describe('buildSlides with <data> and <state>', () => {
   });
 });
 
+describe('buildSlides with <concept>', () => {
+  it('shows the term alone, then one part per piece the concept has', () => {
+    const concepts: Block[] = [
+      { type: 'concept', id: 'c1', term: 'TF-IDF', define: 'A weight.' },
+      { type: 'concept', id: 'c2', term: 'Sigmoid', define: 'A squash.', analogy: 'A dimmer.', formula: '\\sigma(z)', example: 'z = 0 gives 0.5' },
+    ];
+    assert.deepEqual(
+      buildSlides(concepts).map((slide) => slide.parts),
+      [2, 5],
+    );
+  });
+});
+
 describe('buildSlides parts that build up', () => {
   it('reveals prose part by part, stats card by card, then a chart highlight and a quiz answer', () => {
     const lesson: Block[] = [

@@ -10,6 +10,7 @@ import {
   type ThresholdBlock,
   type ChapterBlock,
   type ChartBlock,
+  type ConceptBlock,
   type JourneyBlock,
   type MatrixBlock,
   type QuizBlock,
@@ -431,6 +432,49 @@ describe('<calc>', () => {
     assert.match(errorsOf(calc(' classes="a|b"', parts))[0] ?? '', /"classes" works only in a <calc kind="logistic">/);
     assert.match(errorsOf(calc(' kind="logistic" threshold="1.5"', parts))[0] ?? '', /between 0 and 1/);
     assert.match(errorsOf(calc(' kind="logistic" classes="a"', parts))[0] ?? '', /names the two classes/);
+  });
+});
+
+describe('<concept>', () => {
+  const concept = (body: string, attrs = '') => `<concept term="Sigmoid"${attrs}>\n${body}\n</concept>`;
+  const define = '<define>Squashes any score into a probability between **0** and **1**.</define>';
+
+  it('reads the term and its pieces, keeping the line breaks of the example', () => {
+    const parsed = parseExl(
+      concept(
+        `  ${define}\n  <analogy>A dimmer: however hard you push, the light stays between off and on.</analogy>\n` +
+          '  <formula>\\sigma(z) = \\frac{1}{1+e^{-z}}</formula>\n  <example>\n    | z | p |\n    |---|---|\n    | 0 | 0.5 |\n  </example>',
+        ' id="sigmoid" ref="nb/p2.ipynb:9"',
+      ),
+    );
+    assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+    assert.deepEqual(parsed.scene.blocks[0], {
+      type: 'concept',
+      id: 'sigmoid',
+      term: 'Sigmoid',
+      define: 'Squashes any score into a probability between **0** and **1**.',
+      analogy: 'A dimmer: however hard you push, the light stays between off and on.',
+      formula: '\\sigma(z) = \\frac{1}{1+e^{-z}}',
+      example: '| z | p |\n|---|---|\n| 0 | 0.5 |',
+      ref: { path: 'nb/p2.ipynb', start: 9 },
+    } satisfies ConceptBlock);
+    assert.deepEqual(parsed.refs, ['nb/p2.ipynb']);
+    const short = parseExl(concept(define));
+    assert.ok(short.ok && (short.scene.blocks[0] as ConceptBlock).id === 'concept-1');
+  });
+
+  it('refuses a missing <define>, an unknown child, a duplicate and a piece that is too long', () => {
+    assert.match(errorsOf(concept('<analogy>A dimmer.</analogy>'))[0] ?? '', /<concept> needs a <define>/);
+    assert.match(errorsOf(concept(`${define}\n<note>x</note>`))[0] ?? '', /<note> is not allowed inside <concept>; use <define>, <analogy>, <formula>, <example>/);
+    assert.match(errorsOf(concept(`${define}\n${define}`))[0] ?? '', /Only one <define> per <concept>/);
+    assert.match(errorsOf(concept(`<define>${'a'.repeat(301)}</define>`))[0] ?? '', /<define> is longer than 300 characters/);
+    assert.match(errorsOf('<concept term="Sigmoid" />')[0] ?? '', /<concept> needs a <define>/);
+  });
+
+  it('refuses a formula that is not LaTeX or that keeps its dollars', () => {
+    assert.match(errorsOf(concept(`${define}\n<formula>\\frac{1}{</formula>`))[0] ?? '', /<formula> is not valid LaTeX/);
+    assert.match(errorsOf(concept(`${define}\n<formula>$x^2$</formula>`))[0] ?? '', /without "\$"/);
+    assert.match(errorsOf(concept('<define>Bad $\\frac{$ here.</define>'))[0] ?? '', /is not valid LaTeX/);
   });
 });
 

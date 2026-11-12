@@ -419,8 +419,23 @@ export interface ThresholdBlock {
   ref?: Ref;
 }
 
+/** A new idea introduced from zero: what it is, an everyday analogy, its formula and a tiny worked example. */
+export interface ConceptBlock {
+  type: 'concept';
+  id: string;
+  term: string;
+  /** One or two sentences (Markdown). */
+  define: string;
+  analogy?: string;
+  /** LaTeX, without `$`. */
+  formula?: string;
+  /** Markdown, line breaks kept (it may hold a small table). */
+  example?: string;
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

@@ -14,6 +14,7 @@ import { Button } from '../components/ui/button';
 import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
 import { CalcView } from '../lesson/Calc';
 import { ChartView } from '../lesson/Chart';
+import { ConceptView } from '../lesson/Concept';
 import { matrixFocuses } from '../lesson/focuses';
 import { JourneyTrack, stageRoute } from '../lesson/Journey';
 import { FocusNote, MatrixGrid } from '../lesson/Matrix';
@@ -442,6 +443,12 @@ function SlideView({ scene, slide, part, chapters }: { scene: ScenePayload; slid
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <ThresholdView block={block} />
           </div>
+        </div>
+      );
+    case 'concept':
+      return (
+        <div className="mx-auto w-full max-w-5xl">
+          <ConceptView block={block} shown={part} />
         </div>
       );
     case 'quiz':

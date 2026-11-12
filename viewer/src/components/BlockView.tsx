@@ -2,6 +2,7 @@
 import type { Block } from '../../../server/src/scene.ts';
 import { CalcScene } from '../lesson/Calc';
 import { ChartScene } from '../lesson/Chart';
+import { ConceptView } from '../lesson/Concept';
 import { MatrixScene } from '../lesson/Matrix';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
@@ -44,6 +45,8 @@ export function BlockView({ block }: { block: Block }) {
       return <CalcScene block={block} />;
     case 'threshold':
       return <ThresholdScene block={block} />;
+    case 'concept':
+      return <ConceptView block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
       return null;

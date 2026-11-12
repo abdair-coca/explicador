@@ -297,7 +297,15 @@ Defaults (taken with the plan):
     - Parser tests: a valid formula and a broken one.
     - Typecheck, lint, test and build pass.
     - Formulas checked in Chrome on the page, in Present mode and in an export opened from disk.
-- [ ] **F15b. Concept cards.** Parser, types, the page card, the Present slide (term hero), slide parts, skill, docs and the example lesson.
+- [x] **F15b. Concept cards.** Parser, types, the page card, the Present slide (term hero), slide parts, skill, docs and the example lesson.
+  - Done 2026-11-12.
+    - `term` holds up to 60 characters. `<example>` keeps its line breaks (common indentation removed), so it can hold a small table; the other pieces are one paragraph.
+    - `<formula>` holds the LaTeX alone; one wrapped in `$` is refused with an example.
+    - A formula wider than its card shrinks to fit (down to 45 %) instead of scrolling.
+    - KaTeX 0.19 names its layout rows `katex-base`, so the atoms are the children of each row of `.katex-html`; they are inline blocks so they can move, which did not change the formula's width (measured).
+    - Earlier pieces of a concept slide do not dim, unlike prose parts: the card is read as a whole.
+    - The example lesson has two concepts: logistic regression (chapter 5) and the sigmoid with its formula (chapter 8).
+  - Checked in a separate headless Chrome at 1440 and 390 px and with reduced motion: the page card, the hero, the term in flight, the pieces one per part, 28 atoms animating, and back to the hero with ←. Not checked: a concept inside an exported file, and a real Claude session writing concepts from the skill.
   - Criterion:
     - Parser tests: valid, missing `<define>`, unknown child, duplicate, too long.
     - Slide-part tests.
@@ -419,5 +427,5 @@ Open points:
 | F12 | done (2026-11-11, unattended), user review and the check with the user's notebook pending |
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
-| F15 | F15a done (2026-11-12); F15b in progress |
+| F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
 | F16 | requested (2026-11-12); choices recorded, detailed plan pending |
