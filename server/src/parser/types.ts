@@ -289,8 +289,11 @@ export interface StatsBlock {
 }
 
 /** One value of a trace: the input, or the result of one operation. */
-export const traceKinds = ['text', 'list', 'table', 'bars', 'number'] as const;
-/** The form a traced value takes at one step: a sentence, items, `name = value` rows, bars or one number. */
+export const traceKinds = ['text', 'list', 'table', 'bars', 'number', 'vector'] as const;
+/**
+ * The form a traced value takes at one step: a sentence, items, `name = value` rows, bars, one number, or a vector (an
+ * embedding: numbers in order, of which the first ones are shown).
+ */
 export type TraceKind = (typeof traceKinds)[number];
 
 /** One item of a `list` value, or one `name=value` row of a `table` or `bars` value. */
@@ -305,8 +308,10 @@ export interface TraceValue {
   text: string;
   /** Absent for `text`. */
   kind?: Exclude<TraceKind, 'text'>;
-  /** The items of a `list`, `table` or `bars` value, in order. */
+  /** The items of a `list`, `table` or `bars` value, in order; a `vector`'s numbers, named `1`, `2`, … */
   items?: TraceItem[];
+  /** A `vector`'s real size when only its first numbers are shown (768 for a 768-dimension embedding). */
+  dims?: number;
   /** The operation as code, e.g. `texto.lower()`. */
   code?: string;
   /** Why this operation matters. */

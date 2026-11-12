@@ -791,3 +791,24 @@ body {
 .subtitle-line strong { color: var(--primary); }
 .subtitle-line code { background: rgba(255, 255, 255, 0.12); border-radius: 0.35rem; padding: 0 0.3rem; }
 .presenter[data-idle] .presenter-subtitle { opacity: 1; }
+
+/* A vector in a trace (F20b): one cell per number, blue for positive and red for negative, stronger the bigger it is. */
+.trace-vector { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.35rem; }
+.trace-vector-bracket { font-family: var(--font-mono); font-size: 2.6rem; font-weight: 300; line-height: 2.6rem; color: var(--muted-foreground); }
+.trace-vector-cell { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.trace-vector-swatch {
+  display: block;
+  width: 3.4rem;
+  height: 2.6rem;
+  border-radius: 0.6rem;
+  border: 2px solid color-mix(in oklab, var(--diverge-pos) 55%, white);
+  background: color-mix(in oklab, var(--diverge-pos) calc(12% + var(--share) * 80%), white);
+  animation: pop-in var(--dur-base) var(--ease-pop) both;
+}
+.trace-vector-swatch.negative { border-color: color-mix(in oklab, var(--miss) 55%, white); background: color-mix(in oklab, var(--miss) calc(12% + var(--share) * 80%), white); }
+.trace-vector-swatch.more { border-style: dashed; border-color: var(--border); background: repeating-linear-gradient(90deg, var(--muted) 0 6px, transparent 6px 12px); }
+.trace-vector-number { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; }
+.trace-vector-more .trace-vector-number { color: var(--muted-foreground); }
+.trace-large .trace-vector-swatch { width: 4.4rem; height: 3.2rem; }
+.trace-large .trace-vector-number { font-size: 1.05rem; }
+.trace-large .trace-vector-bracket { font-size: 3.2rem; line-height: 3.2rem; }

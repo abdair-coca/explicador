@@ -160,11 +160,23 @@ const TRACE_EXAMPLES: Record<Exclude<TraceKind, 'text'>, string> = {
   table: '<value kind="table" label="Counts">not=1|good=1|hated=1</value>',
   bars: '<value kind="bars" label="Weights">not=-0.41|good=0.52|hated=-0.73</value>',
   number: '<value kind="number" label="Score">-0.62</value>',
+  vector: '<value kind="vector" label="Embedding" dims="768">0.12|-0.05|0.31|0.08</value>',
 };
 
 /** The items of a `list`, `table` or `bars` value (`a|b` or `name=value|…`); a `number` is one short value. */
 function traceItems(kind: TraceKind, text: string, child: Element, report: Report): TraceItem[] | undefined {
   if (kind === 'text') return undefined;
+  if (kind === 'vector') {
+    const numbers = text.split('|').map((piece) => piece.trim());
+    const bad = numbers.find((piece) => !NUMBER.test(piece));
+    if (bad !== undefined) {
+      report(child.offset, `A vector holds numbers separated by "|": "${bad}" is not one, e.g. ${TRACE_EXAMPLES.vector}`);
+      return undefined;
+    }
+    if (numbers.length < 2) report(child.offset, `A vector needs at least 2 numbers, e.g. ${TRACE_EXAMPLES.vector}`);
+    if (numbers.length > limits.vectorShown) report(child.offset, `A vector shows at most ${limits.vectorShown} numbers; show the first ones and give the real size with dims="768"`);
+    return numbers.map((value, i) => ({ name: String(i + 1), value }));
+  }
   if (kind === 'number') {
     if (text.length > limits.traceNumberLength) report(child.offset, `A number value is at most ${limits.traceNumberLength} characters, e.g. ${TRACE_EXAMPLES.number}`);
     return undefined;
@@ -201,12 +213,21 @@ export function buildTrace(element: Element, ordinal: number, report: Report): T
     const note = optionalText(a.note, 'note', limits.noteLength, child, report);
     const kind = readEnum(a.kind, traceKinds, 'text', 'kind', child, report);
     const items = text ? traceItems(kind, text, child, report) : undefined;
+    let dims: number | undefined;
+    if (a.dims !== undefined) {
+      dims = Number(a.dims);
+      if (kind !== 'vector') report(child.offset, 'dims only goes on a <value kind="vector">: the vector\'s real size');
+      else if (!Number.isInteger(dims) || dims < (items?.length ?? 0) || dims > limits.vectorDims) {
+        report(child.offset, `dims is the vector's real size, a whole number from the count of numbers shown (${items?.length ?? 0}) to ${limits.vectorDims}`);
+      }
+    }
     if (a.label === undefined) continue;
     values.push({
       label: checkText(a.label, 'label', limits.labelLength, child, report),
       text,
       ...(kind !== 'text' ? { kind } : {}),
       ...(items ? { items } : {}),
+      ...(kind === 'vector' && dims !== undefined && dims > (items?.length ?? 0) ? { dims } : {}),
       ...(code ? { code } : {}),
       ...(note ? { note } : {}),
       ...readRef(a.ref, child, report),

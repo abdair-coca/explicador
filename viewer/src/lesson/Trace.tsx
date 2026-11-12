@@ -13,7 +13,7 @@ import { useSpeaker } from './context';
 import { CountUp } from './CountUp';
 import { changeCounts, diffWords, words, type Token } from './diff';
 import { useFirstVisible, useFollowCode } from './hooks';
-import { barsOf, keyed, pieceChanges, pieceNames } from './traceShape';
+import { barsOf, keyed, pieceChanges, pieceNames, vectorOf } from './traceShape';
 
 /** Changes appear one after another, but never take longer than this to finish appearing. */
 const STAGGER_MS = 35;
@@ -168,6 +168,40 @@ function BarsBody({ items }: { items: TraceItem[] }) {
   );
 }
 
+/**
+ * An embedding: a strip of cells, warm for positive numbers and cool for negative ones, stronger the bigger the number,
+ * with the numbers under them; a last cell counts the dimensions not shown. Cells keep their place between two vector
+ * steps, so a change (a normalization) shows as the colors and numbers changing in place.
+ */
+function VectorBody({ value }: { value: TraceValue }) {
+  const { cells, hidden, size } = vectorOf(value);
+  return (
+    <div className="trace-vector" role="list" aria-label={`Vector of ${size} numbers`}>
+      <span className="trace-vector-bracket" aria-hidden="true">
+        [
+      </span>
+      {cells.map((cell, i) => (
+        <span key={cell.n} className="trace-vector-cell" role="listitem" data-flip-id={`v${cell.n}`} aria-label={`${cell.n}: ${cell.text}`}>
+          <span
+            className={cn('trace-vector-swatch', cell.value < 0 && 'negative')}
+            style={{ '--share': cell.share, animationDelay: `${Math.min(i * STAGGER_MS * 2, MAX_DELAY_MS)}ms` } as React.CSSProperties}
+          />
+          <span className={cn('trace-vector-number tabular-nums', cell.value < 0 && 'text-miss')}>{cell.text}</span>
+        </span>
+      ))}
+      {hidden > 0 && (
+        <span className="trace-vector-cell trace-vector-more" role="listitem">
+          <span className="trace-vector-swatch more" />
+          <span className="trace-vector-number tabular-nums">+{hidden.toLocaleString()}</span>
+        </span>
+      )}
+      <span className="trace-vector-bracket" aria-hidden="true">
+        ]
+      </span>
+    </div>
+  );
+}
+
 function NumberBody({ value }: { value: TraceValue }) {
   return (
     <p className="trace-number tabular-nums">
@@ -176,7 +210,7 @@ function NumberBody({ value }: { value: TraceValue }) {
   );
 }
 
-const UNITS = { text: 'words', list: 'items', table: 'rows', bars: 'bars' } as const;
+const UNITS = { text: 'words', list: 'items', table: 'rows', bars: 'bars', vector: 'dimensions' } as const;
 
 /** The value at step `index`, in its form, with what its operation changed. */
 export function TraceView({ block, index }: { block: TraceBlock; index: number }) {
@@ -187,14 +221,17 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   const speaker = useSpeaker();
   if (!value) return null;
   const kind = value.kind ?? 'text';
-  // A number has no pieces: the step that makes it (a sum, a score) combines the pieces, it does not remove them.
-  const comparable = previous !== undefined && kind !== 'number' && previous.kind !== 'number';
+  // A number has no pieces: the step that makes it (a sum, a score) combines the pieces, it does not remove them. A
+  // vector's numbers are positions, not pieces of the words or items before it.
+  const vectorStep = kind === 'vector' || previous?.kind === 'vector';
+  const comparable = previous !== undefined && kind !== 'number' && previous.kind !== 'number' && (!vectorStep || kind === previous.kind);
   const changes = tokens ? changeCounts(tokens) : comparable ? pieceChanges(previous, value) : undefined;
   const removed = changes?.removed ?? 0;
   const added = changes?.added ?? 0;
   const changed = changes && 'changed' in changes ? changes.changed : 0;
-  const count = pieceNames(value).length;
-  const before = previous && (previous.kind ?? 'text') === kind ? pieceNames(previous).length : undefined;
+  const sizeOf = (v: TraceValue): number => (v.kind === 'vector' ? vectorOf(v).size : pieceNames(v).length);
+  const count = sizeOf(value);
+  const before = previous && (previous.kind ?? 'text') === kind ? sizeOf(previous) : undefined;
   return (
     <div className={cn('space-y-3', speaker && 'trace-large')}>
       <div className="flex flex-wrap items-center gap-2">
@@ -205,11 +242,11 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
           <span className="ml-auto text-sm font-bold tabular-nums text-muted-foreground">
             {before !== undefined && before !== count ? (
               <>
-                {before} → <span className="text-foreground">{count}</span> {UNITS[kind]}
+                {before.toLocaleString()} → <span className="text-foreground">{count.toLocaleString()}</span> {UNITS[kind]}
               </>
             ) : (
               <>
-                {count} {UNITS[kind]}
+                {count.toLocaleString()} {UNITS[kind]}
               </>
             )}
           </span>
@@ -221,6 +258,7 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
         {kind === 'table' && <TableBody items={value.items ?? []} />}
         {kind === 'bars' && <BarsBody items={value.items ?? []} />}
         {kind === 'number' && <NumberBody key={index} value={value} />}
+        {kind === 'vector' && <VectorBody value={value} />}
       </FlipPieces>
       {removed + added + changed > 0 && (
         <p className="flex flex-wrap gap-2 text-xs font-extrabold uppercase tracking-wide" aria-label="What this step changed">

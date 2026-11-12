@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { TraceValue } from '../../server/src/scene.ts';
-import { barsOf, keyed, pieceChanges, pieceKey, pieceNames } from '../src/lesson/traceShape.ts';
+import { barsOf, keyed, pieceChanges, pieceKey, pieceNames, vectorOf } from '../src/lesson/traceShape.ts';
 
 const text = (t: string): TraceValue => ({ label: 'T', text: t });
 const list = (...names: string[]): TraceValue => ({ label: 'L', text: names.join('|'), kind: 'list', items: names.map((name) => ({ name })) });
@@ -39,5 +39,18 @@ describe('trace pieces', () => {
       ],
     );
     assert.deepEqual(barsOf([{ name: 'a', value: '0' }]).map((bar) => bar.share), [0]);
+  });
+});
+
+describe('vectorOf', () => {
+  it('measures each number against the largest one and counts the dimensions not shown', () => {
+    const { cells, hidden, size } = vectorOf({ label: 'v', text: '', kind: 'vector', dims: 768, items: [{ name: '1', value: '0.2' }, { name: '2', value: '-0.4' }] });
+    assert.deepEqual(cells, [{ n: 1, text: '0.2', value: 0.2, share: 0.5 }, { n: 2, text: '-0.4', value: -0.4, share: 1 }]);
+    assert.equal(hidden, 766);
+    assert.equal(size, 768);
+  });
+
+  it('shows the whole vector when it has no dims', () => {
+    assert.equal(vectorOf({ label: 'v', text: '', kind: 'vector', items: [{ name: '1', value: '0' }] }).hidden, 0);
   });
 });

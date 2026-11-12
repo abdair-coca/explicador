@@ -274,7 +274,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
           {at.slide + 1} / {slides.length}
         </span>
         <span className="flex-1 sm:hidden" aria-hidden="true" />
-        <span className="ml-auto hidden font-semibold text-muted-foreground lg:inline">
+        <span className="ml-auto hidden whitespace-nowrap font-semibold text-muted-foreground lg:inline">
           ← → to move · Shift+→ next slide · S subtitles · F full screen · M sound · Esc to leave
         </span>
         <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · S · F · M · Esc</span>

@@ -41,7 +41,7 @@ export const catalog: Record<string, TagSpec> = {
     text: true,
   },
   trace: { attrs: { id: 'optional', title: 'required', ref: 'optional' }, children: ['value'] },
-  value: { attrs: { label: 'required', kind: 'optional', code: 'optional', note: 'optional', ref: 'optional' }, text: true },
+  value: { attrs: { label: 'required', kind: 'optional', code: 'optional', note: 'optional', dims: 'optional', ref: 'optional' }, text: true },
   chart: {
     attrs: { id: 'optional', title: 'required', type: 'required', series: 'optional', unit: 'optional', highlight: 'optional', ref: 'optional' },
     children: ['row'],
@@ -116,6 +116,9 @@ export const limits = {
   traceItemLength: 40,
   traceItemValueLength: 24,
   traceNumberLength: 24,
+  /** Numbers of a vector shown at once; the rest are counted by `dims`. */
+  vectorShown: 16,
+  vectorDims: 100000,
   series: 4,
   chartRows: 40,
   rowLabelLength: 60,

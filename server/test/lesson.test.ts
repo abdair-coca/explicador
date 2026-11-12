@@ -171,11 +171,28 @@ describe('lessons: valid documents', () => {
 
   it('refuses trace values in the wrong form, with an example', () => {
     const trace = (value: string): string[] => errorsOf(`<trace title="T">\n<value label="A">a</value>\n${value}\n</trace>`);
-    assert.match(trace('<value kind="shape" label="B">b</value>')[0] ?? '', /Unknown kind "shape"; use text, list, table, bars, number/);
+    assert.match(trace('<value kind="shape" label="B">b</value>')[0] ?? '', /Unknown kind "shape"; use text, list, table, bars, number, vector/);
     assert.match(trace('<value kind="table" label="B">a=1|b</value>')[0] ?? '', /Each table item needs name=value, separated by "\|", e\.g\. <value kind="table"/);
     assert.match(trace('<value kind="list" label="B">a||b</value>')[0] ?? '', /Each list item needs text/);
     assert.match(trace('<value kind="bars" label="B">a=high</value>')[0] ?? '', /Bars need numbers: "a=high" is not one/);
     assert.match(trace('<value kind="number" label="B">a very long sentence that is no number</value>')[0] ?? '', /A number value is at most 24 characters/);
+  });
+
+  it('reads a vector: its numbers in order and its real size', () => {
+    const result = parseExl('<trace title="T">\n<value label="Chunk">Refunds take 5 days</value>\n<value kind="vector" label="Embedding" dims="768">0.12| -0.05|0.31</value>\n</trace>');
+    assert.ok(result.ok, result.ok ? '' : formatErrors(result.errors));
+    const vector = (result.scene.blocks[0] as TraceBlock).values[1];
+    assert.equal(vector?.kind, 'vector');
+    assert.deepEqual(vector?.items, [{ name: '1', value: '0.12' }, { name: '2', value: '-0.05' }, { name: '3', value: '0.31' }]);
+    assert.equal(vector?.dims, 768);
+  });
+
+  it('refuses a vector with a word, dims smaller than what is shown, and dims on another kind', () => {
+    const trace = (value: string): string[] => errorsOf(`<trace title="T">\n<value label="A">a</value>\n${value}\n</trace>`);
+    assert.match(trace('<value kind="vector" label="V">0.1|high</value>')[0] ?? '', /"high" is not one/);
+    assert.match(trace('<value kind="vector" label="V" dims="2">0.1|0.2|0.3</value>')[0] ?? '', /dims is the vector's real size/);
+    assert.match(trace('<value kind="bars" label="V" dims="8">a=1</value>')[0] ?? '', /dims only goes on a <value kind="vector">/);
+    assert.match(trace(`<value kind="vector" label="V">${Array.from({ length: 17 }, () => '0.1').join('|')}</value>`)[0] ?? '', /at most 16 numbers/);
   });
 
   it('reads charts with series, units and highlights, keeping values as written', () => {

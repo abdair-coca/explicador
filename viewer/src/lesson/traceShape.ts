@@ -60,3 +60,26 @@ export function barsOf(items: readonly TraceItem[]): Bar[] {
     return { name: item.name, key: keys[i] ?? item.name, text: item.value ?? '', value, share: largest > 0 ? Math.abs(value) / largest : 0 };
   });
 }
+
+export interface VectorCell {
+  /** Position in the vector, from 1. */
+  n: number;
+  /** As written. */
+  text: string;
+  value: number;
+  /** Strength as a share of the largest absolute number shown, from 0 to 1. */
+  share: number;
+}
+
+/** The cells of a vector, colored by sign and strength, and how many of its numbers are not shown. */
+export function vectorOf(value: TraceValue): { cells: VectorCell[]; hidden: number; size: number } {
+  const items = value.items ?? [];
+  const numbers = items.map((item) => Number(item.value ?? 0));
+  const largest = Math.max(0, ...numbers.map((n) => Math.abs(n)));
+  const cells = items.map((item, i) => {
+    const n = numbers[i] ?? 0;
+    return { n: i + 1, text: item.value ?? '', value: n, share: largest > 0 ? Math.abs(n) / largest : 0 };
+  });
+  const size = Math.max(value.dims ?? 0, cells.length);
+  return { cells, hidden: size - cells.length, size };
+}
