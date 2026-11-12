@@ -6,6 +6,7 @@ import { ConceptView } from '../lesson/Concept';
 import { DeriveScene } from '../lesson/Derive';
 import { MatrixScene } from '../lesson/Matrix';
 import { PlotScene } from '../lesson/Plot';
+import { ScatterScene } from '../lesson/Scatter';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
 import { JourneyScene } from '../lesson/Journey';
@@ -53,6 +54,8 @@ export function BlockView({ block }: { block: Block }) {
       return <PlotScene block={block} />;
     case 'derive':
       return <DeriveScene block={block} />;
+    case 'scatter':
+      return <ScatterScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
     // The theme dresses the page and the slides; it draws nothing in the flow.

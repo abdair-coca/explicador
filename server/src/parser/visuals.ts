@@ -1,9 +1,10 @@
-// The animated visuals of F16: a function drawn on its axes and a formula derived line by line. Like every lesson block, they hold the notebook's numbers
+// The animated visuals of F16: a function drawn on its axes, a formula derived line by line and points with a
+// decision boundary. Like every lesson block, they hold the notebook's numbers
 // as printed; the viewer does the geometry.
 import type { Element } from './reader.ts';
 import { blockHead, bodyText, catalog, checkMath, childElements, limits, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
 import { curveParams, curveValue, plotDomain } from './plotMath.ts';
-import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark } from './types.ts';
+import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot } from './types.ts';
 
 const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
 
@@ -134,4 +135,61 @@ export function buildDerive(element: Element, ordinal: number, report: Report): 
   if (lines.length < 2) report(element.offset, '<derive> needs at least two <line>s: where the formula starts and what it becomes');
   if (lines.length > limits.deriveLines) report(element.offset, `<derive> has more than ${limits.deriveLines} lines; split the derivation`);
   return { type: 'derive', id, title, lines, ...readRef(a.ref, element, report) };
+}
+
+export function buildScatter(element: Element, ordinal: number, report: Report): ScatterBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('scatter'), ordinal, report);
+  const x = optionalText(a.x, 'x', limits.axisLength, element, report);
+  const y = optionalText(a.y, 'y', limits.axisLength, element, report);
+  const classes = (a.classes ?? '').split('|').map((name) => name.trim());
+  const classesOffset = offsetOf(element, 'classes');
+  if (a.classes !== undefined && (classes.length < 2 || classes.length > limits.scatterClasses || classes.some((name) => !name || name.length > limits.rowLabelLength) || new Set(classes).size !== classes.length)) {
+    report(classesOffset, `"classes" names 2 to ${limits.scatterClasses} different classes: classes="negative|positive"`);
+  }
+  const children = childElements(element, spec('scatter'), report);
+  const dots: ScatterDot[] = [];
+  for (const child of children.filter((item) => item.name === 'dot')) {
+    const d = readAttrs(child, spec('dot'), report);
+    if (!child.selfClosing) report(child.offset, '<dot> must be self-closing: <dot x="0.42" y="-1.3" class="positive" />');
+    const px = readNumber(d.x, 'x', child, report);
+    const py = readNumber(d.y, 'y', child, report);
+    if (d.x === undefined || d.y === undefined || d.class === undefined || px === undefined || py === undefined) continue;
+    const name = d.class.trim();
+    if (!classes.includes(name)) {
+      report(offsetOf(child, 'class'), `"class" must name one of the classes: ${classes.join(', ')} (got "${name}")`);
+      continue;
+    }
+    const label = optionalText(d.label, 'label', limits.labelLength, child, report);
+    dots.push({ x: d.x.trim(), y: d.y.trim(), class: name, ...(label ? { label } : {}) });
+  }
+  if (dots.length < 2) report(element.offset, '<scatter> needs at least two <dot>s');
+  if (dots.length > limits.scatterDots) report(element.offset, `<scatter> has more than ${limits.scatterDots} dots; show a sample and say so in the prose`);
+
+  const boundaries = children.filter((item) => item.name === 'boundary');
+  if (boundaries.length > 1) report(boundaries[1]?.offset ?? element.offset, 'Only one <boundary> per <scatter>');
+  let boundary: ScatterBlock['boundary'];
+  const first = boundaries[0];
+  if (first) {
+    const b = readAttrs(first, spec('boundary'), report);
+    if (!first.selfClosing) report(first.offset, '<boundary> must be self-closing: <boundary slope="-1.2" intercept="0.4" above="positive" />');
+    if (b.points !== undefined) {
+      for (const name of ['slope', 'intercept', 'above']) if (b[name] !== undefined) report(offsetOf(first, name), `"${name}" describes a straight boundary; leave it out with "points"`);
+      const points = parsePoints(b.points, 2);
+      if (typeof points === 'string') report(offsetOf(first, 'points'), `Invalid points: ${points}`);
+      else boundary = { points };
+    } else {
+      const slope = readNumber(b.slope, 'slope', first, report);
+      const intercept = readNumber(b.intercept, 'intercept', first, report);
+      if (b.slope === undefined || b.intercept === undefined || b.above === undefined) {
+        report(first.offset, '<boundary> takes "slope", "intercept" and "above" (the class above the line y = slope·x + intercept), or "points"');
+      } else if (classes.length !== 2) {
+        report(first.offset, 'A straight boundary separates two classes; with more, give it as "points"');
+      } else if (!classes.includes(b.above.trim())) {
+        report(offsetOf(first, 'above'), `"above" must name one of the classes: ${classes.join(', ')}`);
+      } else if (slope !== undefined && intercept !== undefined) {
+        boundary = { slope, intercept, above: b.above.trim() };
+      }
+    }
+  }
+  return { type: 'scatter', id, title, ...(x ? { x } : {}), ...(y ? { y } : {}), classes, dots, ...(boundary ? { boundary } : {}), ...readRef(a.ref, element, report) };
 }

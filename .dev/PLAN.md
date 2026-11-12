@@ -388,7 +388,12 @@ Parts, one commit each:
   - Between two lines the symbols they share glide to their new place (Flip), new ones pop in and removed ones fade; the note explains the step. The match reuses the trace's diff over KaTeX's atoms.
   - The last lines may substitute the notebook's numbers; the skill's rule on numbers applies.
   - Criterion: parser tests; tests for the atom match; slides; the checks of F16a.
-- [ ] **F16e. `<scatter>`: points and a decision boundary.**
+- [x] **F16e. `<scatter>`: points and a decision boundary.**
+  - Done 2026-11-12.
+    - 2 to 4 classes, which differ by color and by shape (circle, diamond, triangle, square).
+    - A straight boundary needs `above`, the class on its upper side, and exactly two classes; the viewer clips the line to the plot, tints each side with its class and counts the points on the wrong side. A boundary of `points` is drawn as given and counts nothing.
+    - It reuses the plot's axes, sizes and styles.
+  - Checked in a separate headless Chrome: 16 points and a straight boundary in Present mode (a class landing, the boundary and its sides, three points ringed and counted, a rewind).
   - `<scatter title x? y? classes ref?>` with 2–300 `<dot x y class label? />` and an optional `<boundary slope intercept />` or `<boundary points="…" />`, all as the notebook prints them (for text models, a 2-D projection the notebook computed).
   - Parts: axes; the dots land class by class; the boundary draws and the two sides tint; the dots on the wrong side pulse and are counted.
   - Criterion: parser tests; geometry and side-of-line tests; slides; the checks of F16a.
@@ -504,4 +509,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | in progress (plan approved 2026-11-12); F16a to F16d done |
+| F16 | in progress (plan approved 2026-11-12); F16a to F16e done |

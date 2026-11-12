@@ -489,6 +489,30 @@ export interface PlotBlock {
   ref?: Ref;
 }
 
+/** One point of a scatter, with its coordinates as the notebook prints them. */
+export interface ScatterDot {
+  x: string;
+  y: string;
+  class: string;
+  label?: string;
+}
+
+/**
+ * Points of several classes on two axes, with the boundary a model draws between them: a straight line
+ * (y = slope·x + intercept, with the class above it) or a path of points.
+ */
+export interface ScatterBlock {
+  type: 'scatter';
+  id: string;
+  title: string;
+  x?: string;
+  y?: string;
+  classes: string[];
+  dots: ScatterDot[];
+  boundary?: { slope?: number; intercept?: number; above?: string; points?: [number, number][] };
+  ref?: Ref;
+}
+
 /** A formula derived line by line; the viewer moves the symbols two lines share. */
 export interface DeriveBlock {
   type: 'derive';
@@ -500,7 +524,7 @@ export interface DeriveBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

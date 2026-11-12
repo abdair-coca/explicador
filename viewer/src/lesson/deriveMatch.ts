@@ -6,7 +6,7 @@ export function matchAtoms(before: readonly string[], after: readonly string[]):
   const rows = before.length;
   const cols = after.length;
   // lengths[i][j]: the longest common subsequence of before[i..] and after[j..].
-  const lengths = Array.from({ length: rows + 1 }, () => new Array<number>(cols + 1).fill(0));
+  const lengths = Array.from({ length: rows + 1 }, () => Array.from({ length: cols + 1 }, () => 0));
   for (let i = rows - 1; i >= 0; i--) {
     for (let j = cols - 1; j >= 0; j--) {
       const row = lengths[i];
@@ -14,7 +14,7 @@ export function matchAtoms(before: readonly string[], after: readonly string[]):
       row[j] = before[i] === after[j] ? (lengths[i + 1]?.[j + 1] ?? 0) + 1 : Math.max(lengths[i + 1]?.[j] ?? 0, row[j + 1] ?? 0);
     }
   }
-  const matches = new Array<number | undefined>(cols).fill(undefined);
+  const matches: (number | undefined)[] = Array.from({ length: cols }, () => undefined);
   let i = 0;
   let j = 0;
   while (i < rows && j < cols) {

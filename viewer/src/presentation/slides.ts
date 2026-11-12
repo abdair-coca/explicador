@@ -2,12 +2,13 @@
 // of a prose block (`prose.ts`), <flow> steps, <walk> steps of a <state>, stats cards, journey stages, trace values,
 // calc steps, a chart then its highlight, the whole matrix then each of its highlights, a quiz then its answer, a concept's
 // term then each of its pieces, a plot's curves then each of its marks, and
-// each line of a derivation.
+// each line of a derivation. A scatter shows its axes, each class, its boundary and the points on the wrong side.
 // Each → reveals the next part; with none left, → opens the next slide.
 import type { Block } from '../../../server/src/scene.ts';
 import { calcModel } from '../lesson/calcMath.ts';
 import { conceptParts } from '../lesson/conceptParts.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
+import { scatterParts } from '../lesson/scatterGeometry.ts';
 import { proseSlide } from './prose.ts';
 
 export interface Slide {
@@ -47,6 +48,8 @@ function partsOf(block: Block): number {
       return 1 + block.marks.length;
     case 'derive':
       return block.lines.length;
+    case 'scatter':
+      return scatterParts(block);
     default:
       return 1;
   }

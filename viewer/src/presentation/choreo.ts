@@ -54,6 +54,26 @@ const effects: Record<string, Effect> = {
     timeline.from(element.querySelector('.plot-dot'), { scale: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.spring }, dur.travel - 0.1);
     timeline.from(element.querySelector('.plot-tag'), { autoAlpha: 0, y: '+=10', duration: dur.base, ease: ease.out }, dur.travel + 0.05);
   },
+  /** The points of one class: each drops onto its place with a little weight. */
+  dots: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const dots = element.querySelectorAll('.scatter-dot');
+    timeline.from(dots, { autoAlpha: 0, y: -26, scale: 0.3, transformOrigin: '50% 50%', duration: dur.slow, ease: ease.spring, stagger: staggerOf(dots.length, stagger.tight) }, 0);
+  },
+  /** A decision boundary: the line is traced, then its two sides tint. */
+  boundary: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const line = element.querySelector('.scatter-boundary');
+    if (line) timeline.from(line, { drawSVG: 0, duration: dur.draw, ease: ease.draw }, 0);
+    const sides = element.querySelectorAll('.scatter-side');
+    if (sides.length > 0) timeline.from(sides, { autoAlpha: 0, duration: dur.slow, ease: ease.out, stagger: stagger.loose }, dur.draw * 0.6);
+  },
+  /** The points on the wrong side: a ring closes in on each. */
+  wrong: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    const rings = element.querySelectorAll('.scatter-ring');
+    timeline.from(rings, { autoAlpha: 0, scale: 3, transformOrigin: '50% 50%', duration: dur.slow, ease: ease.out, stagger: staggerOf(rings.length, stagger.base) }, 0);
+  },
   /**
    * A line of a derivation: the symbols it shares with the line above glide down from their place there, then the
    * new ones pop in and the note follows. `data-from` on each symbol (set by the derivation) names its source.

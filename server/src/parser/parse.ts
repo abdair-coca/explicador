@@ -20,7 +20,7 @@ import {
   type Report,
 } from './common.ts';
 import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildTheme, buildThreshold, buildTrace } from './lesson.ts';
-import { buildDerive, buildPlot } from './visuals.ts';
+import { buildDerive, buildPlot, buildScatter } from './visuals.ts';
 import {
   cardinalities,
   fieldKeys,
@@ -52,7 +52,7 @@ import {
 
 export { catalog, limits, parseRefString } from './common.ts';
 
-const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold', 'concept', 'theme', 'plot', 'derive'];
+const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold', 'concept', 'theme', 'plot', 'derive', 'scatter'];
 
 // A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
 const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;
@@ -170,6 +170,7 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   theme: buildTheme,
   plot: buildPlot,
   derive: buildDerive,
+  scatter: buildScatter,
 };
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
@@ -419,6 +420,7 @@ function collectRefs(blocks: Block[]): string[] {
       case 'concept':
       case 'plot':
       case 'derive':
+      case 'scatter':
         add(block.ref);
         break;
       case 'calc':
