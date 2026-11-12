@@ -165,7 +165,7 @@ function ChapterSection(props: { chapter: Chapter; total: number; next: Chapter 
     >
       <header className="relative isolate space-y-3">
         {/* The chapter's own decoration, beside its title on screens wide enough to leave the text alone. */}
-        <Backdrop theme={theme} seed={`${props.seed}:${chapter.block.id}`} variant="band" className="absolute right-0 top-0 -z-10 hidden h-[110px] w-[260px] md:block" />
+        <Backdrop theme={theme} seed={props.seed} index={chapter.number} variant="band" className="absolute right-0 top-0 -z-10 hidden w-[168px] md:block" />
         <div className="flex items-center gap-3">
           <span
             className={cn(

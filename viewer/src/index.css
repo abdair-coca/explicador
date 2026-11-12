@@ -597,25 +597,42 @@ body {
 @keyframes term-flash { 0% { background-size: 0% 100%; background-position: 0 50%; } 55% { background-size: 100% 100%; background-position: 0 50%; } 100% { background-size: 100% 0.34em; background-position: 0 88%; } }
 [data-stage='future'] { visibility: hidden; }
 
-/* Theme decoration (F16b): flat line art in the theme's accent, faint enough to sit behind content. */
+/* Theme decoration (F16b, F17): flat line art in two tones, the theme's accent and yellow for the one thing each
+   drawing points at; faint enough to sit behind content. `soft` shapes keep their outline over a faint fill. */
 .motif { color: var(--accent, var(--info)); }
-.motif-line { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.26; vector-effect: non-scaling-stroke; }
+.motif-line { fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: 0.3; vector-effect: non-scaling-stroke; }
+.motif-soft { fill: currentColor; fill-opacity: 0.07; }
 .motif-solid { fill: currentColor; stroke: none; opacity: 0.2; }
+.motif-b { color: var(--primary-dark); }
+.motif-line.motif-b { stroke-opacity: 0.7; }
+.motif-soft.motif-b { fill-opacity: 0.22; }
+.motif-solid.motif-b { opacity: 0.6; }
 .motif-night { color: var(--primary); }
-.motif-night .motif-line { opacity: 0.3; }
-.motif-night .motif-solid { opacity: 0.24; }
+.motif-night .motif-b { color: #fff; }
+.motif-night .motif-line.motif-b { stroke-opacity: 0.4; }
+.motif-night .motif-soft.motif-b { fill-opacity: 0.1; }
+.motif-night .motif-solid.motif-b { opacity: 0.35; }
 .motif-page .motif-line, .motif-band .motif-line { stroke-width: 2; }
 .motif-part { display: block; width: 100%; height: auto; overflow: visible; }
+/* Behind a slide: a large drawing and a small one, each in the corner the slide's composition gives it. */
 .motif-slide .motif-part, .motif-night .motif-part { position: absolute; }
-.motif-slide .motif-part-0 { top: 4.25rem; right: 1.5rem; width: clamp(200px, 28vw, 420px); }
-.motif-slide .motif-part-1 { bottom: 5.25rem; left: 1.5rem; width: clamp(150px, 20vw, 300px); }
-.motif-night .motif-part-0 { top: 14%; right: 4%; width: clamp(220px, 36vw, 540px); }
-.motif-night .motif-part-1 { bottom: 6.5rem; left: 2rem; width: clamp(140px, 18vw, 280px); }
-/* On a phone the slide needs all its room: only the chapter card keeps its drawing, smaller. */
+.motif-slide .motif-lg { width: clamp(200px, 27vw, 400px); }
+.motif-slide .motif-sm { width: clamp(130px, 16vw, 240px); }
+.motif-night .motif-lg { width: clamp(220px, 36vw, 540px); }
+.motif-night .motif-sm { width: clamp(130px, 17vw, 260px); }
+.motif-tr { top: 4.25rem; right: 1.5rem; }
+.motif-tl { top: 4.25rem; left: 1.5rem; }
+.motif-br { bottom: 5.25rem; right: 1.5rem; }
+.motif-bl { bottom: 5.25rem; left: 1.5rem; }
+.motif-night .motif-tr { top: 12%; right: 4%; }
+.motif-night .motif-br { bottom: 16%; right: 4%; }
+/* On a phone the slide needs all its room: only the chapter card keeps its large drawing, smaller. */
 @media (max-width: 640px) {
   .motif-slide { display: none; }
-  .motif-night .motif-part-0 { top: 4.5rem; right: 0.75rem; width: 46vw; }
-  .motif-night .motif-part-1 { display: none; }
+  .motif-night .motif-lg { width: 46vw; }
+  .motif-night .motif-tr { top: 4.5rem; right: 0.75rem; }
+  .motif-night .motif-br { bottom: 6rem; right: 0.75rem; }
+  .motif-night .motif-sm { display: none; }
 }
 
 /* Plots (F16c): a function on its axes with real inputs marked on it. */

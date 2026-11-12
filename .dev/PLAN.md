@@ -417,6 +417,19 @@ Parts, one commit each:
 
 Checkpoints: the user reviews after F16b (the look and the motion) and at the end of F16.
 
+### F17: decoration that changes on every slide (user, 2026-11-12)
+
+After F16 the user asked for the decorative components to change on each slide and to be prettier and more rigorous. Choices through a quiz the same day: **only a new composition** (the same theme, but another drawing, size and corners on each slide; not tied to the kind of slide); **richer illustrations** (several variants per theme, two tones and flat fills, composed on a grid with exact proportions; not morphing between slides, ambient motion or the slide's own data); **as subtle as now**.
+
+- [x] **F17.** Done 2026-11-12.
+  - Every drawing sits on a 12 × 8 grid (a 360 × 240 canvas): positions and sizes are whole or half cells. Each theme has three drawings (33 in all), in two tones: the theme's accent, and yellow for the one thing the drawing points at (the tallest bar, the chosen leaf, the point on the curve). Shapes are outlines, outlines over a faint fill, or solid. On the night chapter card the second tone is white.
+  - `viewer/src/theme/compose.ts` gives each slide a large drawing and a small one in two of the four corners. The six layouts run in an order of the scene's own and the drawings rotate, so the next slide never has the same corners or the same large drawing. The large one never sits top left, where titles start, and stays on the right on chapter cards.
+  - In Present mode the decoration is keyed by the slide, so it redraws on every slide, not only when the chapter changes. On the page each chapter's band takes the drawing of its number.
+  - Opacity is as before for the accent; the yellow is stronger because it is small.
+  - Tests: every theme has three different drawings, all inside the canvas for several seeds, with two tones and a fill, repeatable and varying with the seed; compositions differ between neighbours and are repeatable.
+  - Checked in a separate headless Chrome: a contact sheet of the 33 drawings, and the gallery scene in Present mode (consecutive slides, a chapter card) and on the page. Fixed from the sheet: tree branches entering their leaves, mesh links drawn twice, filled bands on cylinders, chip traces meeting.
+  - Not checked: Safari and Firefox.
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -521,3 +534,4 @@ Open points:
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
 | F16 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
+| F17 | done (2026-11-12), user review pending |

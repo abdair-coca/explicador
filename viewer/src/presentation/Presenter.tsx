@@ -250,8 +250,8 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       data-idle={idle ? '' : undefined}
       className="presenter fixed inset-0 z-50 flex flex-col overflow-hidden bg-background text-foreground outline-none"
     >
-      {/* Outside the stage, so the decoration stays put while slides move; it redraws when the chapter changes. */}
-      <Backdrop key={`${theme.name}-${slide?.chapter ?? 0}-${night}`} theme={theme} seed={`${scene.key}:${slide?.chapter ?? 0}`} variant={night ? 'night' : 'slide'} className="absolute inset-0 h-full w-full" />
+      {/* Outside the stage, so the decoration stays put while the slide moves; every slide has its own composition. */}
+      <Backdrop key={`${theme.name}-${at.slide}`} theme={theme} seed={scene.key} index={at.slide} variant={night ? 'night' : 'slide'} className="absolute inset-0 h-full w-full" />
       <header className="presenter-bar presenter-header relative z-10 flex items-center gap-3 border-b border-border-soft bg-card px-6 py-2.5 text-sm">
         <span className="min-w-0 truncate font-black">{scene.topic}</span>
         <span className="shrink-0 whitespace-nowrap font-bold tabular-nums text-muted-foreground" aria-live="polite">
