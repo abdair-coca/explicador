@@ -54,6 +54,31 @@ const effects: Record<string, Effect> = {
     timeline.from(element.querySelector('.plot-dot'), { scale: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.spring }, dur.travel - 0.1);
     timeline.from(element.querySelector('.plot-tag'), { autoAlpha: 0, y: '+=10', duration: dur.base, ease: ease.out }, dur.travel + 0.05);
   },
+  /**
+   * A line of a derivation: the symbols it shares with the line above glide down from their place there, then the
+   * new ones pop in and the note follows. `data-from` on each symbol (set by the derivation) names its source.
+   */
+  derive: (element, timeline) => {
+    const symbols = (line: Element | null): HTMLElement[] =>
+      line ? [...line.querySelectorAll<HTMLElement>('.katex-html *')].filter((item) => item.childElementCount === 0 && (item.textContent ?? '').trim() !== '') : [];
+    const atoms = symbols(element);
+    const above = symbols(element.previousElementSibling);
+    const kept = atoms.filter((atom) => atom.dataset.from !== undefined);
+    const fresh = atoms.filter((atom) => atom.dataset.from === undefined);
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelector('.derive-step'), { autoAlpha: 0, scale: 0, duration: dur.base, ease: ease.pop }, 0);
+    for (const atom of kept) {
+      const source = above[Number(atom.dataset.from)];
+      if (!source) continue;
+      const to = atom.getBoundingClientRect();
+      const from = source.getBoundingClientRect();
+      timeline.from(atom, { x: from.left - to.left, y: from.top - to.top, scale: to.height > 0 ? from.height / to.height : 1, transformOrigin: '0% 0%', duration: dur.slow, ease: ease.move }, 0);
+    }
+    const start = kept.length > 0 ? dur.slow * 0.7 : 0.05;
+    if (fresh.length > 0) timeline.from(fresh, { autoAlpha: 0, scale: 0.4, y: '0.3em', duration: dur.base, ease: ease.pop, stagger: staggerOf(fresh.length, stagger.base) }, start);
+    const note = element.querySelector('.derive-note');
+    if (note) timeline.from(note, { autoAlpha: 0, y: 10, duration: dur.base, ease: ease.out }, '>-0.1');
+  },
   /** A chapter card: the number drops in, the rule draws, the title rises word by word and the goal follows. */
   chapter: (element, timeline) => {
     const pick = (selector: string): HTMLElement | null => element.querySelector<HTMLElement>(selector);

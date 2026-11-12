@@ -489,8 +489,18 @@ export interface PlotBlock {
   ref?: Ref;
 }
 
+/** A formula derived line by line; the viewer moves the symbols two lines share. */
+export interface DeriveBlock {
+  type: 'derive';
+  id: string;
+  title: string;
+  /** Each line is LaTeX without `$`, with an optional note on what changed. */
+  lines: { tex: string; note?: string }[];
+  ref?: Ref;
+}
+
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

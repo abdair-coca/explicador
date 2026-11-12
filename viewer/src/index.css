@@ -642,3 +642,22 @@ body {
 .plot-notes { margin-top: 0.9rem; padding-left: 1.3rem; list-style: decimal; display: grid; gap: 0.35rem; font-size: 0.95rem; line-height: 1.5; color: #374151; }
 .plot-notes strong { font-weight: 800; color: var(--foreground); }
 .plot-note { margin-top: 1rem; font-size: clamp(1.15rem, 2vw, 1.6rem); font-weight: 700; line-height: 1.35; }
+
+/* Derivations (F16d): a formula that changes line by line; new symbols carry a yellow marker. */
+.derive { display: grid; gap: 0.9rem; }
+.derive-line { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); column-gap: 0.6rem; align-items: center; }
+.derive-step { font-size: 1.3rem; font-weight: 900; color: var(--muted-foreground); text-align: center; }
+.derive-formula { min-width: 0; }
+.derive-formula .math-block { margin: 0; text-align: left; padding: 0.2em 0; }
+.derive-formula .katex-display { text-align: left; }
+.derive-formula .katex-display > .katex { text-align: left; }
+/* Symbols must be boxes to be moved one by one. */
+.derive .katex-html span:not(:has(*)) { display: inline-block; }
+.derive-new { background: linear-gradient(var(--primary), var(--primary)) no-repeat 0 100% / 100% 0.22em; }
+.derive-note { grid-column: 2; font-size: 0.95rem; line-height: 1.5; color: var(--muted-foreground); font-weight: 600; }
+.derive-slide { gap: 1.5rem; }
+.derive-slide .derive-formula .katex { font-size: clamp(1.4em, 2.6vw, 2.1em); }
+.derive-slide .derive-note { font-size: clamp(1.05rem, 1.7vw, 1.35rem); color: var(--foreground); }
+.derive-slide .derive-line { transition: opacity var(--dur-slow) var(--ease-out); }
+.derive-slide .derive-line.past { opacity: 0.5; }
+.derive-slide .derive-line.past .derive-new { background-size: 0 0.22em; }

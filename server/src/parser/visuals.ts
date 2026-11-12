@@ -1,9 +1,9 @@
-// The animated visuals of F16: a function drawn on its axes. Like every lesson block, they hold the notebook's numbers
+// The animated visuals of F16: a function drawn on its axes and a formula derived line by line. Like every lesson block, they hold the notebook's numbers
 // as printed; the viewer does the geometry.
 import type { Element } from './reader.ts';
-import { blockHead, bodyText, catalog, checkMath, childElements, limits, optionalText, readAttrs, readEnum, readRef, type Report } from './common.ts';
+import { blockHead, bodyText, catalog, checkMath, childElements, limits, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
 import { curveParams, curveValue, plotDomain } from './plotMath.ts';
-import { curveFns, type CurveFn, type PlotBlock, type PlotCurve, type PlotMark } from './types.ts';
+import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark } from './types.ts';
 
 const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
 
@@ -111,4 +111,27 @@ export function buildPlot(element: Element, ordinal: number, report: Report): Pl
   }
   if (block.marks.length > limits.plotMarks) report(element.offset, `<plot> has more than ${limits.plotMarks} marks`);
   return block;
+}
+
+export function buildDerive(element: Element, ordinal: number, report: Report): DeriveBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('derive'), ordinal, report);
+  const lines: DeriveBlock['lines'] = [];
+  for (const child of childElements(element, spec('derive'), report)) {
+    const l = readAttrs(child, spec('line'), report);
+    const tex = child.selfClosing ? '' : bodyText(child, report);
+    const note = optionalText(l.note, 'note', limits.noteLength, child, report);
+    if (note) checkMath(note, offsetOf(child, 'note'), report);
+    if (!tex) {
+      report(child.offset, '<line> needs its formula: <line note="Replace z by the score.">\\sigma(0.438)</line>');
+      continue;
+    }
+    if (tex.length > limits.formulaLength) report(child.offset, `<line> is longer than ${limits.formulaLength} characters`);
+    const problem = texProblem(tex);
+    if (/^\$|\$$/.test(tex)) report(child.offset, '<line> holds the LaTeX alone, without "$"');
+    else if (problem) report(child.offset, `<line> is not valid LaTeX: ${problem}`);
+    lines.push({ tex, ...(note ? { note } : {}) });
+  }
+  if (lines.length < 2) report(element.offset, '<derive> needs at least two <line>s: where the formula starts and what it becomes');
+  if (lines.length > limits.deriveLines) report(element.offset, `<derive> has more than ${limits.deriveLines} lines; split the derivation`);
+  return { type: 'derive', id, title, lines, ...readRef(a.ref, element, report) };
 }

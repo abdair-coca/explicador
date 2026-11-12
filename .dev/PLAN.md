@@ -377,7 +377,13 @@ Parts, one commit each:
   - Parts: the axes draw and the ticks count in; each curve is traced (DrawSVG); then one part per mark, a point travelling along the curve (MotionPath) to it, with guide lines and its value.
   - The sigmoid inside `<calc kind="logistic">` reuses the same drawing.
   - Criterion: parser tests; geometry tests (scales, sampled curve, mark positions); slides; the checks of F16a.
-- [ ] **F16d. `<derive>`: a formula that changes step by step.**
+- [x] **F16d. `<derive>`: a formula that changes step by step.**
+  - Done 2026-11-12.
+    - The lines stack instead of replacing each other: the earlier ones stay, dimmed, and the symbols a new line shares with the line above glide down from there. Nothing has to fade out, and the whole derivation is on screen at the end.
+    - A symbol is one of KaTeX's innermost boxes with text. The match is a longest common subsequence over their text (`viewer/src/lesson/deriveMatch.ts`), not the trace's word diff: it keeps the order, so symbols never cross. The derivation writes each symbol's source on it (`data-from`) and the `derive` effect of `choreo.ts` reads it.
+    - New symbols carry a yellow marker while their line is the current one, on the page too.
+    - Symbols glide with a plain timeline (position and size from their boxes), not GSAP Flip, so the line rewinds like every other part.
+  - Checked in a separate headless Chrome: five lines in Present mode with symbols in flight, the finished derivation, a rewind, and the page.
   - `<derive title ref?>` with 2–8 `<line note?>LaTeX</line>`, each checked with KaTeX.
   - Between two lines the symbols they share glide to their new place (Flip), new ones pop in and removed ones fade; the note explains the step. The match reuses the trace's diff over KaTeX's atoms.
   - The last lines may substitute the notebook's numbers; the skill's rule on numbers applies.
@@ -498,4 +504,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | in progress (plan approved 2026-11-12); F16a, F16b and F16c done |
+| F16 | in progress (plan approved 2026-11-12); F16a to F16d done |
