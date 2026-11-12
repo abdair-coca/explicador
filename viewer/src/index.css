@@ -468,8 +468,8 @@ body {
 .journey-stage.selected { border-color: var(--foreground); box-shadow: 0 4px 0 var(--foreground); }
 .journey-link { position: relative; display: flex; align-items: center; justify-content: center; width: 2.25rem; flex-shrink: 0; color: var(--edge); }
 .journey-link.done { color: var(--foreground); }
-.journey-link .travel { position: absolute; left: 0.1rem; top: 50%; width: 0.7rem; height: 0.7rem; margin-top: -0.35rem; border-radius: 9999px; background: var(--primary); border: 2px solid var(--foreground); animation: travel 700ms var(--ease-out) both; }
-@keyframes travel { from { transform: translateX(0); opacity: 1; } 85% { opacity: 1; } to { transform: translateX(1.4rem); opacity: 0; } }
+.journey-link .travel { position: absolute; left: 0.1rem; top: 50%; width: 0.7rem; height: 0.7rem; margin-top: -0.35rem; border-radius: 9999px; background: var(--primary); border: 2px solid var(--foreground); animation: travel 900ms linear infinite both; }
+@keyframes travel { from { transform: translateX(-0.2rem) scale(0.5); opacity: 0; } 20% { opacity: 1; transform: translateX(0.2rem) scale(1); } 80% { opacity: 1; } to { transform: translateX(1.5rem) scale(0.5); opacity: 0; } }
 .op-pill { font-family: var(--font-mono); font-variant-ligatures: none; font-size: 0.72rem; font-weight: 700; color: var(--foreground); background: var(--subtle); border-radius: 8px; padding: 0.1rem 0.45rem; overflow-wrap: anywhere; }
 
 /* Trace: what one operation removed (struck, red), added (yellow) or changed (letters marked). */
@@ -670,3 +670,55 @@ body {
 .scatter-count { margin-top: 0.8rem; font-size: 1rem; line-height: 1.5; color: #374151; }
 .scatter-count strong { font-weight: 900; color: var(--foreground); }
 .presenter .scatter-count { font-size: clamp(1.1rem, 1.9vw, 1.5rem); font-weight: 600; }
+
+/* Particles (F16f) on the active edge of a diagram. */
+.particle { fill: var(--primary-dark); stroke: var(--foreground); stroke-width: 1; }
+
+/* Comparisons (F16f): two sides, each with its color, facing each other row by row. */
+.compare { display: grid; gap: 0.75rem; --a: var(--series-1); --b: var(--series-2); }
+.compare-head, .compare-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5rem, 9rem) minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+.compare-name { border-radius: 16px; padding: 0.7rem 1rem; font-size: 1.25rem; font-weight: 900; color: #fff; text-align: center; line-height: 1.2; }
+.compare-name.compare-a { background: var(--a); box-shadow: 0 4px 0 color-mix(in oklab, var(--a) 70%, black); }
+.compare-name.compare-b { background: var(--b); box-shadow: 0 4px 0 color-mix(in oklab, var(--b) 70%, black); }
+.compare-vs { align-self: center; justify-self: center; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 9999px; background: var(--foreground); color: var(--primary); font-size: 0.85rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+.compare-rows { display: grid; gap: 0.6rem; }
+.compare-cell { position: relative; border: 2px solid var(--border); border-radius: 14px; background: var(--card); padding: 0.65rem 0.9rem; line-height: 1.45; color: var(--foreground); }
+.compare-cell.compare-a { border-left: 6px solid var(--a); }
+.compare-cell.compare-b { border-right: 6px solid var(--b); }
+.compare-cell.winner { border-color: var(--hit); background: color-mix(in oklab, var(--hit) 8%, white); font-weight: 700; }
+.compare-cell.winner.compare-a { border-left-color: var(--a); }
+.compare-cell.winner.compare-b { border-right-color: var(--b); }
+.compare-win { position: absolute; top: -0.6rem; right: -0.6rem; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--hit); color: #fff; box-shadow: 0 2px 0 color-mix(in oklab, var(--hit) 70%, black); }
+.compare-cell.compare-b .compare-win { right: auto; left: -0.6rem; }
+.compare-label { align-self: center; text-align: center; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); line-height: 1.25; }
+.compare-tally { display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.4rem; }
+.compare-score { border: 2px solid var(--border); border-radius: 9999px; padding: 0.35rem 1rem; font-weight: 800; background: var(--card); }
+.compare-score strong { font-size: 1.3em; font-weight: 900; margin: 0 0.25rem; }
+.compare-score.compare-a strong { color: var(--a); }
+.compare-score.compare-b strong { color: var(--b); }
+.compare-score.lead { border-color: var(--primary-dark); background: var(--primary-light); box-shadow: 0 3px 0 var(--primary-dark); }
+.compare-slide { gap: 1rem; }
+.compare-slide .compare-name { font-size: clamp(1.4rem, 2.6vw, 2.1rem); padding: 1rem 1.2rem; }
+.compare-slide .compare-cell { font-size: clamp(1.05rem, 1.7vw, 1.35rem); padding: 0.8rem 1.1rem; }
+.compare-slide .compare-label { font-size: 0.9rem; }
+.compare-slide .compare-score { font-size: 1.25rem; }
+@media (max-width: 640px) {
+  .compare-head, .compare-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .compare-vs { display: none; }
+  .compare-label { grid-column: 1 / -1; grid-row: 1; text-align: left; }
+}
+
+/* Timelines (F16f): events evenly spaced on a line that fills up to the current one. */
+.timeline-scroll { overflow-x: auto; padding: 0.4rem 0 0.6rem; }
+.timeline-track { position: relative; display: grid; grid-template-columns: repeat(var(--events), minmax(6.5rem, 1fr)); min-width: min-content; }
+.timeline-line { position: absolute; top: 1.05rem; left: calc(50% / var(--events)); right: calc(50% / var(--events)); height: 0.4rem; border-radius: 9999px; background: var(--muted); }
+.timeline-fill { display: block; height: 100%; border-radius: 9999px; background: var(--primary); transition: width 600ms cubic-bezier(0.65, 0, 0.35, 1); }
+.timeline-event { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0 0.4rem; text-align: center; }
+.timeline-dot { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--primary); border: 3px solid var(--foreground); font-weight: 900; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.timeline-when { font-size: 0.75rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground); }
+.timeline-label { font-weight: 800; line-height: 1.25; color: var(--foreground); }
+.timeline-slide .timeline-event { transition: opacity var(--dur-slow) var(--ease-out); }
+.timeline-slide .timeline-event.past { opacity: 0.55; }
+.timeline-slide .timeline-event.current .timeline-dot { box-shadow: 0 0 0 6px var(--primary-light); }
+.timeline-slide .timeline-label { font-size: clamp(1rem, 1.5vw, 1.25rem); }
+.timeline-note { margin-top: 1.2rem; font-size: clamp(1.3rem, 2.4vw, 1.9rem); font-weight: 700; line-height: 1.35; }

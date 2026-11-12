@@ -17,6 +17,7 @@ import {
 } from '../layout/elk';
 import type { ViewNode } from '../layout/levels';
 import { kindIcon } from './icons';
+import { Particles } from './Particles';
 import { cn } from '@/lib/utils';
 
 /** The diagram never shrinks below this scale to fit; it scrolls sideways instead, so text stays legible. */
@@ -147,6 +148,8 @@ export function Diagram(props: DiagramProps) {
             // Keyed by step so the label pops in again whenever the step changes.
             <EdgeLabel key={`${active.id}-${props.tokenKey ?? 0}`} at={active.labelAt ?? active.mid} label={overlay} active pop />
           )}
+          {/* After the token's run, small dots keep flowing along the active edge. */}
+          {active && !reducedMotion && <Particles key={`particles-${props.tokenKey ?? 0}`} path={active.path} />}
           {active && !reducedMotion && (
             <circle key={props.tokenKey} r="7" className="token">
               <animateMotion dur="0.7s" fill="freeze" path={active.path} calcMode="spline" keyTimes="0;1" keySplines="0.33 1 0.68 1" />

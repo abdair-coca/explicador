@@ -513,6 +513,29 @@ export interface ScatterBlock {
   ref?: Ref;
 }
 
+export const compareWinners = ['a', 'b', 'tie'] as const;
+
+/** Two things side by side, row by row, with the better one marked where one is. */
+export interface CompareBlock {
+  type: 'compare';
+  id: string;
+  title: string;
+  /** The names of the two sides. */
+  a: string;
+  b: string;
+  rows: { label: string; a: string; b: string; winner?: (typeof compareWinners)[number] }[];
+  ref?: Ref;
+}
+
+/** Events in order along a line. */
+export interface TimelineBlock {
+  type: 'timeline';
+  id: string;
+  title: string;
+  events: { label: string; when?: string; narration: string; ref?: Ref }[];
+  ref?: Ref;
+}
+
 /** A formula derived line by line; the viewer moves the symbols two lines share. */
 export interface DeriveBlock {
   type: 'derive';
@@ -524,7 +547,7 @@ export interface DeriveBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock;
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 

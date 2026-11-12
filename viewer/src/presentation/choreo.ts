@@ -54,6 +54,28 @@ const effects: Record<string, Effect> = {
     timeline.from(element.querySelector('.plot-dot'), { scale: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.spring }, dur.travel - 0.1);
     timeline.from(element.querySelector('.plot-tag'), { autoAlpha: 0, y: '+=10', duration: dur.base, ease: ease.out }, dur.travel + 0.05);
   },
+  /** The two names of a comparison come from their own sides and meet at the "vs", which lands between them. */
+  versus: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelector('.compare-a'), { autoAlpha: 0, xPercent: -60, duration: dur.slow, ease: ease.out }, 0);
+    timeline.from(element.querySelector('.compare-b'), { autoAlpha: 0, xPercent: 60, duration: dur.slow, ease: ease.out }, 0);
+    timeline.from(element.querySelector('.compare-vs'), { autoAlpha: 0, scale: 0, rotate: -30, duration: dur.slow, ease: ease.spring }, dur.base);
+  },
+  /** A row of a comparison: its label pops, each cell arrives from its side, then the winner's mark lands. */
+  pair: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelector('.compare-label'), { autoAlpha: 0, scale: 0.6, duration: dur.base, ease: ease.pop }, 0);
+    timeline.from(element.querySelector('.compare-cell.compare-a'), { autoAlpha: 0, x: -36, duration: dur.base, ease: ease.out }, 0.08);
+    timeline.from(element.querySelector('.compare-cell.compare-b'), { autoAlpha: 0, x: 36, duration: dur.base, ease: ease.out }, 0.16);
+    const mark = element.querySelector('.compare-win');
+    if (mark) timeline.from(mark, { autoAlpha: 0, scale: 0, duration: dur.base, ease: ease.spring }, 0.55);
+  },
+  /** An event of a timeline: its dot lands once the line reaches it, then its date and name rise. */
+  event: (element, timeline) => {
+    timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);
+    timeline.from(element.querySelector('.timeline-dot'), { autoAlpha: 0, scale: 0, duration: dur.slow, ease: ease.spring }, 0.2);
+    timeline.from(element.querySelectorAll('.timeline-when, .timeline-label'), { autoAlpha: 0, y: 10, duration: dur.base, ease: ease.out, stagger: stagger.base }, 0.35);
+  },
   /** The points of one class: each drops onto its place with a little weight. */
   dots: (element, timeline) => {
     timeline.from(element, { autoAlpha: 0, duration: 0.01 }, 0);

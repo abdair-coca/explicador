@@ -1,10 +1,10 @@
-// The animated visuals of F16: a function drawn on its axes, a formula derived line by line and points with a
-// decision boundary. Like every lesson block, they hold the notebook's numbers
+// The animated visuals of F16: a function drawn on its axes, a formula derived line by line, points with a
+// decision boundary, a comparison of two things and a timeline. Like every lesson block, they hold the notebook's numbers
 // as printed; the viewer does the geometry.
 import type { Element } from './reader.ts';
-import { blockHead, bodyText, catalog, checkMath, childElements, limits, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
+import { blockHead, bodyText, catalog, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, texProblem, type Report } from './common.ts';
 import { curveParams, curveValue, plotDomain } from './plotMath.ts';
-import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot } from './types.ts';
+import { curveFns, type CurveFn, type DeriveBlock, type PlotBlock, type PlotCurve, type PlotMark, type ScatterBlock, type ScatterDot, compareWinners, type CompareBlock, type TimelineBlock } from './types.ts';
 
 const NUMBER = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
 
@@ -192,4 +192,43 @@ export function buildScatter(element: Element, ordinal: number, report: Report):
     }
   }
   return { type: 'scatter', id, title, ...(x ? { x } : {}), ...(y ? { y } : {}), classes, dots, ...(boundary ? { boundary } : {}), ...readRef(a.ref, element, report) };
+}
+
+export function buildCompare(element: Element, ordinal: number, report: Report): CompareBlock {
+  const { id, title, attrs: h } = blockHead(element, spec('compare'), ordinal, report);
+  const a = h.a === undefined ? '' : checkText(h.a, 'a', limits.rowLabelLength, element, report);
+  const b = h.b === undefined ? '' : checkText(h.b, 'b', limits.rowLabelLength, element, report);
+  if (a && a === b) report(offsetOf(element, 'b'), 'The two sides of a <compare> need different names');
+  const rows: CompareBlock['rows'] = [];
+  for (const child of childElements(element, spec('compare'), report)) {
+    const p = readAttrs(child, spec('pair'), report);
+    if (!child.selfClosing) report(child.offset, '<pair> must be self-closing: <pair label="Rare words" a="count like any other" b="weigh more" winner="b" />');
+    if (p.label === undefined || p.a === undefined || p.b === undefined) continue;
+    const label = checkText(p.label, 'label', limits.rowLabelLength, child, report);
+    const left = checkText(p.a, 'a', limits.compareCellLength, child, report);
+    const right = checkText(p.b, 'b', limits.compareCellLength, child, report);
+    checkMath(left, offsetOf(child, 'a'), report);
+    checkMath(right, offsetOf(child, 'b'), report);
+    const winner = p.winner === undefined ? undefined : readEnum(p.winner, compareWinners, 'tie', 'winner', child, report);
+    rows.push({ label, a: left, b: right, ...(winner ? { winner } : {}) });
+  }
+  if (rows.length < 2) report(element.offset, '<compare> needs at least two <pair>s');
+  if (rows.length > limits.comparePairs) report(element.offset, `<compare> has more than ${limits.comparePairs} pairs; keep the ones that decide`);
+  return { type: 'compare', id, title, a, b, rows, ...readRef(h.ref, element, report) };
+}
+
+export function buildTimeline(element: Element, ordinal: number, report: Report): TimelineBlock {
+  const { id, title, attrs: a } = blockHead(element, spec('timeline'), ordinal, report);
+  const events: TimelineBlock['events'] = [];
+  for (const child of childElements(element, spec('timeline'), report)) {
+    const e = readAttrs(child, spec('event'), report);
+    const narration = narrationOf(child, report);
+    checkMath(narration, child.offset, report);
+    if (e.label === undefined) continue;
+    const when = optionalText(e.when, 'when', limits.whenLength, child, report);
+    events.push({ label: checkText(e.label, 'label', limits.rowLabelLength, child, report), ...(when ? { when } : {}), narration, ...readRef(e.ref, child, report) });
+  }
+  if (events.length < 2) report(element.offset, '<timeline> needs at least two <event>s');
+  if (events.length > limits.timelineEvents) report(element.offset, `<timeline> has more than ${limits.timelineEvents} events`);
+  return { type: 'timeline', id, title, events, ...readRef(a.ref, element, report) };
 }

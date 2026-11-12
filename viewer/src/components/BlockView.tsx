@@ -2,6 +2,7 @@
 import type { Block } from '../../../server/src/scene.ts';
 import { CalcScene } from '../lesson/Calc';
 import { ChartScene } from '../lesson/Chart';
+import { CompareScene } from '../lesson/Compare';
 import { ConceptView } from '../lesson/Concept';
 import { DeriveScene } from '../lesson/Derive';
 import { MatrixScene } from '../lesson/Matrix';
@@ -9,6 +10,7 @@ import { PlotScene } from '../lesson/Plot';
 import { ScatterScene } from '../lesson/Scatter';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
+import { TimelineScene } from '../lesson/Timeline';
 import { JourneyScene } from '../lesson/Journey';
 import { StatsView } from '../lesson/Stats';
 import { TraceScene } from '../lesson/Trace';
@@ -56,6 +58,10 @@ export function BlockView({ block }: { block: Block }) {
       return <DeriveScene block={block} />;
     case 'scatter':
       return <ScatterScene block={block} />;
+    case 'compare':
+      return <CompareScene block={block} />;
+    case 'timeline':
+      return <TimelineScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
     // The theme dresses the page and the slides; it draws nothing in the flow.

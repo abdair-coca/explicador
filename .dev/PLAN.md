@@ -397,7 +397,12 @@ Parts, one commit each:
   - `<scatter title x? y? classes ref?>` with 2–300 `<dot x y class label? />` and an optional `<boundary slope intercept />` or `<boundary points="…" />`, all as the notebook prints them (for text models, a 2-D projection the notebook computed).
   - Parts: axes; the dots land class by class; the boundary draws and the two sides tint; the dots on the wrong side pulse and are counted.
   - Criterion: parser tests; geometry and side-of-line tests; slides; the checks of F16a.
-- [ ] **F16f. `<compare>`, `<timeline>` and particles.**
+- [x] **F16f. `<compare>`, `<timeline>` and particles.**
+  - Done 2026-11-12.
+    - A comparison's rows are `<pair>`, not `<row>`: `<row>` already exists with other attributes. `winner` is `a`, `b` or `tie`. The tally is a part only when some row has a winner.
+    - A timeline's line fills up to the current event with a CSS transition; the events are parts on the choreographer. With many events the track scrolls sideways.
+    - Particles: in diagrams three dots follow the active edge with GSAP MotionPath, after the token's run, for as long as the step is active; in journeys three dots loop into the active stage (CSS). Both are absent under reduced motion.
+  - Checked in a separate headless Chrome: a comparison built row by row with its tally, a timeline at its third event, and particles on a flow's active edge.
   - `<compare title a b>` with 2–8 `<row label a b winner? />`: two cards face each other, rows arrive in pairs, the winner of each row is marked and a tally closes it.
   - `<timeline title>` with 2–12 `<event label when?>narration</event>`: a line that draws, events that land on it, one part per event.
   - Particles flow along the active edge of flows and journeys, in the direction of the data.
@@ -509,4 +514,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | in progress (plan approved 2026-11-12); F16a to F16e done |
+| F16 | in progress (plan approved 2026-11-12); F16a to F16f done |

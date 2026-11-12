@@ -15,6 +15,7 @@ import { Button } from '../components/ui/button';
 import { DataScene, StateDiagram, StateScene, walkRoute } from '../components/views';
 import { CalcView } from '../lesson/Calc';
 import { ChartView } from '../lesson/Chart';
+import { CompareView } from '../lesson/Compare';
 import { ConceptView } from '../lesson/Concept';
 import { DeriveView } from '../lesson/Derive';
 import { PlotView } from '../lesson/Plot';
@@ -26,6 +27,7 @@ import { LessonContext } from '../lesson/context';
 import { progressKey } from '../lesson/progress';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdView } from '../lesson/Threshold';
+import { TimelineView } from '../lesson/Timeline';
 import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
@@ -463,6 +465,20 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
           <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <ThresholdView block={block} />
           </div>
+        </div>
+      );
+    case 'compare':
+      return (
+        <div className="mx-auto w-full max-w-5xl space-y-6">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <CompareView block={block} shown={part} />
+        </div>
+      );
+    case 'timeline':
+      return (
+        <div className="mx-auto w-full max-w-6xl space-y-8">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <TimelineView block={block} shown={part} />
         </div>
       );
     case 'scatter':

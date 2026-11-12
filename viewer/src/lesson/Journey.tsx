@@ -29,7 +29,8 @@ export function JourneyTrack(props: { block: JourneyBlock; index: number; onPick
             {i > 0 && (
               <span className={cn('journey-link', i <= index && 'done')} aria-hidden="true">
                 <ArrowRightIcon size={20} />
-                {i === index && <span key={index} className="travel" />}
+                {/* Data keeps flowing into the active stage: three dots, one after another. */}
+                {i === index && [0, 1, 2].map((dot) => <span key={`${index}-${dot}`} className="travel" style={{ animationDelay: `${dot * 300}ms` }} />)}
               </span>
             )}
             <button
