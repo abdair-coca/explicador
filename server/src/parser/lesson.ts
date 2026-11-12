@@ -51,7 +51,10 @@ import {
   type QuizOption,
   type Stat,
   type StatsBlock,
+  traceKinds,
   type TraceBlock,
+  type TraceItem,
+  type TraceKind,
   type TraceValue,
 } from './types.ts';
 
@@ -152,6 +155,38 @@ export function buildJourney(element: Element, ordinal: number, report: Report):
   return { type: 'journey', id, title, stages, drills, ...withCodes(codes) };
 }
 
+const TRACE_EXAMPLES: Record<Exclude<TraceKind, 'text'>, string> = {
+  list: '<value kind="list" label="Tokens">not|good|hated</value>',
+  table: '<value kind="table" label="Counts">not=1|good=1|hated=1</value>',
+  bars: '<value kind="bars" label="Weights">not=-0.41|good=0.52|hated=-0.73</value>',
+  number: '<value kind="number" label="Score">-0.62</value>',
+};
+
+/** The items of a `list`, `table` or `bars` value (`a|b` or `name=value|…`); a `number` is one short value. */
+function traceItems(kind: TraceKind, text: string, child: Element, report: Report): TraceItem[] | undefined {
+  if (kind === 'text') return undefined;
+  if (kind === 'number') {
+    if (text.length > limits.traceNumberLength) report(child.offset, `A number value is at most ${limits.traceNumberLength} characters, e.g. ${TRACE_EXAMPLES.number}`);
+    return undefined;
+  }
+  const items: TraceItem[] = [];
+  for (const raw of text.split('|').map((piece) => piece.trim())) {
+    const equals = raw.indexOf('=');
+    const name = (kind === 'list' || equals < 0 ? raw : raw.slice(0, equals)).trim();
+    const value = kind === 'list' || equals < 0 ? undefined : raw.slice(equals + 1).trim();
+    if (!name || (kind !== 'list' && !value)) {
+      report(child.offset, `Each ${kind} item needs ${kind === 'list' ? 'text' : 'name=value'}, separated by "|", e.g. ${TRACE_EXAMPLES[kind]}`);
+      return undefined;
+    }
+    if (name.length > limits.traceItemLength) report(child.offset, `Item "${name.slice(0, 20)}…" is longer than ${limits.traceItemLength} characters`);
+    if (value !== undefined && value.length > limits.traceItemValueLength) report(child.offset, `The value of "${name}" is longer than ${limits.traceItemValueLength} characters`);
+    if (kind === 'bars' && value !== undefined && !NUMBER.test(value)) report(child.offset, `Bars need numbers: "${name}=${value}" is not one`);
+    items.push(value === undefined ? { name } : { name, value });
+  }
+  if (items.length > limits.traceItems) report(child.offset, `A ${kind} value has more than ${limits.traceItems} items`);
+  return items;
+}
+
 export function buildTrace(element: Element, ordinal: number, report: Report): TraceBlock {
   const { id, title, attrs } = blockHead(element, spec('trace'), ordinal, report);
   const values: TraceValue[] = [];
@@ -164,10 +199,14 @@ export function buildTrace(element: Element, ordinal: number, report: Report): T
     }
     const code = optionalText(a.code, 'code', limits.traceCodeLength, child, report);
     const note = optionalText(a.note, 'note', limits.noteLength, child, report);
+    const kind = readEnum(a.kind, traceKinds, 'text', 'kind', child, report);
+    const items = text ? traceItems(kind, text, child, report) : undefined;
     if (a.label === undefined) continue;
     values.push({
       label: checkText(a.label, 'label', limits.labelLength, child, report),
       text,
+      ...(kind !== 'text' ? { kind } : {}),
+      ...(items ? { items } : {}),
       ...(code ? { code } : {}),
       ...(note ? { note } : {}),
       ...readRef(a.ref, child, report),

@@ -143,6 +143,41 @@ describe('lessons: valid documents', () => {
     );
   });
 
+  it('reads a trace whose value changes form: a sentence, a list, a table, bars and a number', () => {
+    const source = [
+      '<trace title="One review through the model">',
+      '<value label="Review">Not good at all</value>',
+      '<value kind="list" label="Tokens">not | good</value>',
+      '<value kind="table" label="Counts">not=1|good=1</value>',
+      '<value kind="bars" label="Weights">not=-0.41|good=+0.52|bias=1e-3</value>',
+      '<value kind="number" label="Score">0.11</value>',
+      '</trace>',
+    ].join('\n');
+    const result = parseExl(source);
+    assert.ok(result.ok, result.ok ? '' : formatErrors(result.errors));
+    const trace = result.scene.blocks[0] as TraceBlock;
+    assert.deepEqual(
+      trace.values.map((v) => [v.kind, v.items]),
+      [
+        [undefined, undefined],
+        ['list', [{ name: 'not' }, { name: 'good' }]],
+        ['table', [{ name: 'not', value: '1' }, { name: 'good', value: '1' }]],
+        ['bars', [{ name: 'not', value: '-0.41' }, { name: 'good', value: '+0.52' }, { name: 'bias', value: '1e-3' }]],
+        ['number', undefined],
+      ],
+    );
+    assert.equal(trace.values[4]?.text, '0.11');
+  });
+
+  it('refuses trace values in the wrong form, with an example', () => {
+    const trace = (value: string): string[] => errorsOf(`<trace title="T">\n<value label="A">a</value>\n${value}\n</trace>`);
+    assert.match(trace('<value kind="shape" label="B">b</value>')[0] ?? '', /Unknown kind "shape"; use text, list, table, bars, number/);
+    assert.match(trace('<value kind="table" label="B">a=1|b</value>')[0] ?? '', /Each table item needs name=value, separated by "\|", e\.g\. <value kind="table"/);
+    assert.match(trace('<value kind="list" label="B">a||b</value>')[0] ?? '', /Each list item needs text/);
+    assert.match(trace('<value kind="bars" label="B">a=high</value>')[0] ?? '', /Bars need numbers: "a=high" is not one/);
+    assert.match(trace('<value kind="number" label="B">a very long sentence that is no number</value>')[0] ?? '', /A number value is at most 24 characters/);
+  });
+
   it('reads charts with series, units and highlights, keeping values as written', () => {
     const blocks = parsed().scene.blocks;
     const bars = blocks[8] as ChartBlock;

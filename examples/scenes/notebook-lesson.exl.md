@@ -200,6 +200,15 @@ The model starts from its **intercept** (its score before reading any word) and 
   <example>A score of exactly 0 gives a probability of one half; any positive score gives more than that.</example>
 </concept>
 
+<trace id="one-review" title="One review, from text to verdict" ref="reviews.ipynb:19">
+<value label="The review">worst film year really bad</value>
+<value kind="list" label="Words the model knows" code="bow.transform([text])" note="&quot;worst&quot; is not in the vocabulary, so it disappears; the word pairs appear as features of their own.">bad|film|film year|really|year|year really</value>
+<value kind="table" label="Counts" code="x = bow.transform([text]).toarray()[0]" note="Each known word or pair appears once.">bad=1|film=1|film year=1|really=1|year=1|year really=1</value>
+<value kind="bars" label="Weights" code="model.coef_[0][i]" note="Only &quot;bad&quot; pulls towards negative; four features push towards positive.">bad=-0.332|film=+0.011|film year=+0.175|really=+0.310|year=+0.175|year really=+0.175</value>
+<value kind="number" label="Score" code="model.decision_function(...)" note="The intercept plus every count times its weight.">0.438</value>
+<value kind="number" label="Probability of positive" code="model.predict_proba(...)[0][1]" note="Above 0.5, so the model calls this review positive.">0.608</value>
+</trace>
+
 <calc id="score-one" title="Scoring &quot;worst film year really bad&quot;" kind="logistic" total="0.438" classes="negative|positive" ref="reviews.ipynb:19">
 <part label="intercept" value="-0.075" note="Where every review starts, before any word is read." />
 <part label="bad" value="-0.332" note="The only negative word the model knows here." />

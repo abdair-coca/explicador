@@ -288,10 +288,24 @@ export interface StatsBlock {
 }
 
 /** One value of a trace: the input, or the result of one operation. */
+export const traceKinds = ['text', 'list', 'table', 'bars', 'number'] as const;
+/** The form a traced value takes at one step: a sentence, items, `name = value` rows, bars or one number. */
+export type TraceKind = (typeof traceKinds)[number];
+
+/** One item of a `list` value, or one `name=value` row of a `table` or `bars` value. */
+export interface TraceItem {
+  name: string;
+  value?: string;
+}
+
 export interface TraceValue {
   label: string;
   /** The value, whitespace collapsed. */
   text: string;
+  /** Absent for `text`. */
+  kind?: Exclude<TraceKind, 'text'>;
+  /** The items of a `list`, `table` or `bars` value, in order. */
+  items?: TraceItem[];
   /** The operation as code, e.g. `texto.lower()`. */
   code?: string;
   /** Why this operation matters. */

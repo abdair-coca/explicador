@@ -121,7 +121,7 @@ One short paragraph of context.
   - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? />` self-closing; runs until the next chapter.
   - `<stats><stat value="0.833" label="test accuracy" ref? /></stats>` (1–6).
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
-  - `<trace title ref?>` with `<value label code? note? ref?>the value</value>` (2–12; the first is the input).
+  - `<trace title ref?>` with `<value label kind? code? note? ref?>the value</value>` (2–12; the first is the input; `kind` = `text`, `list` `a|b`, `table` `a=1|b=2`, `bars` `a=-0.3|b=0.5`, `number`).
   - `<chart title type="bars|hbars|line" series="train|test"? unit? highlight? ref?>` with `<row label="BoW" values="1.000|0.833" />` (one value per series, up to 4 series and 40 rows).
   - `<matrix title cols="a|b" kind="confusion"? positive? corner? ref?>` with `<row label="a" values="2|1" />` and `<focus label cells="1,2 2,1">narration</focus>` (1-based, `*` = all) or, in a confusion matrix, `<focus metric="precision">narration</focus>`.
   - `<calc title kind="sum|logistic" total="0.438" classes="negative|positive"? threshold? ref?>` with `<part label="bad" value="-0.332" note? ref? />` (2–24; the parts must add up to `total` within rounding).
