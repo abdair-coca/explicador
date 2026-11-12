@@ -321,9 +321,57 @@ Choices through a quiz (user, 2026-11-12):
 - **Rigor means both:** a film-like choreography (one motion system, physical springs, exact timings and staggers, elements that turn into one another between slides) and animations faithful to the math (curves drawn on their axes, a point that travels the function, formulas that change step by step with each term tied to the real data).
 - **New components, all four offered:** an animated function plot; a formula that is derived step by step; a scatter plot with a decision boundary; comparison cards ("A against B") and a timeline or pipeline with flowing particles.
 - **Decorative components** (the user's own words): decoration chosen by the topic or by the context of the system or part being explained, so that every presentation and every diagram has its own distinction.
-- **Animation library:** "add the best there is in animation". Read as approval of a new dependency; the proposal is GSAP (timelines, Flip, SplitText, MorphSVG, DrawSVG, MotionPath), which reverses F5's "no GSAP". To confirm with the detailed plan.
+- **Animation library:** "add the best there is in animation". Confirmed by the user on 2026-11-12: **GSAP** (3.15.1 on npm, standard no-charge license, all plugins included), which reverses F5's "no GSAP". Used: the core timelines, Flip, SplitText, DrawSVG, MorphSVG and MotionPath.
+- **Who chooses the decoration:** confirmed the same day: the agent picks a theme from a closed catalog.
 
-Not designed yet. Before any code: a detailed plan (EXL tags and limits, which data each component takes so numbers still come from the notebook, how decoration is chosen and by whom, the motion tokens, export size, reduced motion) and the user's approval. Open questions for that plan: whether decoration is a theme per scene chosen by the agent from a closed set, or derived by the viewer from the block kinds; how much the exports may grow.
+Detailed plan (written 2026-11-12, waiting for the user's approval; no code before it):
+
+Defaults:
+- **GSAP only in the viewer.** It is bundled, so exports still load nothing; they grow by about 0.15 MB (measured in F16a). The Web Animations code that works stays until its part is migrated.
+- **Every part is a timeline.** → plays the part's timeline; ← plays it backwards instead of cutting; Shift+→ jumps to its end. Reduced motion sets every timeline to its end state.
+- **Motion tokens** in one file (`viewer/src/animation/motion.ts`): durations, eases, springs and stagger rules, used by every block. No animation defines its own numbers.
+- **The flat Titi look stays:** no gradients and no blur; decoration is flat line art and solid shapes. Yellow stays the primary color; a theme adds one accent color.
+- **Numbers still come from the notebook.** The agent writes data as printed; the viewer does the geometry and the arithmetic. No embedded JavaScript and no free expressions: functions come from a closed list.
+- New tags grow the closed catalog (decision 8) and the animation types (decision 5); `AGENTS.md` is updated with each part.
+
+Parts, one commit each:
+
+- [ ] **F16a. Motion system.** GSAP, the tokens, and Present mode moved onto timelines.
+  - Slide parts, the chapter card, stats, quiz reveal and the concept hero become timelines that play both ways.
+  - Elements shared by two slides move from one to the other (Flip): a chapter's number and title into the progress header, a concept's term into the next slide that names it, a block's title when the next slide keeps it.
+  - Headings split by SplitText (characters for short titles, words otherwise) replace the word-rise effect.
+  - Criterion: tests for the timeline controller (forward, backward, skip, reduced motion); typecheck, lint, test and build; Chrome at 1440 and 390 px, reduced motion and an export; export size recorded.
+- [ ] **F16b. Themes and decoration.**
+  - `<theme name accent? />`, top level, at most once, before the first block. `<chapter theme="…">` overrides it for that chapter, so a part of the system can look different.
+  - Closed catalog of names: `data`, `ml`, `math`, `text`, `web`, `network`, `database`, `security`, `code`, `hardware`, `business`, `plain` (default, today's look).
+  - Each theme gives: an accent color, a background motif that draws itself in (dot grid, graph of nodes, circuit traces, axes and curves, rows of tokens…), an illustration on chapter cards, corner ornaments on slides, a divider, and the icon set of chips.
+  - It applies to lessons, to plain diagrams (`<arch>`, `<flow>`, `<data>`, `<state>`) and to exports. Decoration never sits behind text at more than a faint contrast, and it is still under reduced motion.
+  - Skill: pick the theme from what the code is about; override per chapter only when the subject changes.
+  - Criterion: parser tests (valid, unknown name, twice, late); each theme checked in Chrome on the page and in Present mode; contrast of text over motifs measured.
+- [ ] **F16c. `<plot>`: a function drawn on its axes.**
+  - `<plot title x? y? ref?>` with 1–4 `<curve>` and 0–8 `<mark>`.
+  - `<curve fn label? />` with `fn` from a closed list (`sigmoid`, `tanh`, `relu`, `linear`, `quadratic`, `exp`, `log`, `gaussian`) and its parameters as attributes (`slope`, `intercept`, `mean`, `std`…), or `<curve points="x,y x,y …" />` for values the notebook printed (a loss per epoch).
+  - `<mark x label>narration</mark>`: a real input. The viewer computes `y` on the curve.
+  - Parts: the axes draw and the ticks count in; each curve is traced (DrawSVG); then one part per mark, a point travelling along the curve (MotionPath) to it, with guide lines and its value.
+  - The sigmoid inside `<calc kind="logistic">` reuses the same drawing.
+  - Criterion: parser tests; geometry tests (scales, sampled curve, mark positions); slides; the checks of F16a.
+- [ ] **F16d. `<derive>`: a formula that changes step by step.**
+  - `<derive title ref?>` with 2–8 `<line note?>LaTeX</line>`, each checked with KaTeX.
+  - Between two lines the symbols they share glide to their new place (Flip), new ones pop in and removed ones fade; the note explains the step. The match reuses the trace's diff over KaTeX's atoms.
+  - The last lines may substitute the notebook's numbers; the skill's rule on numbers applies.
+  - Criterion: parser tests; tests for the atom match; slides; the checks of F16a.
+- [ ] **F16e. `<scatter>`: points and a decision boundary.**
+  - `<scatter title x? y? classes ref?>` with 2–300 `<dot x y class label? />` and an optional `<boundary slope intercept />` or `<boundary points="…" />`, all as the notebook prints them (for text models, a 2-D projection the notebook computed).
+  - Parts: axes; the dots land class by class; the boundary draws and the two sides tint; the dots on the wrong side pulse and are counted.
+  - Criterion: parser tests; geometry and side-of-line tests; slides; the checks of F16a.
+- [ ] **F16f. `<compare>`, `<timeline>` and particles.**
+  - `<compare title a b>` with 2–8 `<row label a b winner? />`: two cards face each other, rows arrive in pairs, the winner of each row is marked and a tally closes it.
+  - `<timeline title>` with 2–12 `<event label when?>narration</event>`: a line that draws, events that land on it, one part per event.
+  - Particles flow along the active edge of flows and journeys, in the direction of the data.
+  - Criterion: parser tests; slides; the checks of F16a.
+- [ ] **F16g. Skill, docs and examples.** The recipe says when each component fits, `docs/EXL.md` documents every tag, and the example lesson uses a theme, a plot, a derivation and a comparison (a scatter only if the example notebook gains a projection cell). Then the INF672 session regenerates the user's lesson.
+
+Checkpoints: the user reviews after F16b (the look and the motion) and at the end of F16.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -428,4 +476,4 @@ Open points:
 | F13 | done (2026-11-11), user review pending |
 | F14 | done (2026-11-11), user review pending |
 | F15 | done (2026-11-12), user review pending; then the INF672 session regenerates the lesson |
-| F16 | requested (2026-11-12); choices recorded, detailed plan pending |
+| F16 | planned (2026-11-12): GSAP and agent-chosen themes confirmed; detailed plan waiting for the user's approval |
