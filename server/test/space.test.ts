@@ -58,7 +58,14 @@ describe('<space>', () => {
         ['delivery', '0.12'],
       ],
     );
-    assert.equal(block.query.cluster, 'money');
+    assert.equal(block.query?.cluster, 'money');
+  });
+
+  it('shows the index alone when there is no query yet', () => {
+    const body = '<cluster id="a" label="A" x="1" y="0" />\n<cluster id="b" label="B" x="0" y="1" />\n<item id="i" label="I" x="1" y="0.1" cluster="a" />\n<item id="j" label="J" x="0.1" y="1" cluster="b" />';
+    const parsed = parseExl(space(body));
+    assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+    assert.equal((parsed.scene.blocks[0] as SpaceBlock).query, undefined);
   });
 
   it('defaults k to 3 only when the space holds enough items', () => {
@@ -67,7 +74,8 @@ describe('<space>', () => {
 
   it('refuses a missing query, unknown or missing clusters, a lone cluster, partial scores and points at 0,0', () => {
     const one = ' k="1"';
-    assert.match(errorsOf(space(items, one))[0] ?? '', /exactly one <query>/);
+    assert.match(errorsOf(space(items, one))[0] ?? '', /without a <query> shows the index: give it its <cluster>s/);
+    assert.match(errorsOf(space(`${items}\n${query}\n${query}`, one))[0] ?? '', /at most one <query>/);
     assert.match(errorsOf(space(`${items}\n<query label="q" x="1" y="0" cluster="money" />`, one))[0] ?? '', /"cluster" needs <cluster>s/);
     assert.match(
       errorsOf(space(`<cluster id="a" label="A" x="1" y="0" />\n${items.replace('/>', 'cluster="a" />')}\n${query}`, one)).join('\n'),
@@ -77,7 +85,10 @@ describe('<space>', () => {
     const errors = errorsOf(space(clustered, one)).join('\n');
     assert.match(errors, /Unknown cluster "z"; the clusters are a, b/);
     assert.match(errors, /every <item> names its cluster/);
-    assert.match(errorsOf(space(`${items.replace('x="0.9"', 'x="0.9" score="0.9"')}\n${query}`, one))[0] ?? '', /Give every <item> its real "score", or none/);
+    assert.match(errorsOf(space(`${items.replace('x="0.9"', 'x="0.9" score="0.9"')}\n${query}`, one))[0] ?? '', /Give every compared <item> its real "score" \(missing: ship\)/);
+    const scoredClusters = `<cluster id="a" label="A" x="1" y="0" />\n<cluster id="b" label="B" x="0" y="1" />\n<item id="i" label="I" x="1" y="0.1" cluster="a" score="0.9" />\n<item id="j" label="J" x="0.1" y="1" cluster="b" />`;
+    assert.match(errorsOf(space(`${scoredClusters}\n${query}`, one))[0] ?? '', /name the cluster the system sent the query to/);
+    assert.ok(parseExl(space(`${scoredClusters}\n${query.replace('/>', 'cluster="a" />').replace('>The question', ' cluster="a">The question')}`, one)).ok);
     assert.match(errorsOf(space(`${items.replace('x="0.9" y="0.3"', 'x="0" y="0"')}\n${query}`, one))[0] ?? '', /at 0,0: it has no direction/);
     assert.match(errorsOf(space(undefined, ' k="0"'))[0] ?? '', /"k" is how many nearest items/);
   });

@@ -594,8 +594,8 @@ export interface SpaceCluster {
 }
 
 /**
- * A vector space: stored items as points, a query that lands among them, the index's clusters if there are any, and
- * the k nearest items by cosine similarity. The viewer draws the angles and ranks the items; it computes the cosine
+ * A vector space: stored items as points, a query that lands among them (or none yet), the index's clusters if there
+ * are any, and the k nearest items by cosine similarity. The viewer draws the angles and ranks the items; it computes the cosine
  * from the coordinates unless the items carry their real `score`.
  */
 export interface SpaceBlock {
@@ -610,7 +610,8 @@ export interface SpaceBlock {
   dims?: number;
   clusters: SpaceCluster[];
   items: SpaceItem[];
-  query: { label: string; x: string; y: string; cluster?: string; narration?: string };
+  /** Absent for a picture of the stored items alone (the index's clusters, before any question). */
+  query?: { label: string; x: string; y: string; cluster?: string; narration?: string };
   ref?: Ref;
 }
 

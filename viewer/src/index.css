@@ -906,3 +906,13 @@ body {
 .stage-map.night .stage-map-stop.here { background: var(--primary); border-color: var(--primary); color: var(--night); }
 .stage-map.night .stage-map-stop.here .stage-map-dot { background: var(--night); color: var(--primary); }
 .stage-map.night .stage-map-stop + .stage-map-stop::before { background: var(--night-line); }
+.space-legend { display: grid; gap: 0.45rem; }
+.space-legend li { display: flex; align-items: center; gap: 0.55rem; font-size: 1.05rem; }
+.space-legend-dot { width: 0.9rem; height: 0.9rem; border-radius: 9999px; flex: none; }
+.presenter .space-legend li { font-size: 1.25rem; }
+.space-legend.compact { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; }
+.space-legend.compact li { font-size: 0.9rem; }
+.space-legend li { transition: opacity var(--dur-slow) var(--ease-out); }
+.space-legend li.dim { opacity: 0.35; }
+.presenter .space-legend.compact li { font-size: 1rem; }
+.cosine-dim { justify-self: center; font-size: 0.8rem; font-weight: 900; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.03em; }

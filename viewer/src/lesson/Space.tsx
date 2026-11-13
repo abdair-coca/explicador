@@ -12,8 +12,9 @@ import { planParts } from '../presentation/partPlan';
 import { subtitleOf } from '../presentation/subtitles';
 import { cn } from '@/lib/utils';
 import { useFirstVisible } from './hooks';
-import { angleArc, SPACE, spaceModel } from './spaceGeometry';
+import { angleArc, labelPlaces, spaceModel } from './spaceGeometry';
 
+const STAR = 'M0 -11 L3.2 -3.4 L11 -3.4 L4.8 1.6 L7 9.6 L0 4.8 L-7 9.6 L-4.8 1.6 L-11 -3.4 L-3.2 -3.4 Z';
 const COLORS = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', '#8a5cf6', '#e0427f', '#0e9fb0', '#6b7280'];
 const colorOf = (group: number): string => (group < 0 ? 'var(--foreground)' : (COLORS[group % COLORS.length] ?? 'var(--foreground)'));
 
@@ -30,31 +31,44 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
   const indexPart = partOf('index');
   const rankPart = partOf('rank');
   const probing = indexPart >= 0 && now >= indexPart;
-  const ranked = now >= rankPart;
+  const ranked = rankPart >= 0 && now >= rankPart;
   const compareParts = model.parts.flatMap((part, index) => (part.kind === 'compare' ? [{ index, items: part.items }] : []));
   const current = model.parts[now];
   // The angle shows for the item compared alone in the current part; on the page at the end, for the best result.
   const angleItem = current?.kind === 'compare' && current.items.length === 1 ? current.items[0] : ranked ? model.ranking[0] : undefined;
   const best = model.ranking[0];
-  const label = `${block.title}: ${block.items.length} items; the query "${block.query.label}" is closest to ${best !== undefined ? `"${block.items[best]?.label}"` : 'nothing'}`;
+  const query = model.query;
+  const label = block.query
+    ? `${block.title}: ${block.items.length} items; the query "${block.query.label}" is closest to ${best !== undefined ? `"${block.items[best]?.label}"` : 'nothing'}`
+    : `${block.title}: ${block.items.length} items in ${block.clusters.length} clusters`;
+  // The compared items and the results label first, so theirs are the labels that always show.
+  const labels = useMemo(() => {
+    const order = block.items.map((_, i) => i).sort((a, b) => Number(model.items[b]?.candidate) - Number(model.items[a]?.candidate) || a - b);
+    return labelPlaces(
+      model,
+      block.items.map((item) => item.label),
+      order,
+    );
+  }, [block, model]);
+  const sizes = block.clusters.map((_, c) => model.items.filter((item) => item.group === c).length);
 
   return (
     <div className="plot space">
-      <svg viewBox={`0 0 ${SPACE.width} ${SPACE.height}`} role="img" aria-label={label} className={cn('plot-svg space-svg', probing && 'probing')}>
+      <svg viewBox={`0 0 ${model.width} ${model.height}`} role="img" aria-label={label} className={cn('plot-svg space-svg', probing && 'probing')}>
         <defs>
           <marker id="space-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 Z" className="space-head" />
           </marker>
         </defs>
         <g {...stage(0, 'plot')}>
-          <line x1={0} x2={SPACE.width} y1={model.origin.py} y2={model.origin.py} className="plot-grid" />
-          <line x1={model.origin.px} x2={model.origin.px} y1={0} y2={SPACE.height} className="plot-grid" />
+          <line x1={0} x2={model.width} y1={model.origin.py} y2={model.origin.py} className="plot-grid" />
+          <line x1={model.origin.px} x2={model.origin.px} y1={0} y2={model.height} className="plot-grid" />
           <circle cx={model.origin.px} cy={model.origin.py} r={4} className="space-origin" />
           <text x={model.origin.px - 8} y={model.origin.py + 18} className="plot-tick" textAnchor="end">
             0
           </text>
           {block.x && (
-            <text x={SPACE.width - 8} y={model.origin.py + 20} className="plot-label" textAnchor="end">
+            <text x={model.width - 8} y={model.origin.py + 20} className="plot-label" textAnchor="end">
               {block.x}
             </text>
           )}
@@ -73,9 +87,6 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
                   d={`M${place.px - 7} ${place.py - 7} L${place.px + 7} ${place.py + 7} M${place.px + 7} ${place.py - 7} L${place.px - 7} ${place.py + 7}`}
                   className="space-centroid"
                 />
-                <text x={place.px} y={Math.max(16, place.py - place.r - 8)} className="space-cluster-label" textAnchor="middle">
-                  {cluster.label}
-                </text>
               </g>
             );
           })}
@@ -84,7 +95,7 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
           {block.items.map((item, i) => {
             const place = model.items[i];
             if (!place) return null;
-            const right = place.px < SPACE.width - 170;
+            const spot = labels[i];
             return (
               // The outer group places the item; the inner one is what moves.
               <g key={item.id} transform={`translate(${place.px} ${place.py})`}>
@@ -92,28 +103,30 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
                   <circle r={7} className="space-dot" style={{ fill: colorOf(place.group) }}>
                     <title>{`${item.label} (${item.x}, ${item.y})`}</title>
                   </circle>
-                  <text x={right ? 12 : -12} y={4} className="space-item-label" textAnchor={right ? 'start' : 'end'}>
-                    {item.label}
-                  </text>
+                  {spot && (
+                    <text x={spot.x - place.px} y={spot.y - place.py} className="space-item-label" textAnchor={spot.anchor}>
+                      {item.label}
+                    </text>
+                  )}
                 </g>
               </g>
             );
           })}
         </g>
-        {indexPart >= 0 && model.probed >= 0 && model.clusters[model.probed] && (
+        {query && indexPart >= 0 && model.probed >= 0 && model.clusters[model.probed] && (
           <g {...stage(indexPart, 'space-probe')}>
-            <line x1={model.query.px} y1={model.query.py} x2={model.clusters[model.probed]?.px} y2={model.clusters[model.probed]?.py} className="space-probe" />
+            <line x1={query.px} y1={query.py} x2={model.clusters[model.probed]?.px} y2={model.clusters[model.probed]?.py} className="space-probe" />
           </g>
         )}
         {compareParts.map(({ index, items }) =>
           items.map((i) => {
             const place = model.items[i];
-            if (!place) return null;
+            if (!place || !query) return null;
             const length = Math.min(
               Math.hypot(place.px - model.origin.px, place.py - model.origin.py),
-              Math.hypot(model.query.px - model.origin.px, model.query.py - model.origin.py),
+              Math.hypot(query.px - model.origin.px, query.py - model.origin.py),
             );
-            const arc = angleArc(model.origin, model.query, place, Math.max(36, Math.min(110, length * 0.5)));
+            const arc = angleArc(model.origin, query, place, Math.max(36, Math.min(110, length * 0.5)));
             return (
               <g key={`${index}-${i}`}>
                 <g {...stage(index, 'space-angle')} className={cn('space-angle', angleItem !== i && 'resting')}>
@@ -134,39 +147,56 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
             );
           }),
         )}
-        {compareParts.length > 0 && (
+        {query && compareParts.length > 0 && (
           <g {...stage(compareParts[0]?.index ?? 0, 'space-angle')}>
-            <Arrow from={model.origin} to={model.query} className="space-arrow query" />
+            <Arrow from={model.origin} to={query} className="space-arrow query" />
           </g>
         )}
-        <g transform={`translate(${model.query.px} ${model.query.py})`}>
-          <g {...stage(1, 'space-query')}>
-            <circle r={18} className="space-query-ring" />
-            <path d="M0 -11 L3.2 -3.4 L11 -3.4 L4.8 1.6 L7 9.6 L0 4.8 L-7 9.6 L-4.8 1.6 L-11 -3.4 L-3.2 -3.4 Z" className="space-query" />
+        {query && (
+          <g transform={`translate(${query.px} ${query.py})`}>
+            <g {...stage(1, 'space-query')}>
+              <circle r={18} className="space-query-ring" />
+              <path d={STAR} className="space-query" />
+            </g>
           </g>
-        </g>
-        <g {...stage(rankPart, 'fade')}>
-          {model.ranking.map((i, r) => {
-            const place = model.items[i];
-            return place ? (
-              <g key={i} transform={`translate(${place.px} ${place.py})`}>
-                <circle r={15} className="space-ring" />
-                <text x={-17} y={-13} className="space-rank-number" textAnchor="middle">
-                  {r + 1}
-                </text>
-              </g>
-            ) : null;
-          })}
-        </g>
+        )}
+        {rankPart >= 0 && (
+          <g {...stage(rankPart, 'fade')}>
+            {model.ranking.map((i, r) => {
+              const place = model.items[i];
+              return place ? (
+                <g key={i} transform={`translate(${place.px} ${place.py})`}>
+                  <circle r={15} className="space-ring" />
+                  <text x={-17} y={-13} className="space-rank-number" textAnchor="middle">
+                    {r + 1}
+                  </text>
+                </g>
+              ) : null;
+            })}
+          </g>
+        )}
       </svg>
       <div className="space-side">
         <div className="space-facts">
-          <p {...stage(1, 'rise')} className="space-fact space-question">
-            <svg width={22} height={22} viewBox="-12 -12 24 24" aria-hidden="true">
-              <path d="M0 -11 L3.2 -3.4 L11 -3.4 L4.8 1.6 L7 9.6 L0 4.8 L-7 9.6 L-4.8 1.6 L-11 -3.4 L-3.2 -3.4 Z" className="space-query" />
-            </svg>
-            <strong>{block.query.label}</strong>
-          </p>
+          {block.clusters.length > 0 && (
+            <ul className={cn('space-legend', block.query && 'compact')} aria-label="Clusters of the index">
+              {block.clusters.map((cluster, c) => (
+                <li key={cluster.id} className={cn(probing && c !== model.probed && 'dim')}>
+                  <span className="space-legend-dot" style={{ background: colorOf(c) }} />
+                  <strong>{cluster.label}</strong>
+                  <span className="tabular-nums text-muted-foreground">{sizes[c]}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {block.query && (
+            <p {...stage(1, 'rise')} className="space-fact space-question">
+              <svg width={22} height={22} viewBox="-12 -12 24 24" aria-hidden="true">
+                <path d={STAR} className="space-query" />
+              </svg>
+              <strong>{block.query.label}</strong>
+            </p>
+          )}
           {indexPart >= 0 && model.probed >= 0 && (
             <p {...stage(indexPart, 'rise')} className="space-fact">
               Index: the query goes to <strong>{block.clusters[model.probed]?.label}</strong> and compares{' '}
@@ -178,29 +208,31 @@ export function SpaceView({ block, shown }: { block: SpaceBlock; shown?: number 
           )}
           {block.dims !== undefined && (
             <p className="space-note">
-              A 2-D view of {block.dims.toLocaleString()} dimensions;{' '}
-              {model.realScores ? 'the scores are the system’s own.' : 'the cosines are measured on this view.'}
+              A 2-D view of {block.dims.toLocaleString()} dimensions
+              {!block.query ? '.' : model.realScores ? '; the scores are the system’s own.' : '; the cosines are measured on this view.'}
             </p>
           )}
         </div>
-        <ol {...stage(rankPart, 'rank')} className="space-rank" aria-label={`The ${model.ranking.length} nearest items`}>
-          {model.ranking.map((i, r) => {
-            const item = block.items[i];
-            const place = model.items[i];
-            if (!item || !place) return null;
-            const top = model.items[model.ranking[0] ?? i]?.score ?? 1;
-            return (
-              <li key={item.id} className="space-rank-row">
-                <span className="space-rank-place">{r + 1}</span>
-                <span className="space-rank-label">{item.label}</span>
-                <span className="space-rank-track" aria-hidden="true">
-                  <span className="space-rank-bar" style={{ '--share': top > 0 ? Math.max(0, place.score) / top : 0 } as React.CSSProperties} />
-                </span>
-                <span className="space-rank-score tabular-nums">{place.scoreText}</span>
-              </li>
-            );
-          })}
-        </ol>
+        {rankPart >= 0 && (
+          <ol {...stage(rankPart, 'rank')} className="space-rank" aria-label={`The ${model.ranking.length} nearest items`}>
+            {model.ranking.map((i, r) => {
+              const item = block.items[i];
+              const place = model.items[i];
+              if (!item || !place) return null;
+              const top = model.items[model.ranking[0] ?? i]?.score ?? 1;
+              return (
+                <li key={item.id} className="space-rank-row">
+                  <span className="space-rank-place">{r + 1}</span>
+                  <span className="space-rank-label">{item.label}</span>
+                  <span className="space-rank-track" aria-hidden="true">
+                    <span className="space-rank-bar" style={{ '--share': top > 0 ? Math.max(0, place.score) / top : 0 } as React.CSSProperties} />
+                  </span>
+                  <span className="space-rank-score tabular-nums">{place.scoreText}</span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </div>
     </div>
   );

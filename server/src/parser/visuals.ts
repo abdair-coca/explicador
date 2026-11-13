@@ -302,14 +302,15 @@ export function buildSpace(element: Element, ordinal: number, report: Report): S
   if (items.length < 2) report(element.offset, '<space> needs at least two <item>s');
   if (items.length > limits.spaceItems) report(element.offset, `<space> has more than ${limits.spaceItems} items; show a sample and say so in the prose`);
   const scored = items.filter((item) => item.score !== undefined).length;
-  if (scored > 0 && scored < items.length) report(element.offset, 'Give every <item> its real "score", or none (the viewer then computes the cosine from x and y)');
   if (scored === 0) {
     for (const item of items) if (atOrigin(item)) report(element.offset, `Item "${item.id}" is at 0,0: it has no direction, so it has no cosine`);
   }
 
   const queries = children.filter((item) => item.name === 'query');
-  if (queries.length !== 1) report(queries[1]?.offset ?? element.offset, '<space> needs exactly one <query>: <query label="your question" x="0.7" y="0.4" />');
-  let query: SpaceBlock['query'] = { label: '', x: '1', y: '0' };
+  if (queries.length > 1) report(queries[1]?.offset ?? element.offset, '<space> takes at most one <query>: <query label="your question" x="0.7" y="0.4" />');
+  if (queries.length === 0 && clusters.length === 0) report(element.offset, '<space> without a <query> shows the index: give it its <cluster>s, or add the <query> to search');
+  if (queries.length === 0 && scored > 0) report(element.offset, 'Scores measure the similarity to a <query>: add it, or leave the scores out');
+  let query: SpaceBlock['query'];
   const first = queries[0];
   if (first) {
     const q = readAttrs(first, spec('query'), report);
@@ -319,13 +320,25 @@ export function buildSpace(element: Element, ordinal: number, report: Report): S
       if (scored === 0 && atOrigin(xy)) report(first.offset, 'The query is at 0,0: it has no direction, so it has no cosine');
     }
   }
+  // Real scores: the system scores the rows it compares, so those need one: the items of the query's cluster, or all.
+  if (scored > 0 && query) {
+    if (clusters.length > 0 && query.cluster === undefined) {
+      report(first?.offset ?? element.offset, 'With real scores and <cluster>s, name the cluster the system sent the query to: <query … cluster="…">');
+    } else {
+      const compared = items.filter((item) => clusters.length === 0 || item.cluster === query?.cluster);
+      const missing = compared.filter((item) => item.score === undefined).map((item) => item.id);
+      if (missing.length > 0) {
+        report(element.offset, `Give every compared <item> its real "score" (missing: ${missing.join(', ')}), or none (the viewer then computes the cosine from x and y)`);
+      }
+    }
+  }
 
   let k = 3;
   if (a.k !== undefined) {
     k = Number(a.k);
     if (!Number.isInteger(k) || k < 1 || k > limits.spaceK) report(offsetOf(element, 'k'), `"k" is how many nearest items the search returns, a whole number from 1 to ${limits.spaceK}`);
   }
-  if (Number.isInteger(k) && k >= 1 && items.length >= 2 && k > items.length) report(offsetOf(element, 'k'), `"k" is ${k} but the space holds ${items.length} items`);
+  if (query && Number.isInteger(k) && k >= 1 && items.length >= 2 && k > items.length) report(offsetOf(element, 'k'), `"k" is ${k} but the space holds ${items.length} items`);
   let dims: number | undefined;
   if (a.dims !== undefined) {
     dims = Number(a.dims);
@@ -341,7 +354,7 @@ export function buildSpace(element: Element, ordinal: number, report: Report): S
     ...(dims !== undefined && dims > 2 ? { dims } : {}),
     clusters,
     items,
-    query,
+    ...(query ? { query } : {}),
     ...readRef(a.ref, element, report),
   };
 }

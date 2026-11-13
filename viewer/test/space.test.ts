@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import type { SpaceBlock } from '../../server/src/scene.ts';
 import { subtitleOf } from '../src/presentation/subtitles.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
-import { angleArc, cosine, COMPARE_ONE_BY_ONE, SPACE, spaceModel } from '../src/lesson/spaceGeometry.ts';
+import { angleArc, cosine, COMPARE_ONE_BY_ONE, labelPlaces, SPACE, spaceModel } from '../src/lesson/spaceGeometry.ts';
 
 const base: SpaceBlock = {
   type: 'space',
@@ -53,7 +53,7 @@ describe('spaceModel', () => {
     assert.ok(c);
     assert.ok(Math.abs(c.px - model.origin.px - (model.origin.py - c.py)) < 0.02);
     for (const item of model.items) {
-      assert.ok(item.px >= 0 && item.px <= SPACE.width && item.py >= 0 && item.py <= SPACE.height);
+      assert.ok(item.px >= 0 && item.px <= model.width && item.py >= 0 && item.py <= model.height);
     }
   });
 
@@ -86,7 +86,7 @@ describe('spaceModel', () => {
       ['points', 'query', 'index', 'compare', 'compare', 'rank'],
     );
     assert.equal(subtitleOf(clustered, 2), 'Only the east is searched.');
-    assert.equal(spaceModel({ ...clustered, query: { ...clustered.query, cluster: 'north' } }).probed, 1);
+    assert.equal(spaceModel({ ...clustered, query: { label: 'Q', x: '2', y: '0', cluster: 'north' } }).probed, 1);
   });
 
   it('compares the items past the first ones together, so a big cluster does not make a long slide', () => {
@@ -97,12 +97,39 @@ describe('spaceModel', () => {
     assert.equal(compares.at(-1)?.kind === 'compare' ? compares.at(-1)?.items.length : 0, 4);
   });
 
+  it('shows the stored items alone, in one part, when there is no query', () => {
+    const alone: SpaceBlock = { ...base, clusters: [{ id: 'a', label: 'A', x: '1', y: '0' }, { id: 'b', label: 'B', x: '0', y: '1' }], items: base.items.map((item, i) => ({ ...item, cluster: i === 1 ? 'b' : 'a' })) };
+    delete alone.query;
+    const model = spaceModel(alone);
+    assert.equal(model.query, undefined);
+    assert.deepEqual(model.parts, [{ kind: 'points' }]);
+    assert.deepEqual(model.ranking, []);
+    assert.equal(model.probed, -1);
+  });
+
   it('is one slide with one part per step, and says the narration of the query and of each item compared', () => {
     assert.deepEqual(buildSlides([base]), [{ kind: 'space', block: 0, parts: 6, chapter: 0 }]);
     assert.equal(subtitleOf(base, 0), undefined);
     assert.equal(subtitleOf(base, 1), 'The query lands.');
     assert.equal(subtitleOf(base, 2), 'Same direction.');
     assert.equal(subtitleOf(base, 5), undefined);
+  });
+});
+
+describe('labelPlaces', () => {
+  it('puts a label to the right when that is free, else to the left, clear of the other dots', () => {
+    const model = spaceModel({ ...base, items: [{ id: 'a', label: 'A long label', x: '1', y: '1' }, { id: 'b', label: 'B', x: '1.2', y: '1' }] });
+    const places = labelPlaces(model, ['A long label', 'B'], [0, 1]);
+    // B's dot sits where A's label would go on the right.
+    assert.equal(places[0]?.anchor, 'end');
+    assert.equal(places[1]?.anchor, 'start');
+  });
+
+  it('keeps the picture as tall as the data needs, within its limits', () => {
+    const tall = spaceModel({ ...base, items: [{ id: 'a', label: 'A', x: '0.1', y: '5' }, { id: 'b', label: 'B', x: '0.2', y: '-5' }] });
+    assert.equal(tall.height, SPACE.maxHeight);
+    const flat = spaceModel({ ...base, items: [{ id: 'a', label: 'A', x: '5', y: '0.1' }, { id: 'b', label: 'B', x: '-5', y: '0.2' }] });
+    assert.equal(flat.height, SPACE.minHeight);
   });
 });
 

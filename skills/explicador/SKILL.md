@@ -7,7 +7,7 @@ description: Explains how a software system works (a feature, request flow, modu
 
 You explain code with **scenes**: an EXL document (Markdown plus a few diagram tags) that the Explicador MCP server validates, caches and plays in a local viewer tab. Always answer the user in their language; write the scene text (titles, labels, narration, prose) in that language too.
 
-Every scene is a page that explains in full and a presentation a speaker gives: Present shows the `#` title as the cover, then one component per slide with its `title` as its one sentence, and leaves the prose to the speaker. By default the audience uses technical vocabulary made easy. **Before writing any EXL, read [presenting.md](presenting.md)**: what Present shows, a component for every idea, one example through the whole process, which tag answers which question, templates to copy, LaTeX, and the checklist.
+Every scene is a page that explains in full and a presentation someone can watch alone: Present shows the `#` title as the cover, then one component per slide with its `title` as its one sentence, and the narration of each part as a subtitle under it (a speaker turns subtitles off with S). By default the audience uses technical vocabulary made easy. When the user wants to understand a process well ("how does our RAG work", "explain the checkout end to end"), build a **deep dive**: a map of the whole process, then one chapter per stop with its own picture and the same real example all the way through. **Before writing any EXL, read [presenting.md](presenting.md)**: what Present shows, the deep dive, a component for every idea, one example through the whole process, which tag answers which question, templates to copy, LaTeX, and the checklist.
 
 ## Workflow
 
@@ -46,7 +46,7 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 2. **Intro** (before the first chapter): a `#` title that states the problem as a question ("Can a model tell a good review from a bad one?"), one short paragraph, then `<stats>` with 2–4 headline numbers (the result first) and a `<journey>` of the data's path: one `<stage>` per big step with its real size as `value` ("24 reviews", "18 × 70", "0.833") and the operation as `op` (`train_test_split()`).
 3. **One `<chapter>` per notebook section**, in notebook order: `ref` = the section's cells (a range), a `title` a beginner understands, and a `goal` ("Read a confusion matrix and compute precision from it"). The server attaches the cells with their outputs.
 4. **In each chapter**, short blocks, one idea each:
-   - **Prose is for the page**: Present leaves it to the speaker, so everything the audience must see goes into a component whose `title` states the point in at most 12 words (see [presenting.md](presenting.md)). On the page, write one idea per paragraph in at most two sentences, put the key term in **bold** (it gets a marker stroke) and write numbers as digits (they count up).
+   - **Prose is for the page**: Present shows only components and their narration as subtitles, so everything the audience must see goes into a component whose `title` states the point in at most 12 words, and every step, stage, note and mark gets one short sentence of narration that works as a subtitle (see [presenting.md](presenting.md)). On the page, write one idea per paragraph in at most two sentences, put the key term in **bold** (it gets a marker stroke) and write numbers as digits (they count up).
    - **Each new concept from zero**, as a `<concept term>` card before the code: `<define>` what it is in one sentence, `<analogy>` an everyday comparison (a jury where each word votes; exam answers hidden from the student), `<formula>` only when the notebook really uses one (TF-IDF, the sigmoid, precision), and `<example>` a tiny worked example (a sentence or a 2–3 row Markdown table). One card per idea the reader must be able to name, usually 3–10 per lesson (other technical words become plain words); in Present mode the term fills the slide and the pieces arrive one by one. A bigger worked example goes after the card as a small `<matrix>`.
    - **One example through the notebook**: one `<trace>` follows a real input (a review, a row) from the raw data to the prediction, changing form at each step with `kind` (`text`, `list`, `table`, `bars`, `number`), every value copied from an output. Put it in the chapter where the model predicts, or in the intro when the notebook prints every step for one input.
    - **A function the model uses**: `<plot>` with the function (`<curve fn="sigmoid" />`) and a `<mark>` at each real input the notebook computed, so the reader sees where its numbers fall on the curve; or `<curve points>` for a series the notebook printed (loss per epoch). The viewer computes the heights: never write them yourself.
@@ -119,10 +119,10 @@ One short paragraph of context.
 - Write `&lt;` for a literal `<` in narration.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
   - `<theme name="ml" accent? />` once, right after the title (see "Theme" below).
-  - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? />` self-closing; runs until the next chapter.
+  - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? stage? />` self-closing; runs until the next chapter. `stage` = the id of a `<journey>` stage: the chapter opens with the journey as a map, that stage lit.
   - `<stats><stat value="0.833" label="test accuracy" ref? /></stats>` (1–6).
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
-  - `<trace title ref?>` with `<value label kind? code? note? ref?>the value</value>` (2–12; the first is the input; `kind` = `text`, `list` `a|b`, `table` `a=1|b=2`, `bars` `a=-0.3|b=0.5`, `number`).
+  - `<trace title ref?>` with `<value label kind? code? note? dims? ref?>the value</value>` (2–12; the first is the input; `kind` = `text`, `list` `a|b`, `table` `a=1|b=2`, `bars` `a=-0.3|b=0.5`, `number`, `vector` `0.83|0.56|0.00` with `dims="384"` for the real size when only the first 2–16 numbers are shown).
   - `<chart title type="bars|hbars|line" series="train|test"? unit? highlight? ref?>` with `<row label="BoW" values="1.000|0.833" />` (one value per series, up to 4 series and 40 rows).
   - `<matrix title cols="a|b" kind="confusion"? positive? corner? ref?>` with `<row label="a" values="2|1" />` and `<focus label cells="1,2 2,1">narration</focus>` (1-based, `*` = all) or, in a confusion matrix, `<focus metric="precision">narration</focus>`.
   - `<calc title kind="sum|logistic" total="0.438" classes="negative|positive"? threshold? ref?>` with `<part label="bad" value="-0.332" note? ref? />` (2–24; the parts must add up to `total` within rounding).
@@ -132,8 +132,20 @@ One short paragraph of context.
   - `<scatter title classes="negative|positive" x? y? ref?>` with 2–300 `<dot x y class label? />` and at most one `<boundary slope intercept above="positive" />` or `<boundary points="x,y x,y" />`.
   - `<compare title a="Counts" b="TF-IDF" ref?>` with 2–8 `<pair label a b winner="a|b|tie"? />`.
   - `<timeline title ref?>` with 2–12 `<event label when? ref?>narration</event>`.
+  - `<space title x? y? k? dims? ref?>` with 2–40 `<item id label x y cluster? score?>narration</item>`, at most one `<query label x y cluster?>narration</query>` and 0 or 2–8 `<cluster id label x y>narration</cluster>` (the index). Without a query it shows the index alone.
+  - `<cosine title a b dims? score? ref?>` with 2–12 `<dim a="0.879" b="0.826" label? />`; the viewer multiplies, adds, measures and divides. With `dims` larger than the dims shown, `score` (the real cosine) is required.
   - `<derive title ref?>` with 2–8 `<line note="what changed">LaTeX without $</line>`.
   - `<concept term id? ref?>` with `<define>one sentence</define>` (required), `<analogy>…</analogy>`, `<formula>LaTeX without $</formula>` and `<example>Markdown</example>` (each at most once).
+
+## Vectors, embeddings and search
+
+For embeddings, vector stores, indexes and similarity search (RAG, recommendations, semantic search), use the vector tags with the project's real numbers:
+
+- **Where real numbers come from**: rows already stored (a JSON or CSV export, a `SELECT` of the vector column, a fixture), logs or notebook outputs, or one short run of the project's own code (its embedding function on one chunk and one question, its search with scores) when the user agrees to run it. Never invent a vector, a coordinate or a score; if none can be obtained, say which command would print them.
+- **An embedding** is a `<trace>` that ends in `<value kind="vector">`: the chunk's text, its tokens (`list`), then the vector's first numbers with `dims` = its real size.
+- **The store** is a `<matrix>` (rows = chunks, columns = dimensions, at most 12 × 12; show the first rows and say how many there are) or a `<data>` entity for its schema.
+- **The index and the search** are `<space>`s: positions from a 2-D projection the project computed or that a short script computes from the real vectors (PCA keeps the origin; say "a 2-D view of 384 dimensions" with `dims`), real `score`s for every compared item, the `cluster` the system chose on the `<query>`. One `<space>` without a query shows the index; one with it shows the search.
+- **The score** is a `<cosine>` of the question and the best row: all dimensions when they are few, else the first ones with `dims` and the real `score`.
 
 ## Theme
 

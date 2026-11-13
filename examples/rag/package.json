@@ -1,0 +1,9 @@
+{
+  "name": "rag-example",
+  "private": true,
+  "type": "module",
+  "description": "A tiny retrieval-augmented search over a help center, small enough to follow by hand: Explicador's deep-dive example.",
+  "scripts": {
+    "demo": "node src/demo.js"
+  }
+}

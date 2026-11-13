@@ -105,8 +105,17 @@ Claude writes scenes in **EXL**, a closed catalog of tags. There is no JavaScrip
 | `<state>` | States, transitions and an optional walk |
 | `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<calc>`, `<threshold>`, `<quiz>` | Lessons: chapters, numbers, data paths, one example changing form step by step, charts, matrices, calculations, thresholds and checks |
 | `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<theme>` | Concept cards, functions with marks, formulas changed line by line, classes and their boundary, comparisons, events in order, and the scene's decoration |
+| `<space>`, `<cosine>`, `<value kind="vector">`, `<chapter stage>` | Vector spaces with their index, angles and nearest items, the cosine worked out step by step, embeddings as vectors, and a map of the whole process at each chapter |
 
 The full format is in [`docs/EXL.md`](docs/EXL.md).
+
+## Deep dives
+
+To understand a whole process, the scene becomes a deep dive: a map of the process, then one chapter per stop, each opening with the map and its stop lit, each with its own picture, and the same real example all the way through. In Present mode each part's narration shows as a subtitle (S turns it off). `examples/rag` is a small retrieval pipeline (embed, store, index, search, score) whose `npm run demo` prints every number of `examples/scenes/rag.exl.md`:
+
+```bash
+npm run preview -- examples/scenes/rag.exl.md --project examples/rag
+```
 
 ## Notebook lessons
 
@@ -190,7 +199,7 @@ monitors/          click monitor that delivers clicks and questions to Claude
 skills/            explicador (how to write scenes) and explain (/explicador:explain)
 server/            MCP server, local bridge, EXL parser, cache, index, notebooks, exports
 viewer/            React + Tailwind viewer; scenes laid out with ELK.js
-examples/          sample project (shop), a notebook and sample scenes
+examples/          sample projects (shop, rag), a notebook and sample scenes
 docs/              EXL format and decision records
 ```
 

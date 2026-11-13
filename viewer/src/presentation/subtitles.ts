@@ -64,7 +64,7 @@ export function subtitleOf(block: Block | undefined, part: number): string | und
     case 'space': {
       const model = spaceModel(block);
       const step = model.parts[part];
-      if (step?.kind === 'query') return said(block.query.narration);
+      if (step?.kind === 'query') return said(block.query?.narration);
       if (step?.kind === 'index') return said(block.clusters[model.probed]?.narration);
       if (step?.kind === 'compare' && step.items.length === 1) return said(block.items[step.items[0] ?? -1]?.narration);
       return undefined;

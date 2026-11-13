@@ -39,6 +39,17 @@ export function CosineView({ block, shown }: { block: CosineBlock; shown?: numbe
         <Tex tex={FORMULA} display />
       </div>
       <div className="cosine-grid" style={columns} {...stage('vectors', 'rise')}>
+        {model.rows.some((row) => row.label) && (
+          <>
+            <span />
+            {model.rows.map((row, i) => (
+              <span key={i} className="cosine-dim">
+                {row.label}
+              </span>
+            ))}
+            {more && <span />}
+          </>
+        )}
         <span className="cosine-name">
           <b className="cosine-tag a">a</b>
           {block.a}

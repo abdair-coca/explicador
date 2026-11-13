@@ -1,14 +1,15 @@
-# Presenting: one picture per slide, for a speaker
+# Presenting: one picture per slide, with subtitles
 
-Every scene is two things. The **page** explains in full, for someone reading alone: prose, narration, notes. **Present** is what a speaker shows while they explain: the title as the cover, then one component per slide, each saying one short sentence, its `title`. Prose never reaches the slides. Tag syntax: "EXL in short" in `SKILL.md` and `docs/EXL.md` in the plugin; lesson rules: "Lessons" in `SKILL.md`.
+Every scene is two things. The **page** explains in full, for someone reading alone: prose, narration, notes. **Present** is a video the reader steps through: the title as the cover, then one component per slide, each saying one short sentence, its `title`, while the narration of the part on screen shows as a **subtitle** under it. Prose paragraphs never reach the slides; a speaker turns the subtitles off with S. Tag syntax: "EXL in short" in `SKILL.md` and `docs/EXL.md` in the plugin; lesson rules: "Lessons" in `SKILL.md`.
 
 ## What Present shows
 
 - **The cover**: the `#` title at the top of the scene, alone and large. Then chapter cards and components, in order.
 - **One slide per component**, its pieces arriving one per click: flow steps (every `<step>`, with or without `to`), journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights, scatter classes.
 - **On the slide**: titles, labels, values, boxes, arrows, bars, numbers, concept cards and quizzes.
-- **Only on the page**: Markdown prose and callouts, and the narration of steps, stages, events and marks, the notes of traces, derivations and calcs, the narration of matrix highlights.
-- So what the audience must **see** goes into a component, and what the speaker **says** goes into prose and narration.
+- **As the subtitle of each part**: the narration of flow and walk steps, journey stages, timeline events and plot marks; the `note` of trace values, derivation lines and calc parts; the narration of matrix highlights; the narration of a `<space>`'s query, chosen cluster and compared items.
+- **Only on the page**: Markdown prose and callouts.
+- So what the audience must **see** goes into a component, what they must **hear** goes into narration (one short sentence per part: a subtitle is read in a few seconds), and the longer explanation goes into prose.
 - **A component** is every tag except `<chapter>`, `<quiz>` and `<theme>` (so `<stats>` is one). A quiz checks the slide before it; it never replaces one.
 
 ## Audience
@@ -18,6 +19,18 @@ Every scene is two things. The **page** explains in full, for someone reading al
 - Labels say what a part does ("Checks the password"); code names go in `desc`, `ref` and `<code>`, which open on click.
 - Give numbers a comparison the reader feels: "5 of the 6 hidden reviews", "one hour, then you log in again".
 
+## Deep dive: when the user wants to understand a process well
+
+"How does our RAG work", "explain the checkout end to end", "what really happens when I deploy": the answer is a lesson whose parts complete each other.
+
+1. **The map.** In the intro, a `<journey>` with one `<stage>` per stop of the process (3–7), each with its real size as `value` and the operation as `op`.
+2. **One chapter per stop**, in order, with `stage="…"` naming its stage: the chapter opens with the map and that stop lit, so the reader always knows where they are and what comes next.
+3. **Each chapter its own picture**, the one that answers that stop's question (the table below): a `<trace>` for how one thing changes, a `<matrix>` or `<data>` for what is stored, a `<space>` for vectors, a `<flow>` for who calls whom, a `<cosine>` or `<calc>` or `<derive>` for a number worked out.
+4. **One example through every chapter**: the same input (one chunk and one question, one order, one request) in every chapter, with its real values, so each chapter picks it up where the last one left it.
+5. **A concept card** for each new term, the first time it appears, and a quiz per chapter; a review chapter at the end.
+
+For vectors (embeddings, stores, indexes, similarity search) the pictures are: the embedding as a `<trace>` ending in `<value kind="vector">`, the store as a `<matrix>`, the index as a `<space>` with `<cluster>`s and no query, the search as a `<space>` with the `<query>`, and the score as a `<cosine>`. Where their real numbers come from: "Vectors, embeddings and search" in `SKILL.md`. A complete example is `examples/scenes/rag.exl.md` in the plugin, over `examples/rag`.
+
 ## Recipe
 
 1. **The question.** Start with a `#` title that is the question the scene answers ("What happens when you log in?"), then `<theme>`. Done when the title has at most 12 words.
@@ -25,7 +38,7 @@ Every scene is two things. The **page** explains in full, for someone reading al
 3. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
 4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label`, `code` and `note` of a value: the first two show on the slide, the note only on the page.
 5. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
-6. **The page.** Around each component, write for a reader alone: 1–3 short paragraphs, the narration of each step, the notes. Done when the page makes sense without a speaker.
+6. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of at most about 20 words, with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
 7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when no warning is left. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 8. **Check** against the checklist at the end. Done when every line is true.
 
@@ -50,6 +63,11 @@ Every scene is two things. The **page** explains in full, for someone reading al
 | Which of two options, and in what? | `<compare>` | row by row, then the tally |
 | In what order did things happen? | `<timeline>` | the line reaches each event |
 | What are the key numbers? | `<stats>` | numbers count up |
+| What does this text look like as numbers? | `<trace>` ending in `<value kind="vector">` | the words become a strip of numbers, colored by sign |
+| Where do the stored items sit, and how does the index group them? | `<space>` with `<cluster>`s, no query | the items land in their zones |
+| Which items does the question find, and why those? | `<space>` with a `<query>` | the question lands, goes to its zone, each angle opens with its cosine, the k best are ranked |
+| How is the similarity worked out? | `<cosine>` | each pair is multiplied, summed, measured, divided, and lands on −1…1 |
+| Where are we in the whole process? | `<journey>` + `<chapter stage>` | each chapter opens with the map, its stop lit |
 | Did I understand? | `<quiz>` | options, then the answer |
 
 A list of more than 3 bullets is almost always one of these: steps in order → `<flow>` or `<timeline>`; pros and cons → `<compare>`; parts → `<arch>`; quantities → `<chart>`; one thing being transformed → `<trace>`.
@@ -193,6 +211,8 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 - Every technical term is introduced once by a `<concept>` with an analogy (or replaced by plain words for a non-technical audience).
 - Each formula has words before it and an example or real numbers after it.
 - The page reads well alone: prose and narration around every component.
+- Every step, stage, event, mark and trace value has a one-sentence narration or note: Present shows it as the subtitle.
+- For a whole process: a `<journey>` map in the intro and one chapter per stop with `stage`, the same example in each.
 - Every number comes from the code or its outputs.
 - `render_scene` returned no warnings.
 - The scene text is in the user's language.

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "c1",
+    "text": "Refunds are sent back to your card within 5 business days.",
+    "vector": [
+      0.8262273428075477,
+      0.5633368246415097,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c2",
+    "text": "If you were charged twice, we return the extra payment to your card.",
+    "vector": [
+      0.9147201285387216,
+      0,
+      0,
+      0,
+      0,
+      0.09800572805772016,
+      0,
+      0.3920229122308807
+    ]
+  },
+  {
+    "id": "c3",
+    "text": "Invoices are emailed to you after every purchase.",
+    "vector": [
+      0.8886617051320623,
+      0,
+      0,
+      0.41015155621479804,
+      0,
+      0.20507577810739902,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c4",
+    "text": "Orders ship within 24 hours from our warehouse.",
+    "vector": [
+      0,
+      0.5167494293678936,
+      0.8489454911043965,
+      0,
+      0,
+      0.11073202057883434,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c5",
+    "text": "Track your parcel with the link in the shipping email.",
+    "vector": [
+      0,
+      0,
+      0.9950371902099892,
+      0.09950371902099892,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c6",
+    "text": "Delivery is free for orders over 50 dollars.",
+    "vector": [
+      0.6240199689585152,
+      0,
+      0.768024577179711,
+      0,
+      0,
+      0.1440046082211958,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c7",
+    "text": "Reset your password from the login page.",
+    "vector": [
+      0,
+      0,
+      0,
+      0.6643638388299198,
+      0.7474093186836597,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c8",
+    "text": "Turn on two-step verification to protect your account.",
+    "vector": [
+      0,
+      0,
+      0,
+      0.46574643283262235,
+      0.8849182223819825,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c9",
+    "text": "You can delete your account in settings.",
+    "vector": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c10",
+    "text": "Every product comes with a 2 year warranty.",
+    "vector": [
+      0,
+      0.42808634473904467,
+      0,
+      0,
+      0,
+      0.9037378388935388,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "c11",
+    "text": "A damaged product can be swapped for a new one within 30 days.",
+    "vector": [
+      0,
+      0.4413966627836022,
+      0,
+      0,
+      0,
+      0.8512649925112327,
+      0,
+      0.2837549975037443
+    ]
+  },
+  {
+    "id": "c12",
+    "text": "Every product page lists its sizes and colors.",
+    "vector": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  }
+]
