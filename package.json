@@ -12,11 +12,13 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e && tsc -p evals",
     "lint": "oxlint",
-    "test": "npm test --workspaces --if-present",
+    "test": "npm test --workspaces --if-present && npm run test:evals",
+    "test:evals": "node --test --test-reporter=spec \"evals/test/**/*.test.ts\"",
     "preview": "node server/src/preview.ts",
     "e2e": "playwright test --project chromium --trace off",
     "e2e:all": "playwright test --trace off",
-    "eval": "node evals/run.ts"
+    "eval": "node evals/run.ts",
+    "eval:comprension": "node evals/comprehension.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

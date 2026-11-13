@@ -1,0 +1,40 @@
+{
+  "id": "regresion-resenas",
+  "title": "Logistic regression on movie reviews",
+  "audience": "Beginners in machine learning who can read a little Python",
+  "language": "en",
+  "sources": [
+    "examples/notebook/reviews.ipynb"
+  ],
+  "scene": "examples/scenes/notebook-lesson.exl.md",
+  "root": "examples/notebook",
+  "questions": [
+    {
+      "q": "How many reviews are in the test set?",
+      "answer": 6
+    },
+    {
+      "q": "How many features (columns) does the bag-of-words matrix of the training reviews have?",
+      "answer": 70
+    },
+    {
+      "q": "Of the 3 negative reviews of the test set, how many did the model classify correctly?",
+      "answer": 2
+    },
+    {
+      "q": "What weight does the model give to the word \"great\"?",
+      "answer": 0.892,
+      "tolerance": 0.001
+    },
+    {
+      "q": "The review \"worst film year really bad\" is negative, but the model gave it a probability of 0.608 of being positive. What explains it?",
+      "options": [
+        "\"worst\" is not in the vocabulary, so it adds nothing, and words such as \"really\" and \"year\" push towards positive",
+        "The model had too few negative reviews to learn from",
+        "The threshold was set to 0.9",
+        "That review was in the training set"
+      ],
+      "answer": "A"
+    }
+  ]
+}

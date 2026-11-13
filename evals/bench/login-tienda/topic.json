@@ -1,0 +1,51 @@
+{
+  "id": "login-tienda",
+  "title": "The login of the sample shop",
+  "audience": "Developers who are new to the codebase",
+  "language": "en",
+  "sources": [
+    "examples/shop"
+  ],
+  "scene": "examples/scenes/login.exl.md",
+  "root": "examples/shop",
+  "questions": [
+    {
+      "q": "How many characters long is the session id the server sends in the cookie?",
+      "answer": 48
+    },
+    {
+      "q": "How many bytes long is the random salt of each stored password?",
+      "answer": 16
+    },
+    {
+      "q": "What happens to the sessions of the shop when the server restarts?",
+      "options": [
+        "They survive: they are stored in the database",
+        "Every user is logged out: sessions live only in memory",
+        "They survive: they are stored in the cookie",
+        "Only the sessions older than an hour are lost"
+      ],
+      "answer": "B"
+    },
+    {
+      "q": "A login arrives with an email that does not exist. What does the shop answer?",
+      "options": [
+        "404 saying that the email is unknown",
+        "200 with an empty user",
+        "401 with the same message as for a wrong password",
+        "400 saying that the email is invalid"
+      ],
+      "answer": "C"
+    },
+    {
+      "q": "How does the shop compare the key derived from the typed password with the stored one?",
+      "options": [
+        "With ===, which stops at the first different byte",
+        "In constant time, so the time taken does not reveal how much matched",
+        "By decrypting the stored key",
+        "By asking the database to compare them"
+      ],
+      "answer": "B"
+    }
+  ]
+}

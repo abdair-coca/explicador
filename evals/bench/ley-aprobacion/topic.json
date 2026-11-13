@@ -1,0 +1,45 @@
+{
+  "id": "ley-aprobacion",
+  "title": "Cómo se aprueba una ley",
+  "audience": "Adultos sin formación en derecho que quieren entender el camino de una ley",
+  "language": "es",
+  "sources": [
+    "evals/bench/ley-aprobacion/source.md"
+  ],
+  "scene": "evals/bench/ley-aprobacion/scene.exl.md",
+  "root": "evals/bench/ley-aprobacion",
+  "questions": [
+    {
+      "q": "En el sistema de la explicación, ¿cuántos diputados presentes hacen falta como mínimo para que la cámara baja pueda sesionar (quórum)?",
+      "answer": 51
+    },
+    {
+      "q": "En una sesión con 80 diputados presentes, ¿cuántos votos a favor necesita como mínimo un proyecto para aprobarse por mayoría simple?",
+      "answer": 41
+    },
+    {
+      "q": "Tras un veto, con 80 presentes, ¿cuántos votos a favor hacen falta como mínimo para insistir con dos tercios?",
+      "answer": 54
+    },
+    {
+      "q": "En el sistema de la explicación, la cámara revisora modifica el texto de un proyecto. ¿Qué pasa después?",
+      "options": [
+        "Pasa directamente al ejecutivo",
+        "Vuelve a la cámara de origen, que decide si acepta los cambios",
+        "Queda archivado",
+        "El ejecutivo decide qué texto vale"
+      ],
+      "answer": "B"
+    },
+    {
+      "q": "En el sistema de la explicación, una vez sancionada una ley, ¿qué debe ocurrir para que entre en vigor?",
+      "options": [
+        "Que se publique en el diario oficial",
+        "Una nueva votación de las cámaras",
+        "Que la revise una comisión",
+        "Nada: entra en vigor en cuanto se firma"
+      ],
+      "answer": "A"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "embudo-ventas",
+  "title": "Un embudo de ventas con cifras de ejemplo",
+  "audience": "Personas de un pequeño negocio que nunca han analizado sus ventas por etapas",
+  "language": "es",
+  "sources": [
+    "evals/bench/embudo-ventas/source.md"
+  ],
+  "scene": "evals/bench/embudo-ventas/scene.exl.md",
+  "root": "evals/bench/embudo-ventas",
+  "questions": [
+    {
+      "q": "En el embudo de la explicación, ¿cuántas personas piden una demo?",
+      "answer": 480
+    },
+    {
+      "q": "En el embudo de la explicación, ¿cuál es la conversión total de visitas a ventas, en porcentaje?",
+      "answer": 0.6,
+      "tolerance": 0.01
+    },
+    {
+      "q": "En el embudo de la explicación, ¿qué etapa tiene la menor tasa de conversión?",
+      "options": [
+        "De visita a registro",
+        "De registro a demo",
+        "De demo a propuesta",
+        "De propuesta a compra"
+      ],
+      "answer": "A"
+    },
+    {
+      "q": "¿Cuál es el costo de adquisición de cliente (CAC), en euros, del embudo de la explicación?",
+      "answer": 100
+    },
+    {
+      "q": "Según la explicación, si la última etapa mejorara del 25 % al 30 %, ¿cuántas ventas habría?",
+      "answer": 72
+    }
+  ]
+}

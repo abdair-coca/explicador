@@ -1,0 +1,45 @@
+{
+  "id": "pan",
+  "title": "La química del pan",
+  "audience": "Personas curiosas que quieren hacer su primer pan en casa",
+  "language": "es",
+  "sources": [
+    "evals/bench/pan/source.md"
+  ],
+  "scene": "evals/bench/pan/scene.exl.md",
+  "root": "evals/bench/pan",
+  "questions": [
+    {
+      "q": "En la receta de la explicación, ¿cuántos gramos de agua lleva la hogaza?",
+      "answer": 325
+    },
+    {
+      "q": "En la receta de la explicación, ¿cuál es la hidratación de la masa, en porcentaje?",
+      "answer": 65
+    },
+    {
+      "q": "Según la explicación, ¿a cuántos grados centígrados se hornea el pan?",
+      "answer": 220
+    },
+    {
+      "q": "¿Por qué la masa sube un poco más al entrar en el horno?",
+      "options": [
+        "Porque la levadura se activa con el calor",
+        "Porque se forma gluten nuevo",
+        "Porque la sal se evapora",
+        "Porque el calor expande el gas ya formado, hasta que la levadura muere"
+      ],
+      "answer": "D"
+    },
+    {
+      "q": "¿Qué produce el color dorado y el aroma de la corteza?",
+      "options": [
+        "La reacción de Maillard entre azúcares y aminoácidos, a alta temperatura",
+        "La levadura, que se activa con el calor",
+        "La gelatinización del almidón",
+        "La evaporación del agua"
+      ],
+      "answer": "A"
+    }
+  ]
+}

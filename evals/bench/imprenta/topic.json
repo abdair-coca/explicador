@@ -1,0 +1,57 @@
+{
+  "id": "imprenta",
+  "title": "Las causas de la imprenta de Gutenberg y su difusión",
+  "audience": "Estudiantes de bachillerato que estudian el paso a la Edad Moderna",
+  "language": "es",
+  "sources": [
+    "evals/bench/imprenta/source.md"
+  ],
+  "scene": "evals/bench/imprenta/scene.exl.md",
+  "root": "evals/bench/imprenta",
+  "questions": [
+    {
+      "q": "Según la explicación, ¿cuántos ejemplares se hicieron de la Biblia de 42 líneas?",
+      "answer": 180
+    },
+    {
+      "q": "Según la explicación, ¿qué elemento del sistema de Gutenberg permitía reutilizar las piezas para componer páginas distintas?",
+      "options": [
+        "La tinta a base de aceite",
+        "Los tipos móviles metálicos",
+        "La prensa de tornillo",
+        "El papel"
+      ],
+      "answer": "B"
+    },
+    {
+      "q": "Según la explicación, ¿cuántas ciudades europeas tenían imprentas hacia 1500?",
+      "options": [
+        "Unas 25",
+        "Unas 250 o más",
+        "Unas 2 000",
+        "Solo Maguncia"
+      ],
+      "answer": "B"
+    },
+    {
+      "q": "¿Por qué circularon tan rápido los folletos de Lutero?",
+      "options": [
+        "Porque se copiaban a mano en los monasterios",
+        "Porque la Iglesia los distribuía",
+        "Porque la imprenta permitía hacer muchas copias iguales en poco tiempo",
+        "Porque se escribían en latín"
+      ],
+      "answer": "C"
+    },
+    {
+      "q": "Según la explicación, ¿qué aportó Gutenberg que no existía antes?",
+      "options": [
+        "La idea de imprimir con bloques de madera",
+        "Un sistema de tipos móviles metálicos, tinta grasa y prensa",
+        "El papel",
+        "La prensa de tornillo"
+      ],
+      "answer": "B"
+    }
+  ]
+}

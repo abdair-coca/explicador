@@ -192,9 +192,10 @@ npm run lint
 npm run build                 # run before npm test and the browser tests: both need the built viewer
 npm test
 npm run e2e                   # browser tests in Chromium (npm run e2e:all adds Firefox and WebKit)
+npm run eval:comprension -- --dry   # comprehension bench: what it would ask and what it would cost (no model call)
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck, lint, build and test on Ubuntu, Windows and macOS, and the browser tests in the three browsers, on every push. `npm run eval` measures the skill with `claude plugin eval` on Haiku, Sonnet and Opus; it spends model usage, so it is a local command and not part of CI.
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, build and test on Ubuntu, Windows and macOS, and the browser tests in the three browsers, on every push. `npm run eval` measures the skill with `claude plugin eval` on Haiku, Sonnet and Opus; it spends model usage, so it is a local command and not part of CI. `npm run eval:comprension` measures whether a scene makes a small model (Haiku) understand a topic of the bench in `evals/bench/` (ten topics, see [`docs/baseline-f22.md`](docs/baseline-f22.md)); its `--dry` and `--print` options call nothing, and [`docs/prueba-humana.md`](docs/prueba-humana.md) is the protocol for showing a scene to people.
 
 ```
 .claude-plugin/    plugin manifest (the MCP server is declared here)

@@ -29,6 +29,7 @@ Change these only after the user approves:
 
 ## Checks and commits
 
-- A change is done when `npm run typecheck` and `npm run lint` exit 0 and `npm test` passes (run `npm run build` first: some tests need the built viewer). Changes to the viewer also need `npm run e2e` (Chromium; CI runs Firefox and WebKit).
-- `npm run eval` runs other models (Haiku, Sonnet, Opus) and costs usage: never run it, nor any other test with a model other than the session's, without telling the user first and getting their go-ahead.
+- A change is done when `npm run typecheck` and `npm run lint` exit 0 and `npm test` passes (server, viewer and the comprehension bench in `evals/test/`; run `npm run build` first: some tests need the built viewer). Changes to the viewer also need `npm run e2e` (Chromium; CI runs Firefox and WebKit).
+- `npm run eval` and `npm run eval:comprension` call other models and cost usage: never run them, nor any other test with a model other than the session's, without telling the user first (with the cost at list price) and getting their go-ahead. The comprehension eval runs Haiku only; Sonnet and Opus need the user's say-so for each run.
+- The phases F22–F30 (from valid format to a scene that is understood) are in `docs/plan.md`: its scope and criteria per phase come first, and the stops are at the end of F22, F25 and F30.
 - Commit as `abdair-coca <cocaabdair@gmail.com>` with Conventional Commits, one commit per finished phase, without `Co-Authored-By` or other attribution lines.

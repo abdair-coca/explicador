@@ -8,6 +8,7 @@ import { Bridge } from '../server/src/bridge/index.ts';
 import { formatErrors, parseExl } from '../server/src/parser/index.ts';
 import type { ScenePayload } from '../server/src/scene.ts';
 import { serveProject } from '../server/src/files.ts';
+import { loadTopics } from '../evals/bench.ts';
 import { withSnippets } from '../server/src/snippets.ts';
 
 export const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -15,8 +16,10 @@ export const viewerDir = fileURLToPath(new URL('../viewer/dist/', import.meta.ur
 
 export interface Example {
   name: string;
-  /** The project the scene was written against, under examples/. */
+  /** The project the scene was written against, under examples/ (or `root`). */
   project: string;
+  /** The project's folder, relative to the repository, when it is not examples/<project> (the bench's topics). */
+  root?: string;
   /** The scene's EXL; examples/scenes/<name>.exl.md when absent. */
   file?: string;
 }
@@ -28,6 +31,17 @@ export const examples: Example[] = [
   { name: 'notebook-lesson', project: 'notebook' },
   { name: 'rag', project: 'rag' },
 ];
+
+/**
+ * The scenes of the comprehension bench (F22) that are not examples already: each one is its own project, a Markdown
+ * source beside its scene, under evals/bench/<id>/.
+ */
+export const bench: Example[] = loadTopics()
+  .filter((topic) => !topic.scene.startsWith('examples/'))
+  .map((topic) => ({ name: `bench-${topic.id}`, project: topic.id, root: topic.root, file: `${repo}${topic.scene}` }));
+
+/** The folder a scene's refs are relative to. */
+export const projectOf = (example: Example): string => `${repo}${example.root ?? `examples/${example.project}`}`;
 
 /**
  * The scenes the eval's models wrote, to play like the examples: EXPLICADOR_E2E_SCENES names a folder (npm run eval
@@ -66,7 +80,7 @@ export function payloadOf(example: Example): Omit<ScenePayload, 'version'> {
     changes: [],
     savedAt: '2026-11-13T12:00:00.000Z',
     trail: [],
-    blocks: withSnippets(`${repo}examples/${example.project}`, parsed.scene.blocks),
+    blocks: withSnippets(projectOf(example), parsed.scene.blocks),
   };
 }
 
@@ -109,7 +123,7 @@ export const test = base.extend<Fixtures>({
     await use(async (example) => {
       const bridge = new Bridge({ viewerDir, openUrl: () => {} });
       bridges.push(bridge);
-      serveProject(bridge, `${repo}examples/${example.project}`);
+      serveProject(bridge, projectOf(example));
       const url = await bridge.start();
       bridge.publish(payloadOf(example));
       return url;

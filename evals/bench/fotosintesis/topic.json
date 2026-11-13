@@ -1,0 +1,48 @@
+{
+  "id": "fotosintesis",
+  "title": "La fotosíntesis",
+  "audience": "Estudiantes de secundaria de 14 a 15 años",
+  "language": "es",
+  "sources": [
+    "evals/bench/fotosintesis/source.md"
+  ],
+  "scene": "evals/bench/fotosintesis/scene.exl.md",
+  "root": "evals/bench/fotosintesis",
+  "questions": [
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos mg de oxígeno libera la hoja por hora?",
+      "answer": 6.4,
+      "tolerance": 0.05
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos mg de CO2 absorbe la hoja por hora?",
+      "answer": 8.8,
+      "tolerance": 0.05
+    },
+    {
+      "q": "¿De qué molécula proviene el oxígeno que libera la planta?",
+      "options": [
+        "Del dióxido de carbono (CO2)",
+        "De la glucosa",
+        "Del agua (H2O)",
+        "Del aire que entra por las raíces"
+      ],
+      "answer": "C"
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos mg de agua absorbe la hoja por hora?",
+      "answer": 3.6,
+      "tolerance": 0.05
+    },
+    {
+      "q": "Un invernadero tiene luz y agua de sobra, pero se agota el CO2. ¿Qué pasa con la fotosíntesis?",
+      "options": [
+        "Se acelera, porque hay más luz por cada molécula de CO2",
+        "No cambia",
+        "Solo se frena si baja la temperatura",
+        "Se frena, porque el CO2 es el factor que falta"
+      ],
+      "answer": "D"
+    }
+  ]
+}

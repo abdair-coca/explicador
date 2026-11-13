@@ -1,0 +1,40 @@
+{
+  "id": "contrato-alquiler",
+  "title": "Las cláusulas clave de un contrato de alquiler",
+  "audience": "Una persona que va a alquilar su primera vivienda y nunca ha leído un contrato",
+  "language": "es",
+  "sources": [
+    "evals/bench/contrato-alquiler/source.md"
+  ],
+  "scene": "evals/bench/contrato-alquiler/scene.exl.md",
+  "root": "evals/bench/contrato-alquiler",
+  "questions": [
+    {
+      "q": "Pablo paga la renta de abril el día 12, y el plazo era el día 5. Según el contrato, ¿cuántos euros de mora debe?",
+      "answer": 35
+    },
+    {
+      "q": "Según el contrato, ¿con cuántos días de anticipación debe avisar Pablo por escrito si quiere irse antes de que termine?",
+      "answer": 30
+    },
+    {
+      "q": "Según el contrato, ¿cuántos euros deja Pablo como garantía?",
+      "answer": 900
+    },
+    {
+      "q": "Según el contrato, nadie avisa nada antes del vencimiento. ¿Qué ocurre?",
+      "options": [
+        "Termina el 28 de febrero de 2027",
+        "Hay que firmar un contrato nuevo",
+        "Pasa a ser un contrato por tiempo indefinido",
+        "Se renueva automáticamente por otros 12 meses"
+      ],
+      "answer": "D"
+    },
+    {
+      "q": "En la renovación, si Marta sube la renta lo máximo que permite el contrato, ¿cuántos euros al mes pagará Pablo?",
+      "answer": 472.5,
+      "tolerance": 0.01
+    }
+  ]
+}

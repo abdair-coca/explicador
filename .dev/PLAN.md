@@ -499,6 +499,22 @@ Parts, one commit each:
 - [x] **F21f. Close.** Done 2026-11-13: README (Develop: `npm run e2e`, `e2e:all`, CI, `npm run eval`; the limit about browsers) and `AGENTS.md` (checks now include build, `npm test` and `npm run e2e`; evals use other models, so the user is told first). Browser tests rerun after the last fixture change: typecheck 0, lint 0, build OK, server 222/222, viewer 162/162, e2e 37/37 in Chromium.
 - Criterion: typecheck, lint, test, build and the browser tests pass; every case of the suite scores at least 0.8 with Haiku and 0.95 with Sonnet and Opus, with the rule graders passing on all three; the scenes the models wrote play in the browser without errors.
 
+### F22–F30: from "valid format" to "an explanation that is understood" (user, 2026-11-13)
+
+The user pasted a plan after seeing that scenes obey every rule and are still not understood (the five-box map of the trees scene). The full plan, principles, working rules and per-phase scope and acceptance criteria live in [`docs/plan.md`](../docs/plan.md), as the user asked; this file keeps only the status.
+
+Standing rules from the user: stop and wait for review at the end of **F22, F25 and F30**; evals on **Haiku only**, and **before any run with another model, tell the user first** (for Sonnet or Opus, with the cost at list price); no tags per domain; do not touch F11 or add features outside the plan.
+
+- [x] **F22. Bench of 10 topics and a comprehension baseline.** Done 2026-11-13, stop for review. `evals/bench/` (10 topics with source, scene, audience and 5 questions each), `npm run eval:comprension` (Haiku with and without the scene, graded without judges), `docs/prueba-humana.md`, `docs/baseline-f22.md` with the table and screenshots. Haiku 2.4 of 5 without the scene, 4.9 with it; every scene has 0 rule warnings. The first questions were saturated (4.6 without the scene) and were rewritten; the model eval catches omissions but not clarity. Typecheck 0, lint 0, build OK, server 222/222, viewer 162/162, evals 50/50, e2e 61/61 in Chromium.
+- [ ] F23. Mandatory pedagogical brief.
+- [ ] F24. Narrative arc and comprehension rules.
+- [ ] F25. Form "structure with states": `<structure>` (stop).
+- [ ] F26. Form "causal system": `<system>`.
+- [ ] F27. Forms "annotated space" and "argument".
+- [ ] F28. Sources beyond code.
+- [ ] F29. Interactivity that teaches.
+- [ ] F30. Measure the result (stop).
+
 ### Unattended mode (user, 2026-11-10)
 
 The user asked to push the work and continue it in a cloud session without their laptop, as a loop that adds features and fixes errors on its own, without supervision but with a clear objective. Choices through a quiz the same day: objective "F12 and continuous improvement"; publish straight to `main`; one long cloud session started now (not a recurring schedule). This overrides, for this mode only, "stop at the end of each phase and wait for the go-ahead" in `AGENTS.md`.
@@ -608,3 +624,5 @@ Open points:
 | F19 | done (2026-11-12), user review pending; then the INF672 session rebuilds "segundo parcial" |
 | F20 | done (2026-11-13), user review pending |
 | F21 | done (2026-11-13), user review pending |
+| F22 | done (2026-11-13), stopped for the user's review |
+| F23–F30 | planned (user, 2026-11-13); see `docs/plan.md` |

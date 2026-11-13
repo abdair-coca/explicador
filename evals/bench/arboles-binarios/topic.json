@@ -1,0 +1,51 @@
+{
+  "id": "arboles-binarios",
+  "title": "Inserción y clasificación en un árbol binario de búsqueda",
+  "audience": "Estudiantes de segundo año de ingeniería que saben qué es una lista enlazada",
+  "language": "es",
+  "sources": [
+    "evals/bench/arboles-binarios/source.md"
+  ],
+  "scene": "evals/bench/arboles-binarios/scene.exl.md",
+  "root": "evals/bench/arboles-binarios",
+  "questions": [
+    {
+      "q": "En el ejemplo de la explicación, ¿cuánto vale la longitud de camino interno (LCI) del árbol?",
+      "answer": 4
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿por qué el árbol no es lleno?",
+      "options": [
+        "Porque el 3 tiene un solo hijo",
+        "Porque la raíz tiene dos hijos",
+        "Porque el 10 tiene un hijo",
+        "Porque su altura es 2"
+      ],
+      "answer": "A"
+    },
+    {
+      "q": "En esta práctica, ¿qué pasa cuando se intenta insertar un valor que ya existe en el árbol?",
+      "options": [
+        "Se inserta a la izquierda del nodo igual",
+        "Se inserta a la derecha del nodo igual",
+        "Se rechaza y el árbol no cambia",
+        "Reemplaza al nodo que tiene ese valor"
+      ],
+      "answer": "C"
+    },
+    {
+      "q": "En esta práctica, la raíz de un árbol tiene un único hijo, a la izquierda, y ese hijo es una hoja. ¿Cuánto vale el factor de equilibrio de la raíz?",
+      "options": [
+        "−1",
+        "0",
+        "1",
+        "2"
+      ],
+      "answer": "C"
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿cuánto vale el factor de equilibrio de la raíz?",
+      "answer": 1
+    }
+  ]
+}

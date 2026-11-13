@@ -1,0 +1,43 @@
+{
+  "id": "interes-compuesto",
+  "title": "El interés compuesto en un préstamo",
+  "audience": "Adultos sin formación financiera que van a pedir un préstamo",
+  "language": "es",
+  "sources": [
+    "evals/bench/interes-compuesto/source.md"
+  ],
+  "scene": "evals/bench/interes-compuesto/scene.exl.md",
+  "root": "evals/bench/interes-compuesto",
+  "questions": [
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos euros de interés se cargan en el año 3?",
+      "answer": 150.53,
+      "tolerance": 0.01
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos euros más se deben a los 3 años con interés compuesto que con interés simple?",
+      "answer": 44.93,
+      "tolerance": 0.01
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿cuántos euros se deben después de 1 año si los intereses se suman cada mes?",
+      "answer": 1126.83,
+      "tolerance": 0.01
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿qué pasa con la deuda si cada año se paga exactamente el interés de ese año?",
+      "options": [
+        "Se queda igual que al principio",
+        "Sigue creciendo, pero más despacio",
+        "Baja un poco cada año",
+        "Se duplica en 6 años"
+      ],
+      "answer": "A"
+    },
+    {
+      "q": "En el ejemplo de la explicación, ¿qué porcentaje del capital inicial crece la deuda en total a los 3 años? Redondea a dos decimales.",
+      "answer": 40.49,
+      "tolerance": 0.05
+    }
+  ]
+}
