@@ -12,6 +12,12 @@ Every scene is a page that explains in full and a presentation someone can watch
 
 ## Workflow
 
+First decide what is asked, because each answer has its own tool:
+- **A walk through code** ("show me the code", "step by step", "walk me through", "enséñame el código paso a paso", a file or a function to read along): a tour with `explain_code`, step 9. No scene.
+- **A message from the viewer** (it starts with `Explicador viewer:`): steps 7 to 9, as it says.
+- **A file to share**: `export_scene`, step 10.
+- **Anything else that asks to understand the project**: a scene, steps 1 to 6.
+
 1. **Pick a topic**: a short, stable name for what is explained ("login", "checkout flow"). Reuse the same topic for the same question so the cache hits.
 2. **Call `show_scene`** with the topic.
    - **fresh**: the scene is already in the viewer and its EXL is in the result. Do **not** read code or call other tools. Reply with 2–4 sentences summarizing it from the EXL and give the viewer URL.
@@ -21,7 +27,7 @@ Every scene is a page that explains in full and a presentation someone can watch
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
+5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
 6. **Reply in the chat** with a short explanation (3–6 sentences, no list of the scene's steps, no code) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -69,13 +75,13 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` takes an optional `id`.
 
 ```exl
-# Title in Markdown
+# What happens when you log in?
 
 <theme name="security" />
 
 One short paragraph of context.
 
-<arch id="overview" title="Login: the parts involved">
+<arch id="overview" title="The server checks the password and keeps only a hash">
   <node id="form" label="Login form" desc="Posts the credentials as JSON" kind="ui" ref="src/ui/login-form.js" />
   <node id="api" label="Auth routes" desc="Validate input, set the cookie" kind="service" ref="src/api/auth-routes.js:6-20" />
   <node id="users" label="Users table" desc="Users and password hashes" kind="store" ref="src/db/users.js" />
@@ -94,7 +100,14 @@ One short paragraph of context.
   <code node="password" ref="src/auth/password.js:14-19">The comparison that keeps timing constant.</code>
 </arch>
 
-<flow id="login" title="Logging in">
+<trace id="example" title="The password is never stored: only its scrypt key is compared">
+<value label="What the user types">ada@example.com · lovelace</value>
+<value kind="table" label="What the form posts" code="JSON.stringify(body)" note="The form sends both fields once, as JSON, to POST /api/login.">email=ada@example.com|password=lovelace</value>
+<value kind="table" label="What the check derives" code="scryptAsync(password, salt, 64)" ref="src/auth/password.js:17" note="scrypt runs on what was typed with the stored salt, and gives the stored key back.">salt=5f1d0c7e…|key=2149472b…</value>
+<value label="The answer" code="timingSafeEqual(key, expected)" ref="src/auth/password.js:18" note="Both keys match, compared in constant time, so the login succeeds.">true</value>
+</trace>
+
+<flow id="login" title="A right password earns a session cookie">
   <node id="form" label="Login form" desc="Sends the credentials" kind="ui" />
   <node id="api" label="Auth routes" desc="Validate and reply" kind="service" />
   <step from="form" to="api" label="credentials" ref="src/ui/login-form.js:7-11">

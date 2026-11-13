@@ -491,11 +491,11 @@ body {
 .trace-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .trace-chip { display: inline-block; border: 2px solid var(--border); background: var(--card); border-radius: 999px; padding: 0.3rem 0.85rem; font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; box-shadow: 0 2px 0 var(--border); }
 .trace-name { display: inline-block; font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; }
-.trace-table { border-collapse: separate; border-spacing: 0; min-width: 16rem; background: var(--card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; }
+.trace-table { border-collapse: separate; border-spacing: 0; min-width: min(16rem, 100%); max-width: 100%; background: var(--card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; }
 .trace-table th, .trace-table td { padding: 0.45rem 1rem; text-align: left; border-top: 1px solid var(--border-soft); }
 .trace-table tr:first-child th, .trace-table tr:first-child td { border-top: 0; }
 .trace-table th { font-weight: 700; }
-.trace-cell { font-family: var(--font-mono); font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; animation: tok-in var(--dur-slow) var(--ease-pop) both; }
+.trace-cell { font-family: var(--font-mono); font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; animation: tok-in var(--dur-slow) var(--ease-pop) both; }
 .trace-bars { display: grid; grid-template-columns: max-content minmax(8rem, 1fr) max-content; gap: 0.45rem 0.9rem; align-items: center; }
 .trace-bar-row { display: contents; }
 .trace-track { position: relative; height: 1.1rem; }
@@ -515,6 +515,8 @@ body {
 .trace-large .trace-chip { font-size: 1.35rem; padding: 0.45rem 1.15rem; }
 .trace-large .trace-name, .trace-large .trace-bar-value { font-size: 1.3rem; }
 .trace-large .trace-table th, .trace-large .trace-table td { font-size: 1.3rem; padding: 0.6rem 1.4rem; }
+/* On a phone a long value (an email, a hash) wraps inside its cell instead of pushing the table off the slide. */
+@media (max-width: 640px) { .trace-large .trace-table th, .trace-large .trace-table td { font-size: 1.05rem; padding: 0.5rem 0.8rem; } }
 .trace-large .trace-track { height: 1.6rem; }
 .trace-large .trace-number { font-size: clamp(4rem, 11vw, 8rem); }
 

@@ -1,5 +1,5 @@
 // npm run eval: the eval suite on Haiku, Sonnet and Opus, each against its target (F21e).
-//   npm run eval [-- --models haiku,opus] [--case <glob>] [--runs <n>] [--concurrency <n>]
+//   npm run eval [-- --models haiku,opus] [--case <glob>] [--runs <n>] [--concurrency <n>] [--keep-temp]
 // Every run is a real Claude session on your account, so it costs money. Build first (`npm run build`): the runs start
 // the plugin's own MCP server. Results go to evals/results/: one JSON per model and summary.md.
 // Targets (user, 2026-11-13): Haiku very good (every case ≥ 0.8), Sonnet and Opus excellent (≥ 0.95); on all three every
@@ -18,6 +18,7 @@ const { values } = parseArgs({
     case: { type: 'string' },
     runs: { type: 'string' },
     concurrency: { type: 'string', default: '4' },
+    'keep-temp': { type: 'boolean', default: false },
   },
 });
 const targets: Record<string, number> = { haiku: 0.8, sonnet: 0.95, opus: 0.95 };
@@ -65,6 +66,7 @@ for (const model of models) {
     '--json', out,
     ...(values.case ? ['--case', values.case] : []),
     ...(values.runs ? ['--runs', values.runs] : []),
+    ...(values['keep-temp'] ? ['--keep-temp'] : []),
   ];
   console.log(`\n== ${model} (target ${target}) ==`);
   // Runs pass only EVAL_* variables to the plugin's server; this one keeps it from opening browser tabs.

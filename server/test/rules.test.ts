@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl } from '../src/parser/index.ts';
-import { boxWarnings, codeWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
+import { boxWarnings, codeWarnings, exampleWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
 import type { Block } from '../src/scene.ts';
 import { tempProject } from './helpers.ts';
 
@@ -168,6 +168,16 @@ describe('codeWarnings', () => {
     assert.match(codeWarnings(blocksOf(arch))[0] ?? '', /No <code>/);
     assert.deepEqual(codeWarnings(blocksOf(arch.replace('</arch>', '<code node="a" ref="a.js:1-2">Why.</code>\n</arch>'))), []);
     assert.deepEqual(codeWarnings(blocksOf('<stats>\n<stat value="1" label="one" />\n</stats>')), []);
+  });
+});
+
+describe('exampleWarnings', () => {
+  it('asks a flow for one real input traced through it, and nothing else', () => {
+    const flow = '<flow title="F">\n<node id="a" label="A" desc="Does" />\n<node id="b" label="B" desc="Does too" />\n<step from="a" to="b" label="go">Goes.</step>\n</flow>';
+    const trace = '<trace title="T">\n<value label="In">a</value>\n<value label="Out">b</value>\n</trace>';
+    assert.match(exampleWarnings(blocksOf(flow))[0] ?? '', /No <trace>: follow one real input through the flow/);
+    assert.deepEqual(exampleWarnings(blocksOf(`${flow}\n\n${trace}`)), []);
+    assert.deepEqual(exampleWarnings(blocksOf('<arch title="A">\n<node id="a" label="A" desc="Does" />\n</arch>')), [], 'an architecture alone');
   });
 });
 

@@ -36,6 +36,7 @@ export function sceneWarnings(root: string, blocks: Block[], refs: readonly stri
     ...lessonWarnings(blocks),
     ...quizWarnings(blocks),
     ...codeWarnings(blocks),
+    ...exampleWarnings(blocks),
   ];
 }
 
@@ -360,5 +361,16 @@ export function codeWarnings(blocks: Block[]): string[] {
   if (diagrams.length === 0 || blocks.some((block) => 'codes' in block && (block.codes?.length ?? 0) > 0)) return [];
   return [
     'No <code>: give the 1–4 boxes a reader will open their key lines, <code node="id" ref="path:start-end">why these lines matter</code> inside their block; the detail panel shows them, copied from the file.',
+  ];
+}
+
+// One example --------------------------------------------------------------------------------------------------------
+
+/** A flow is a process something goes through: one real input follows it as a <trace> (presenting.md, step 4). */
+export function exampleWarnings(blocks: Block[]): string[] {
+  if (!blocks.some((block) => block.type === 'flow') || blocks.some((block) => block.type === 'trace')) return [];
+  return [
+    'No <trace>: follow one real input through the flow (what the user types, a request, a row), changing form at each step: ' +
+      '<trace title="…"><value label="What goes in">the real input</value><value kind="table" label="…" code="the call" note="one sentence">name=value|…</value>…</trace>, every value from the code or its data.',
   ];
 }

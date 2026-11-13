@@ -213,7 +213,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           ...warningLines(warnings),
           warnings.length > 0
             ? `The scene is saved, but it breaks ${warnings.length === 1 ? 'a rule' : `${warnings.length} rules`} of the explicador skill: fix every warning and call render_scene again with the same topic until none is left (presenting.md says how).`
-            : 'No warnings: the scene follows every rule the server checks. Now reply in the chat in 3 to 6 sentences, in the user\'s language, with the viewer URL: the scene carries the detail, so no list of its steps and no code.',
+            : `No warnings: the scene follows every rule the server checks. Now reply in the chat in 3 to 6 sentences, in the user's language, ending with the viewer URL exactly as written here: ${bridge.url} (the scene carries the detail, so no list of its steps and no code).`,
         ]
           .filter(Boolean)
           .join('\n'),

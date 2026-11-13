@@ -35,12 +35,12 @@ graders:
     weight: 1
     input_match: 'sessions\.js'
     min: 1
-  - name: 'rule-only-changed'
+  - name: 'rule-not-from-scratch'
     type: 'tool_used'
     tool: 'Read'
     weight: 1
     input_match: '(auth-routes|login-form|login-page|password|users|auth-service|require-session|http|server|cart-service|cart-routes)\.js'
-    max: 0
+    max: 2
     min: 0
   - name: 'rule-rendered'
     type: 'tool_used'

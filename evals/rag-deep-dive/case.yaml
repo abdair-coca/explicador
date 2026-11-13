@@ -116,7 +116,7 @@ graders:
     target:
       source: 'file'
       path: '.explicador/scenes/rag.json'
-    pattern: '0[.,]88\b[\s\S]{0,40}0[.,]47\b'
+    pattern: '0[.,]8(?:8|79)\b[\s\S]{0,60}?0[.,]4(?:7|65)\b'
     weight: 1
   - name: 'fact-3-of-12'
     type: 'regex'

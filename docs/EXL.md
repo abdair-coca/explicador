@@ -179,6 +179,7 @@ After a scene is saved, `render_scene` may add warnings, one `Warning:` line eac
 - In a scene with chapters: no `<journey>` before the first chapter (the map); a chapter without `goal`; a chapter without `<quiz>`, except the last one when it is the review; a last chapter with fewer than 3 flashcards (no review); no `<trace>`; no `<concept>`.
 - A `why` that opens with a verdict ("Right,", "Wrong:", "Correcto.").
 - A scene with `<arch>`, `<flow>`, `<data>` or `<state>` and no `<code>`.
+- A scene with a `<flow>` and no `<trace>`: one real input should follow the process.
 
 The skill's `presenting.md` says how to fix each one.
 
