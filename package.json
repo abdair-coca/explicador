@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e && tsc -p evals",
     "lint": "oxlint",
     "test": "npm test --workspaces --if-present",
     "preview": "node server/src/preview.ts",
