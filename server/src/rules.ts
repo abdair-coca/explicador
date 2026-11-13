@@ -32,9 +32,11 @@ export function sceneWarnings(root: string, blocks: Block[], refs: readonly stri
     ...numberWarnings(root, blocks, refs),
     ...boxWarnings(blocks),
     ...subtitleWarnings(blocks),
+    ...sectionWarnings(blocks),
     ...lessonWarnings(blocks),
     ...quizWarnings(blocks),
     ...codeWarnings(blocks),
+    ...exampleWarnings(blocks),
   ];
 }
 
@@ -287,6 +289,22 @@ export function subtitleWarnings(blocks: Block[]): string[] {
   ];
 }
 
+// Sections -----------------------------------------------------------------------------------------------------------
+
+/** Headings that split a scene into sections before they are chapters. */
+export const MAX_SECTION_HEADINGS = 2;
+
+/** A scene in sections is a lesson or a deep dive: its sections are <chapter>s, which get the rail, the cards and the map. */
+export function sectionWarnings(blocks: Block[]): string[] {
+  if (blocks.some((block) => block.type === 'chapter')) return [];
+  const headings = blocks.flatMap((block) => (block.type === 'markdown' ? block.text.split(/\r?\n/).filter((line) => /^##\s+\S/.test(line.trim())) : []));
+  if (headings.length <= MAX_SECTION_HEADINGS) return [];
+  return [
+    `This scene is split into ${headings.length} sections with "##" headings: make each one a <chapter title goal stage?> instead ` +
+      '(a lesson or a deep dive: a <journey> map in the intro, then one chapter per stop with its component and a <quiz>, and a review at the end).',
+  ];
+}
+
 // Lessons ------------------------------------------------------------------------------------------------------------
 
 /** A lesson (a scene with chapters) has goals, a check per chapter, a final review, one example traced and its concepts. */
@@ -302,6 +320,10 @@ export function lessonWarnings(blocks: Block[]): string[] {
   const review = cards(last) >= MIN_REVIEW_CARDS ? last : undefined;
   const title = (section: { chapter: ChapterBlock }): string => `"${section.chapter.title}"`;
   const warnings: string[] = [];
+  const intro = blocks.slice(0, blocks.findIndex((block) => block.type === 'chapter'));
+  if (!intro.some((block) => block.type === 'journey')) {
+    warnings.push('No map: put a <journey> in the intro, before the first chapter, with one <stage> per step of the process (its real size as value), and give each chapter that explains a step its stage="…".');
+  }
   const noGoal = chapters.filter((section) => !section.chapter.goal).map(title);
   if (noGoal.length > 0) warnings.push(`Chapters without a goal: ${listed(noGoal)}. Give each one: what the reader can do by its end ("Read a confusion matrix").`);
   const unchecked = chapters.filter((section) => section !== review && !section.blocks.some((block) => block.type === 'quiz')).map(title);
@@ -339,5 +361,16 @@ export function codeWarnings(blocks: Block[]): string[] {
   if (diagrams.length === 0 || blocks.some((block) => 'codes' in block && (block.codes?.length ?? 0) > 0)) return [];
   return [
     'No <code>: give the 1–4 boxes a reader will open their key lines, <code node="id" ref="path:start-end">why these lines matter</code> inside their block; the detail panel shows them, copied from the file.',
+  ];
+}
+
+// One example --------------------------------------------------------------------------------------------------------
+
+/** A flow is a process something goes through: one real input follows it as a <trace> (presenting.md, step 4). */
+export function exampleWarnings(blocks: Block[]): string[] {
+  if (!blocks.some((block) => block.type === 'flow') || blocks.some((block) => block.type === 'trace')) return [];
+  return [
+    'No <trace>: follow one real input through the flow (what the user types, a request, a row), changing form at each step: ' +
+      '<trace title="…"><value label="What goes in">the real input</value><value kind="table" label="…" code="the call" note="one sentence">name=value|…</value>…</trace>, every value from the code or its data.',
   ];
 }

@@ -1,7 +1,7 @@
 // What every browser test shares: the example scenes, a bridge that serves one of them with the built viewer, a
 // record of the page's errors, and a walk through Present mode.
-import { existsSync } from 'node:fs';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test as base, type Locator, type Page } from '@playwright/test';
 import { Bridge } from '../server/src/bridge/index.ts';
@@ -17,6 +17,8 @@ export interface Example {
   name: string;
   /** The project the scene was written against, under examples/. */
   project: string;
+  /** The scene's EXL; examples/scenes/<name>.exl.md when absent. */
+  file?: string;
 }
 
 export const examples: Example[] = [
@@ -27,6 +29,27 @@ export const examples: Example[] = [
   { name: 'rag', project: 'rag' },
 ];
 
+/**
+ * The scenes the eval's models wrote, to play like the examples: EXPLICADOR_E2E_SCENES names a folder (npm run eval
+ * keeps them in evals/results/<stamp>/runs) whose <project>.<topic>.exl.md files were written over examples/<project>.
+ */
+export const written: Example[] = scenesIn(process.env.EXPLICADOR_E2E_SCENES);
+
+function scenesIn(dir: string | undefined): Example[] {
+  if (!dir) return [];
+  const walk = (folder: string): string[] =>
+    readdirSync(folder, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? walk(join(folder, entry.name)) : [join(folder, entry.name)]));
+  return walk(dir)
+    .filter((file) => file.endsWith('.exl.md'))
+    .sort()
+    .map((file) => {
+      const [, project = '', topic = ''] = /^([\w-]+)\.([\w-]+)\.exl\.md$/.exec(basename(file)) ?? [];
+      if (!existsSync(`${repo}examples/${project}`)) throw new Error(`${file}: name it <project>.<topic>.exl.md, with a project under examples/`);
+      // The run's folder names the scene: "sonnet-login-scene-1-login".
+      return { name: `${basename(dirname(file))}-${topic}`, project, file };
+    });
+}
+
 export const sizes = [
   { name: 'desktop', viewport: { width: 1440, height: 900 } },
   { name: 'phone', viewport: { width: 390, height: 844 } },
@@ -34,7 +57,7 @@ export const sizes = [
 
 /** The scene as the server publishes it: parsed, with its key code and chapter cells read from the project. */
 export function payloadOf(example: Example): Omit<ScenePayload, 'version'> {
-  const parsed = parseExl(readFileSync(`${repo}examples/scenes/${example.name}.exl.md`, 'utf8'));
+  const parsed = parseExl(readFileSync(example.file ?? `${repo}examples/scenes/${example.name}.exl.md`, 'utf8'));
   if (!parsed.ok) throw new Error(`${example.name}: ${formatErrors(parsed.errors)}`);
   return {
     topic: example.name,

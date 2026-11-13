@@ -10,7 +10,7 @@ This notebook teaches a computer to read a short movie review and say whether it
 <stat value="70" label="word features the model learns from" ref="reviews.ipynb:10" />
 </stats>
 
-<journey id="path" title="The data's path">
+<journey id="path" title="24 reviews become one verdict in five steps">
 <stage id="reviews" label="Reviews" value="24 reviews" kind="table" ref="reviews.ipynb:3">Every review is a sentence plus its label: 1 for positive, 0 for negative.</stage>
 <stage id="clean" label="Clean text" value="24 texts" kind="text" op="clean()" ref="reviews.ipynb:6">Lowercase, no punctuation, no filler words, but negations stay.</stage>
 <stage id="split" label="Train and test" value="18 + 6" kind="split" op="train_test_split()" ref="reviews.ipynb:8">The model learns from 18 reviews; 6 are hidden away to grade it fairly.</stage>
@@ -19,7 +19,7 @@ This notebook teaches a computer to read a short movie review and say whether it
 <stage id="score" label="Test accuracy" value="0.833" kind="metric" ref="reviews.ipynb:15">On the 6 hidden reviews it gets 5 right.</stage>
 </journey>
 
-<chapter id="load" title="The reviews" goal="Know what the model learns from: 24 sentences, each with a 0 or a 1." ref="reviews.ipynb:2-4" />
+<chapter id="load" title="The model learns from 24 labelled sentences" goal="Know what the model learns from: 24 sentences, each with a 0 or a 1." ref="reviews.ipynb:2-4" />
 
 Before any model, there is a table of examples with their answers.
 
@@ -36,6 +36,11 @@ Before any model, there is a table of examples with their answers.
 
 The notebook writes 24 reviews by hand: 12 with label 1 and 12 with label 0. Having the same number of each matters: a model that always said "positive" would only be right half of the time, so any score above 0.5 is real learning.
 
+<chart id="chart-labels" title="Half the reviews are positive, half negative" type="bars" ref="reviews.ipynb:4">
+<row label="positive (1)" values="12" />
+<row label="negative (0)" values="12" />
+</chart>
+
 > [!NOTE]
 > Real datasets have thousands of reviews. This one is tiny on purpose, so every number in the lesson can be checked by eye.
 
@@ -45,17 +50,17 @@ The notebook writes 24 reviews by hand: 12 with label 1 and 12 with label 0. Hav
 <option why="Reviews are not scored by length.">The review is short</option>
 </quiz>
 
-<chapter id="clean" theme="text" title="Cleaning the text" goal="See why the cleaning drops filler words but keeps &quot;not&quot;." ref="reviews.ipynb:5-6" />
+<chapter id="clean" theme="text" title="Cleaning drops filler words but keeps &quot;not&quot;" goal="See why the cleaning drops filler words but keeps &quot;not&quot;." ref="reviews.ipynb:5-6" />
 
 The model will count words, so two spellings of the same word should count as one: "Not" and "not" must become the same thing. Cleaning is like sorting coins before counting them: same coin, same pile.
 
 The function `clean()` does three things: it lowercases, it replaces anything that is not a letter by a space, and it drops **stop words**, words like "I", "at", "all" that appear everywhere and say nothing about the opinion.
 
-<trace id="trace-clean" title="One review through clean()" ref="reviews.ipynb:6">
+<trace id="trace-clean" title="Six words shrink to three, and &quot;not&quot; survives" ref="reviews.ipynb:6">
 <value label="Original">Not good at all, I hated it</value>
 <value label="Lowercase" code="text.lower()" note="&quot;Not&quot; and &quot;not&quot; are now the same word.">not good at all, i hated it</value>
 <value label="Letters only" code="re.sub(r&quot;[^a-z\s]&quot;, &quot; &quot;, text)" note="The comma becomes a space, so it can never stick to a word.">not good at all  i hated it</value>
-<value label="No stop words" code="w not in STOP_WORDS" note="&quot;at&quot;, &quot;all&quot;, &quot;i&quot; and &quot;it&quot; go. &quot;not&quot; stays, because the notebook removed the negations from the stop word list.">not good hated</value>
+<value label="No stop words" code="w not in STOP_WORDS" note="&quot;at&quot;, &quot;all&quot;, &quot;i&quot; and &quot;it&quot; go, but &quot;not&quot; stays because the notebook took the negations off the stop word list.">not good hated</value>
 </trace>
 
 > [!IMPORTANT]
@@ -67,13 +72,19 @@ The function `clean()` does three things: it lowercases, it replaces anything th
 <option why="Other words like &quot;waste&quot; would still be there.">It would become an empty text</option>
 </quiz>
 
-<chapter id="split" theme="data" title="Train and test" goal="Understand why 6 reviews are hidden from the model." ref="reviews.ipynb:7-8" />
+<chapter id="split" theme="data" title="Six reviews stay hidden to grade the model fairly" goal="Understand why 6 reviews are hidden from the model." ref="reviews.ipynb:7-8" />
 
 If a student sees the exam questions while studying, a perfect grade proves nothing. So the notebook hides some reviews: the model **trains** on 18 and is **tested** on the other 6, which it never sees while learning.
 
+<concept id="c-split" term="Train/test split" ref="reviews.ipynb:8">
+<define>Keeping part of the labelled examples away from the model while it learns, to grade it later on examples it has never seen.</define>
+<analogy>A teacher who keeps some exam questions out of the practice sheets, so the exam measures understanding, not memory.</analogy>
+<example>24 reviews: 18 to **train**, 6 to **test**.</example>
+</concept>
+
 `train_test_split(..., test_size=0.25, stratify=df["label"])` takes a quarter of the reviews for the test set. **Stratify** means the split keeps the class balance: the 6 test reviews are 3 positive and 3 negative, the same half-and-half as the whole dataset.
 
-<chart id="chart-split" title="Reviews in each part" type="bars" series="negative|positive" ref="reviews.ipynb:8">
+<chart id="chart-split" title="Both parts keep half positive, half negative" type="bars" series="negative|positive" ref="reviews.ipynb:8">
 <row label="train" values="9|9" />
 <row label="test" values="3|3" />
 </chart>
@@ -83,13 +94,23 @@ If a student sees the exam questions while studying, a perfect grade proves noth
 <option correct="true" why="With only 6 test reviews, a random split could take 5 negatives and 1 positive, and the score would mostly measure that accident.">So both parts keep the same share of positive and negative reviews</option>
 </quiz>
 
-<chapter id="vectorize" title="Turning words into numbers" goal="Read a document-term matrix and know what CountVectorizer and TF-IDF put in it." ref="reviews.ipynb:9-11" />
+<chapter id="vectorize" title="Each review becomes a row of word counts" goal="Read a document-term matrix and know what CountVectorizer and TF-IDF put in it." ref="reviews.ipynb:9-11" />
 
-A model can only do arithmetic, so each review has to become a row of numbers. `CountVectorizer` builds a **vocabulary** of every word in the training reviews, and each review becomes one row with a column per word: the number is how many times that word appears. This is called a **bag of words**: like emptying the sentence into a bag, the order is lost but the counts remain.
+A model can only do arithmetic, so each review has to become a row of numbers. `CountVectorizer` builds a **vocabulary** of every word in the training reviews, and each review becomes one row with a column per word.
+
+<concept id="c-bow" term="Bag of words" ref="reviews.ipynb:10">
+<define>A review turned into a row of counts: one column per word of the vocabulary, holding how many times that word appears.</define>
+<analogy>Emptying the sentence into a bag: the order of the words is lost, but you can still count each one.</analogy>
+<example>
+| review | good | great | boring |
+|---|---|---|---|
+| good story great acting | 1 | 1 | 0 |
+</example>
+</concept>
 
 Here is the idea on 3 training reviews and 5 chosen words (cell 11 prints exactly this):
 
-<matrix id="dtm" title="3 reviews, 5 words" cols="good|great|bad|boring|not" ref="reviews.ipynb:11">
+<matrix id="dtm" title="A review is only its counts" cols="good|great|bad|boring|not" ref="reviews.ipynb:11">
 <row label="awful film ending bad" values="0|0|1|0|0" />
 <row label="good story great acting" values="1|1|0|0|0" />
 <row label="great acting fun story" values="0|1|0|0|0" />
@@ -102,7 +123,7 @@ The notebook uses `ngram_range=(1, 2)`: besides single words, it also counts **p
 > [!TIP]
 > **TF-IDF** is the same table with smarter numbers: a word that appears in many reviews (like "film") gets a smaller weight than a rare, telling word. The notebook tries both.
 
-<compare id="counts-vs-tfidf" title="Two ways to fill the table" a="Word counts" b="TF-IDF" ref="reviews.ipynb:9-11">
+<compare id="counts-vs-tfidf" title="TF-IDF turns down the words that are everywhere" a="Word counts" b="TF-IDF" ref="reviews.ipynb:9-11">
 <pair label="What a cell holds" a="How many times the word appears" b="The count, scaled down for words that are everywhere" />
 <pair label="A word in every review" a="Weighs as much as any other" b="Weighs **less**" winner="b" />
 <pair label="Reading the table" a="Whole numbers, easy to check by hand" b="Decimals" winner="a" />
@@ -114,7 +135,7 @@ The notebook uses `ngram_range=(1, 2)`: besides single words, it also counts **p
 <option why="Labels are kept apart, in y_train.">The labels</option>
 </quiz>
 
-<chapter id="train" title="Training the model" goal="Know what logistic regression learns and read train against test accuracy." ref="reviews.ipynb:12-13" />
+<chapter id="train" title="The model gives every word a weight" goal="Know what logistic regression learns and read train against test accuracy." ref="reviews.ipynb:12-13" />
 
 <concept id="c-logreg" term="Logistic regression" ref="reviews.ipynb:12">
   <define>A model that gives every column a **weight** and judges a review by adding up the weights of the words it contains.</define>
@@ -126,7 +147,7 @@ Training means finding the weights that best match the 18 labelled reviews.
 
 The notebook trains one model on the word counts and one on TF-IDF, and measures **accuracy** (the share of right answers) on both parts:
 
-<chart id="chart-acc" title="Accuracy: train against test" type="bars" series="train|test" highlight="test" ref="reviews.ipynb:13">
+<chart id="chart-acc" title="Perfect on what it studied, 5 of 6 on new reviews" type="bars" series="train|test" highlight="test" ref="reviews.ipynb:13">
 <row label="BoW" values="1.000|0.833" />
 <row label="TF-IDF" values="1.000|0.833" />
 </chart>
@@ -138,17 +159,28 @@ Both models get every training review right (1.000) but 5 of 6 test reviews (0.8
 <option correct="true" why="The 6 test reviews were hidden during training.">Test accuracy, 0.833</option>
 </quiz>
 
-<chapter id="evaluate" title="Grading on the test set" goal="Read a confusion matrix and compute accuracy, precision, recall and F1 from it." ref="reviews.ipynb:14-15" />
+<chapter id="evaluate" title="A confusion matrix shows which mistakes happened" goal="Read a confusion matrix and compute accuracy, precision, recall and F1 from it." ref="reviews.ipynb:14-15" />
 
-Accuracy says how many answers were right, but not **which** mistakes happened. A **confusion matrix** does: rows are the real labels, columns what the model predicted. The diagonal holds the right answers; everything else is a mistake.
+Accuracy says how many answers were right, but not **which** mistakes happened.
+
+<concept id="c-confusion" term="Confusion matrix" ref="reviews.ipynb:15">
+<define>A table that counts the answers by real label (rows) and predicted label (columns): the diagonal holds the right answers, every other cell a kind of mistake.</define>
+<analogy>A teacher's tally that says not only how many answers were wrong, but which wrong answer each student gave.</analogy>
+</concept>
+
+<concept id="c-precision" term="Precision and recall" ref="reviews.ipynb:15">
+<define>**Precision**: of the reviews the model called positive, the share that really were. **Recall**: of the reviews that really were positive, the share the model found.</define>
+<analogy>A fisher's net: precision is how much of the catch is fish rather than boots; recall is how many of the fish in the lake ended up in the net.</analogy>
+<formula>\text{precision} = \frac{TP}{TP + FP} \qquad \text{recall} = \frac{TP}{TP + FN}</formula>
+</concept>
 
 Pick each highlight to see which cells it reads; the numbers come from the counts.
 
-<matrix id="cm" title="The 6 test reviews" kind="confusion" cols="negative|positive" positive="positive" ref="reviews.ipynb:15">
+<matrix id="cm" title="One negative review was called positive" kind="confusion" cols="negative|positive" positive="positive" ref="reviews.ipynb:15">
 <row label="negative" values="2|1" />
 <row label="positive" values="0|3" />
 <focus metric="accuracy">All the right answers over all the reviews: 5 of 6.</focus>
-<focus metric="precision">Of the 4 reviews the model called positive, how many really were. One negative review slipped in.</focus>
+<focus metric="precision">3 of the 4 reviews the model called positive really were: one negative review slipped in.</focus>
 <focus metric="recall">Of the 3 truly positive reviews, how many the model found: all of them.</focus>
 <focus metric="f1">One number that balances precision and recall; it is low if either one is low.</focus>
 <focus label="The mistake" cells="1,2">One negative review was called positive: a false positive.</focus>
@@ -165,11 +197,11 @@ The notebook prints the review it got wrong: **"worst film year really bad"**, a
 <option why="Accuracy is 0.833.">75 % of all answers are right</option>
 </quiz>
 
-<chapter id="weights" title="Which words decide" goal="Read the model's weights and see that negation pairs carry meaning." ref="reviews.ipynb:16-17" />
+<chapter id="weights" title="Pairs with &quot;not&quot; carry meaning" goal="Read the model's weights and see that negation pairs carry meaning." ref="reviews.ipynb:16-17" />
 
 Because the model is just a weight per word, you can open it and look. The notebook prints the four strongest weights in each direction:
 
-<chart id="chart-coefs" title="The strongest weights" type="hbars" ref="reviews.ipynb:17">
+<chart id="chart-coefs" title="&quot;great&quot; pushes up most, &quot;boring&quot; down most" type="hbars" ref="reviews.ipynb:17">
 <row label="great" values="0.892" />
 <row label="loved" values="0.611" />
 <row label="fun" values="0.439" />
@@ -187,7 +219,7 @@ Two of the eight are **word pairs with "not"**: "not bad" pushes towards positiv
 <option why="Both words push up; nothing pushes down.">Negative</option>
 </quiz>
 
-<chapter id="scoring" theme="math" title="How the model scored one review" goal="Follow the arithmetic behind one prediction, from word weights to a probability." ref="reviews.ipynb:18-19" />
+<chapter id="scoring" theme="math" title="Neutral words outvote &quot;bad&quot;" goal="Follow the arithmetic behind one prediction, from word weights to a probability." ref="reviews.ipynb:18-19" />
 
 Chapter 6 showed one mistake: **"worst film year really bad"** was called positive. Now open the model and watch it decide. Cell 19 prints every word and word pair of that review that the model knows, with its weight; "worst" is not among them, because it never appeared in the training reviews.
 
@@ -200,32 +232,32 @@ The model starts from its **intercept** (its score before reading any word) and 
   <example>A score of exactly 0 gives a probability of one half; any positive score gives more than that.</example>
 </concept>
 
-<trace id="one-review" title="One review, from text to verdict" ref="reviews.ipynb:19">
+<trace id="one-review" title="Our review becomes 0.608" ref="reviews.ipynb:19">
 <value label="The review">worst film year really bad</value>
 <value kind="list" label="Words the model knows" code="bow.transform([text])" note="&quot;worst&quot; is not in the vocabulary, so it disappears; the word pairs appear as features of their own.">bad|film|film year|really|year|year really</value>
 <value kind="table" label="Counts" code="x = bow.transform([text]).toarray()[0]" note="Each known word or pair appears once.">bad=1|film=1|film year=1|really=1|year=1|year really=1</value>
-<value kind="bars" label="Weights" code="model.coef_[0][i]" note="Only &quot;bad&quot; pulls towards negative; four features push towards positive.">bad=-0.332|film=+0.011|film year=+0.175|really=+0.310|year=+0.175|year really=+0.175</value>
+<value kind="bars" label="Weights" code="model.coef_[0][i]" note="Only &quot;bad&quot; pulls towards negative; five features push towards positive.">bad=-0.332|film=+0.011|film year=+0.175|really=+0.310|year=+0.175|year really=+0.175</value>
 <value kind="number" label="Score" code="model.decision_function(...)" note="The intercept plus every count times its weight.">0.438</value>
 <value kind="number" label="Probability of positive" code="model.predict_proba(...)[0][1]" note="Above 0.5, so the model calls this review positive.">0.608</value>
 </trace>
 
-<calc id="score-one" title="Scoring &quot;worst film year really bad&quot;" kind="logistic" total="0.438" classes="negative|positive" ref="reviews.ipynb:19">
+<calc id="score-one" title="Five small pushes beat one negative word" kind="logistic" total="0.438" classes="negative|positive" ref="reviews.ipynb:19">
 <part label="intercept" value="-0.075" note="Where every review starts, before any word is read." />
 <part label="bad" value="-0.332" note="The only negative word the model knows here." />
 <part label="film" value="+0.011" note="Almost neutral." />
 <part label="film year" value="+0.175" note="A word pair from the bigrams; it happened to appear in positive training reviews." />
 <part label="really" value="+0.310" note="In this small dataset &quot;really&quot; came mostly with positive reviews." />
-<part label="year" value="+0.175" />
-<part label="year really" value="+0.175" />
+<part label="year" value="+0.175" note="Another small push towards positive." />
+<part label="year really" value="+0.175" note="A word pair that leans a little positive too." />
 </calc>
 
-<plot id="sigmoid-plot" title="Where this review falls on the sigmoid" x="score" y="probability of positive" ref="reviews.ipynb:19">
+<plot id="sigmoid-plot" title="A score just above 0 gives just over one half" x="score" y="probability of positive" ref="reviews.ipynb:19">
 <curve fn="sigmoid" />
 <mark x="0" label="undecided">A score of 0 sits exactly on the threshold.</mark>
-<mark x="0.438" label="our review">The review's score is a little to the right of 0, so its probability lands just above one half: enough to be called positive.</mark>
+<mark x="0.438" label="our review">Its score of 0.438 sits a little right of 0, so its probability, 0.608, is just enough to be called positive.</mark>
 </plot>
 
-<derive id="score-to-prob" title="From the score to the probability" ref="reviews.ipynb:19">
+<derive id="score-to-prob" title="0.438 becomes 0.608" ref="reviews.ipynb:19">
 <line>p = \sigma(z)</line>
 <line note="The definition of the **sigmoid**.">p = \frac{1}{1 + e^{-z}}</line>
 <line note="The score cell 19 printed for this review.">p = \frac{1}{1 + e^{-0.438}}</line>
@@ -241,13 +273,13 @@ The model starts from its **intercept** (its score before reading any word) and 
 <option why="Each word adds its own weight; the count of words does not decide.">Because most of the words are positive</option>
 </quiz>
 
-<chapter id="threshold" title="Moving the threshold" goal="See how the 0.5 threshold trades one kind of mistake for the other." ref="reviews.ipynb:20-21" />
+<chapter id="threshold" title="The threshold trades one mistake for another" goal="See how the 0.5 threshold trades one kind of mistake for the other." ref="reviews.ipynb:20-21" />
 
 The model never says "positive" directly: it gives a **probability**, and a **threshold** turns it into an answer. scikit-learn uses 0.5, but that is a choice, like the mark that decides who passes an exam. Cell 21 prints the probability of every test review.
 
 Drag the threshold and watch the dots: green when the review is called right, red when it is wrong. The matrix and the metrics below are recomputed from the same 6 reviews.
 
-<threshold id="what-if" title="The 6 test reviews and the threshold" classes="negative|positive" ref="reviews.ipynb:21">
+<threshold id="what-if" title="At 0.5, one of six reviews lands on the wrong side" classes="negative|positive" ref="reviews.ipynb:21">
 <point score="0.156" actual="negative" label="bad music boring plot hated" />
 <point score="0.292" actual="negative" label="boring slow bad watch" />
 <point score="0.608" actual="negative" label="worst film year really bad" />

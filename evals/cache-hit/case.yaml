@@ -1,0 +1,85 @@
+schema_version: '1.1'
+name: 'cache-hit'
+description: 'A fresh cached scene is answered from the cache, without reading code.'
+runs: 3
+execution:
+  max_turns: 15
+  timeout_seconds: 600
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: '/explicador:explain login'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-show'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__show_scene'
+    weight: 2
+    input_match: '"topic"\s*:\s*"login"'
+    min: 1
+  - name: 'rule-no-render'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+    max: 0
+    min: 0
+  - name: 'rule-no-index'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__ensure_index'
+    weight: 1
+    max: 0
+    min: 0
+  - name: 'rule-no-read'
+    type: 'tool_used'
+    tool: 'Read'
+    weight: 2
+    max: 0
+    min: 0
+  - name: 'rule-no-grep'
+    type: 'tool_used'
+    tool: 'Grep'
+    weight: 1
+    max: 0
+    min: 0
+  - name: 'rule-no-glob'
+    type: 'tool_used'
+    tool: 'Glob'
+    weight: 1
+    max: 0
+    min: 0
+  - name: 'reply-from-scene'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'scrypt|HttpOnly|401'
+    weight: 1
+    flags: 'i'
+  - name: 'rule-reply-url'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'http://127\.0\.0\.1:\d+/\?t=[a-f0-9]+'
+    weight: 1
+  - name: 'reply-short'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '[\s\S]{1200}'
+    weight: 1
+    match: 'not_contains'
+  - name: 'reply-no-code'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '```'
+    weight: 1
+    match: 'not_contains'

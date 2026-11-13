@@ -1,0 +1,70 @@
+schema_version: '1.1'
+name: 'question'
+description: 'A question typed in a box''s panel is answered with answer_question, lines that prove it, in the user''s language.'
+runs: 3
+execution:
+  max_turns: 20
+  timeout_seconds: 900
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: 'Explicador viewer: the user asks about "Password check (scrypt)" (node password, function, src/auth/password.js) in "Login: the parts involved" of the scene "login": "¿Por qué compara la contraseña en tiempo constante?" Answer in the user''s language with answer_question (topic "login", question "q1"): a short Markdown answer for the panel, with refs to the lines that prove it when they help. If the question deserves a diagram, first call render_scene with background true under a new topic and pass that topic as scene. If it is about how code runs, add a tour (steps with ref and note) so the user can step through it in the code window. Then reply in the chat with one sentence.'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-answered'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__answer_question'
+    weight: 3
+    input_match: '"question"\s*:\s*"q1"'
+    min: 1
+  - name: 'rule-refs'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__answer_question'
+    weight: 2
+    input_match: 'password\.js:\d+-\d+'
+    min: 1
+  - name: 'rule-no-rerender'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+    input_match: '"topic"\s*:\s*"login"'
+    max: 0
+    min: 0
+  - name: 'saved-answer'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '"answer"\s*:\s*\{'
+    weight: 2
+  - name: 'answer-timing-safe'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__answer_question'
+    weight: 1
+    input_match: 'timingSafeEqual'
+    min: 1
+  - name: 'rule-answer-spanish'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__answer_question'
+    weight: 1
+    input_match: '\b(?:tiempo|contraseña|atacante)\b'
+    min: 1
+  - name: 'reply-one-sentence'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '[\s\S]{400}'
+    weight: 1
+    match: 'not_contains'

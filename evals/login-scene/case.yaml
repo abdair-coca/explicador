@@ -1,0 +1,170 @@
+schema_version: '1.1'
+name: 'login-scene'
+description: 'Explain a feature of a code base as a scene: index first, the right components, no warning left, the facts of the code.'
+runs: 3
+execution:
+  max_turns: 60
+  timeout_seconds: 1800
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: 'Explícame cómo funciona el inicio de sesión de este proyecto. Usa «login» como tema.'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-skill'
+    type: 'tool_used'
+    tool: 'Skill'
+    weight: 1
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explicador(?::explain)?"'
+    min: 1
+  - name: 'rule-show-first'
+    type: 'tool_order'
+    before: 'mcp__plugin_explicador_explicador__show_scene'
+    after: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+  - name: 'rule-index-first'
+    type: 'tool_order'
+    before: 'mcp__plugin_explicador_explicador__ensure_index'
+    after: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+  - name: 'rule-rendered'
+    type: 'file_exists'
+    path: '.explicador/scenes/login.json'
+    weight: 2
+  - name: 'rule-no-warnings'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '"warnings"'
+    weight: 3
+    match: 'not_contains'
+  - name: 'uses-arch'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '<arch\b'
+    weight: 1
+  - name: 'uses-flow'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '<flow\b'
+    weight: 1
+  - name: 'uses-trace'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '<trace\b'
+    weight: 1
+  - name: 'shows-return'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: 'kind=.{0,2}return'
+    weight: 1
+  - name: 'fact-scrypt'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: 'scrypt'
+    weight: 1
+    flags: 'i'
+  - name: 'fact-constant-time'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: 'timingSafeEqual|tiempo constante'
+    weight: 1
+    flags: 'i'
+  - name: 'fact-cookie'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: 'HttpOnly'
+    weight: 1
+    flags: 'i'
+  - name: 'fact-one-hour'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '\b1 ?h\b|una hora|3600|60 min'
+    weight: 1
+    flags: 'i'
+  - name: 'fact-same-401'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '\b401\b'
+    weight: 1
+  - name: 'invents-nothing'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '\b(?:JWT|bcrypt|PostgreSQL|MySQL|MongoDB|Redis|localStorage)\b'
+    weight: 2
+    match: 'not_contains'
+    flags: 'i'
+  - name: 'rule-spanish'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '\b(?:contraseña|sesión|usuario)\b'
+    weight: 1
+    flags: 'i'
+  - name: 'rule-no-english'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '\b(?:which|because|should)\b'
+    weight: 1
+    match: 'not_contains'
+    flags: 'i'
+  - name: 'rule-reply-url'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'http://127\.0\.0\.1:\d+/\?t=[a-f0-9]+'
+    weight: 1
+  - name: 'reply-short'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '[\s\S]{1500}'
+    weight: 1
+    match: 'not_contains'
+  - name: 'reply-no-code'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '```'
+    weight: 1
+    match: 'not_contains'
+  - name: 'rule-reply-spanish'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '\b(?:sesión|contraseña|escena)\b'
+    weight: 1
+    flags: 'i'

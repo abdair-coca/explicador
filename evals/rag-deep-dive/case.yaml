@@ -1,0 +1,167 @@
+schema_version: '1.1'
+name: 'rag-deep-dive'
+description: 'A deep dive: a map of the whole process, one chapter per stop with its own picture, the same real example and the real numbers.'
+runs: 3
+execution:
+  max_turns: 100
+  timeout_seconds: 3600
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: '¿Cómo encuentra este centro de ayuda la respuesta a una pregunta? Explícamelo a fondo, de principio a fin, con los números reales: los imprime todos `npm run demo`, y su salida está en demo-output.txt. Usa «rag» como tema.'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-skill'
+    type: 'tool_used'
+    tool: 'Skill'
+    weight: 1
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explicador(?::explain)?"'
+    min: 1
+  - name: 'rule-rendered'
+    type: 'file_exists'
+    path: '.explicador/scenes/rag.json'
+    weight: 2
+  - name: 'rule-no-warnings'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '"warnings"'
+    weight: 3
+    match: 'not_contains'
+  - name: 'used-real-numbers'
+    type: 'tool_used'
+    tool: 'Read'
+    weight: 1
+    input_match: 'demo-output\.txt'
+    min: 1
+  - name: 'uses-map'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '<journey\b'
+    weight: 1
+  - name: 'chapter-per-stop'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '(?:<chapter\b[^>]*\bstage=[\s\S]*?){4}'
+    weight: 1
+  - name: 'uses-vector'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: 'kind=.{0,2}vector'
+    weight: 1
+  - name: 'uses-matrix'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '<matrix\b'
+    weight: 1
+  - name: 'uses-spaces'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '(?:<space\b[\s\S]*?){2}'
+    weight: 1
+  - name: 'uses-cosine'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '<cosine\b'
+    weight: 1
+  - name: 'concepts-with-analogy'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '(?:<analogy>[\s\S]*?){3}'
+    weight: 1
+  - name: 'review-flashcards'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '(?:<answer>[\s\S]*?){4}'
+    weight: 1
+  - name: 'fact-best-score'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '0[.,]988'
+    weight: 1
+  - name: 'fact-question-vector'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '0[.,]8(?:8|79)\b[\s\S]{0,60}?0[.,]4(?:7|65)\b'
+    weight: 1
+  - name: 'fact-3-of-12'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '\b3\b[^<"]{0,12}\b12\b'
+    weight: 1
+  - name: 'rule-spanish'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '\b(?:pregunta|respuesta|párrafos?|fragmentos?)\b'
+    weight: 1
+    flags: 'i'
+  - name: 'rule-no-english'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/rag.json'
+    pattern: '\b(?:which|because|should)\b'
+    weight: 1
+    match: 'not_contains'
+    flags: 'i'
+  - name: 'rule-reply-url'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'http://127\.0\.0\.1:\d+/\?t=[a-f0-9]+'
+    weight: 1
+  - name: 'reply-short'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '[\s\S]{1500}'
+    weight: 1
+    match: 'not_contains'
+  - name: 'reply-no-code'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '```'
+    weight: 1
+    match: 'not_contains'
+  - name: 'rule-reply-spanish'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '\b(?:pregunta|respuesta|escena)\b'
+    weight: 1
+    flags: 'i'

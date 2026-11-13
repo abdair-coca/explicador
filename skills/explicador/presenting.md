@@ -39,7 +39,7 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
 5. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
 6. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
-7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
+7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 8. **Check** against the checklist at the end. Done when every line is true.
 
 ## Which component for which question
@@ -132,7 +132,13 @@ With your project's code, every value of the trace comes from the code or a log,
 
 <theme name="ml" />
 
-<chapter title="A score becomes a probability" goal="Read a score as a probability between 0 and 1." />
+<journey title="A review becomes a verdict in three steps">
+<stage id="review" label="Review" value="1 review" kind="text">The review, as its author wrote it.</stage>
+<stage id="score" label="Score" value="0.438" kind="model" op="decision_function()">The model adds up what each word weighs.</stage>
+<stage id="probability" label="Probability" value="0.608" kind="metric" op="predict_proba()">The sigmoid turns the score into a probability.</stage>
+</journey>
+
+<chapter title="A score becomes a probability" goal="Read a score as a probability between 0 and 1." stage="probability" />
 
 The model gives each review a **score**, which can be any number. The **sigmoid** turns it into a probability.
 
@@ -179,7 +185,7 @@ The model gives each review a **score**, which can be any number. The **sigmoid*
 </quiz>
 ```
 
-A whole lesson repeats the middle chapter once per section of the notebook, each with its `<quiz>`, and ends with the review: 5–8 flashcards. Every number in a lesson comes from a notebook output (the rules are in `SKILL.md`, "Lessons").
+A whole lesson opens with this map and repeats the middle chapter once per section of the notebook, each with its `stage` and its `<quiz>`, and ends with the review: 5–8 flashcards. Every number in a lesson comes from a notebook output (the rules are in `SKILL.md`, "Lessons").
 
 ## LaTeX
 

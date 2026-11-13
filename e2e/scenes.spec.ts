@@ -1,7 +1,8 @@
-// Every example scene, on the page and in Present, at a desktop and a phone width.
-import { examples, expect, headingsOf, payloadOf, sizes, test, walkPresent } from './fixtures.ts';
+// Every example scene, on the page and in Present, at a desktop and a phone width; with EXPLICADOR_E2E_SCENES, the
+// scenes the eval's models wrote instead (see fixtures.ts).
+import { examples, expect, headingsOf, payloadOf, sizes, test, walkPresent, written } from './fixtures.ts';
 
-for (const example of examples) {
+for (const example of written.length > 0 ? written : examples) {
   test.describe(`${example.name}`, () => {
     for (const size of sizes) {
       test(`draws every component without errors or sideways scroll (${size.name})`, async ({ page, serve, errors }) => {

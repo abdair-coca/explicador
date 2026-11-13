@@ -1,5 +1,5 @@
 ---
-description: Explain a part of this codebase with an animated diagram in the Explicador viewer. Usage /explicador:explain <topic>, e.g. /explicador:explain login.
+description: Explain a part of this codebase with an animated diagram in the Explicador viewer. Usage /explicador:explain [topic], e.g. /explicador:explain login.
 argument-hint: <topic>
 ---
 

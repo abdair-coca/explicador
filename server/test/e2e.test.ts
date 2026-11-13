@@ -59,7 +59,7 @@ describe('MCP server over stdio', () => {
 
     const rendered = await call('render_scene', { topic: 'login', exl });
     assert.equal(rendered.isError, false, rendered.text);
-    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <flow id="login-flow">\)/);
+    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <trace id="login-trace">, <flow id="login-flow">\)/);
     assert.match(rendered.text, /No warnings: the scene follows every rule the server checks\./);
     viewerUrl = /at (http:\/\/127\.0\.0\.1:\d+\/\?t=[a-f0-9]+)/.exec(rendered.text)?.[1] ?? '';
     assert.ok(viewerUrl);
@@ -85,7 +85,7 @@ describe('MCP server over stdio', () => {
     assert.deepEqual(body.scene.changes, [{ path: 'src/auth/sessions.js', change: 'modified' }]);
     assert.deepEqual(
       body.scene.blocks.map((b) => b.type),
-      ['markdown', 'theme', 'markdown', 'arch', 'flow', 'markdown'],
+      ['markdown', 'theme', 'markdown', 'arch', 'markdown', 'trace', 'flow', 'markdown'],
     );
     // Key code arrives with the real lines, read from the project when the scene is shown.
     const password = body.scene.blocks[3]?.codes?.find((c) => c.node === 'password');

@@ -312,7 +312,8 @@ function parseJson(text: string): Record<string, unknown> | undefined {
 }
 
 export function openInBrowser(url: string): void {
-  if (process.env.EXPLICADOR_NO_BROWSER) return;
+  // Plugin evals pass only EVAL_* variables to a plugin's servers, and their runs must never open tabs.
+  if (process.env.EXPLICADOR_NO_BROWSER || process.env.EVAL_EXPLICADOR_NO_BROWSER) return;
   const [command, args] =
     process.platform === 'win32'
       ? ['rundll32', ['url.dll,FileProtocolHandler', url]]

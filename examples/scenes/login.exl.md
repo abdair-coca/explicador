@@ -1,10 +1,10 @@
-# How login works
+# What happens when you log in?
 
 <theme name="security" />
 
 The browser form posts the credentials as JSON. The auth routes validate the input, the auth service checks the password with scrypt and opens an in-memory session, and the session id comes back as an `HttpOnly` cookie that later guards the cart.
 
-<arch id="login-architecture" title="Login: the parts involved">
+<arch id="login-architecture" title="The server checks the password and keeps the session in memory">
   <node id="user" label="User" desc="Types an email and a password" kind="actor" />
   <node id="form" label="Login form (browser)" desc="Posts the credentials as JSON" kind="ui" ref="src/ui/login-form.js" />
   <node id="routes" label="Auth routes" desc="Validate input and set the session cookie" kind="service" ref="src/api/auth-routes.js" />
@@ -34,7 +34,18 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
   </code>
 </arch>
 
-<flow id="login-flow" title="Logging in, step by step">
+Follow one login, Ada's, with the demo password from the users table.
+
+<trace id="login-trace" title="The password is never stored: only its scrypt key is compared" ref="src/auth/password.js:14-19">
+<value label="What Ada types">ada@example.com · lovelace</value>
+<value kind="table" label="What the form posts" code="JSON.stringify(body)" ref="src/ui/login-form.js:7-11" note="The form sends both fields once, as JSON, to POST /api/login.">email=ada@example.com|password=lovelace</value>
+<value kind="table" label="What the users table keeps" code="findUserByEmail(email).passwordHash" ref="src/db/users.js:2-10" note="The table keeps a random salt and a 64-byte scrypt key, never the password itself.">salt=5f1d0c7e…|key=2149472b…</value>
+<value kind="table" label="What the check derives" code="scryptAsync(password, salt, 64)" ref="src/auth/password.js:17" note="scrypt runs again on what Ada typed, with the stored salt, and gives the same 64-byte key.">salt=5f1d0c7e…|key=2149472b…</value>
+<value label="The answer" code="timingSafeEqual(key, expected)" ref="src/auth/password.js:18" note="The two keys match, compared in constant time, so the service opens a session for Ada.">true</value>
+<value label="What the browser gets" code="set-cookie" ref="src/api/auth-routes.js:18" note="A random 48-character session id in an HttpOnly cookie that expires after one hour.">sid=…; HttpOnly; SameSite=Strict; Max-Age=3600</value>
+</trace>
+
+<flow id="login-flow" title="A right password earns a cookie for one hour">
   <node id="form" label="Login form" desc="Sends the credentials" kind="ui" ref="src/ui/login-form.js" />
   <node id="routes" label="Auth routes" desc="Validate and reply" kind="service" ref="src/api/auth-routes.js" />
   <node id="service" label="Auth service" desc="Runs the login checks" kind="module" ref="src/auth/auth-service.js" />
@@ -48,10 +59,10 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
     The route rejects missing fields with 400 and lower-cases the email.
   </step>
   <step from="routes" to="service" label="login(email, password)" ref="src/api/auth-routes.js:12">
-    It hands the credentials to the auth service.
+    It calls login() with the lower-cased email and the password; the service decides, the route only answers.
   </step>
   <step from="service" to="users" label="findUserByEmail" ref="src/auth/auth-service.js:7">
-    The service looks the user up by email.
+    The service finds the user in a fixed in-memory list and takes the stored scrypt hash.
   </step>
   <step from="service" to="password" label="verifyPassword" ref="src/auth/password.js:15-20">
     It re-hashes the password with the stored salt and compares in constant time, even for unknown emails, so timing reveals no account.

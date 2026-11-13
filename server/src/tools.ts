@@ -68,16 +68,18 @@ const topicSchema = z
 export const sceneTags = topLevelTags.map((tag) => `<${tag}>`).join(', ');
 
 export const instructions = [
-  'Explicador explains software systems with animated diagrams in a local browser tab.',
-  'For any explanation: call show_scene first; if it is fresh, answer from it without reading code.',
-  'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document:',
-  `Markdown plus the scene tags ${sceneTags}.`,
-  'The explicador skill (SKILL.md and its guide presenting.md) documents them: read it before writing a scene.',
-  'render_scene refuses a scene with errors and, once it is saved, lists warnings: fix every error and every warning, and render again until none is left.',
+  'Explicador shows explanations of this project as scenes: animated diagrams in a local browser tab.',
+  'Whenever the user asks to explain or understand code, a feature, a flow, an architecture or a notebook of this project, in any language, the answer is a scene, not a text-only reply:',
+  '1. Load the explicador skill first (Skill tool, skill "explicador"): it holds the scene format and the rules every scene follows.',
+  '2. Call show_scene with a short topic (the one the user names, if any). Fresh: answer from it without reading code.',
+  '3. Missing or stale: call ensure_index, read only the code you need, write the scene as EXL and call render_scene;',
+  `EXL is Markdown plus the scene tags ${sceneTags}.`,
+  'render_scene refuses a scene with errors and, once it is saved, lists warnings: fix every error and every warning, and render again until it says "No warnings".',
+  '4. Reply in the chat in a few sentences, in the user\'s language, with the viewer URL.',
   'Notebooks and data or ML code are explained as lessons: <chapter>s over their real values, every number copied from an output.',
-  'export_scene writes a cached scene as one offline HTML file for sharing.',
+  'When the user asks to be walked through code ("show me the code", "step by step", a file, a function, a whole flow across files), call explain_code: the viewer opens a code window and highlights each part with your notes. Do not answer such a request with a text walkthrough.',
   'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
-  'To walk the user through code (a file, a function, a whole flow across files, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
+  'export_scene writes a cached scene as one offline HTML file for sharing.',
   'Jupyter notebooks (.ipynb): read them with read_notebook, never as raw JSON; refs to them are cell numbers.',
   'Record non-obvious facts worth keeping with add_finding.',
 ].join(' ');
@@ -92,7 +94,10 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
         'Build or refresh the light project index (file tree + import grep) in .explicador/index/ and return it. ' +
         'Read it before opening code to find the files that matter.',
     },
-    async () => text(describeIndex(ensureIndex(root))),
+    async () =>
+      text(
+        `${describeIndex(ensureIndex(root))}\n\nNext: read only the files the explanation needs (check the line numbers of every ref), write the scene in EXL as the explicador skill says, and call render_scene.`,
+      ),
   );
 
   mcp.registerTool(
@@ -109,7 +114,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       const lookup = cache.lookup(topic);
       if (lookup.status === 'missing') {
         return text(
-          `No cached scene for "${topic}" (key ${key}). Call ensure_index, read the relevant code, then call render_scene.`,
+          `No cached scene for "${topic}" (key ${key}). Build it now: load the explicador skill if you have not (Skill tool, "explicador"; it holds the scene format), ` +
+            'call ensure_index, read only the code the explanation needs, write the scene and call render_scene. The user expects a scene in the viewer, not a text-only answer.',
         );
       }
       const changes = lookup.status === 'stale' ? lookup.changes : [];
@@ -207,7 +213,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           ...warningLines(warnings),
           warnings.length > 0
             ? `The scene is saved, but it breaks ${warnings.length === 1 ? 'a rule' : `${warnings.length} rules`} of the explicador skill: fix every warning and call render_scene again with the same topic until none is left (presenting.md says how).`
-            : 'No warnings: the scene follows every rule the server checks.',
+            : `No warnings: the scene follows every rule the server checks. Now reply in the chat in 3 to 6 sentences, in the user's language, ending with the viewer URL exactly as written here: ${bridge.url} (the scene carries the detail, so no list of its steps and no code).`,
         ]
           .filter(Boolean)
           .join('\n'),
@@ -343,7 +349,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       return text(
         [
           `Tour "${built.tour.title}" (${built.tour.steps.length} steps) is open in the code window at ${bridge.url}`,
-          'Reply in the chat with 2-4 sentences summarizing it; do not repeat the notes.',
+          'Reply in the chat in 2 to 4 sentences, in the user\'s language: what the tour shows and where it starts. Do not list its steps or repeat its notes: the code window shows them.',
           bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
         ]
           .filter(Boolean)

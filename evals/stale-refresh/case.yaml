@@ -1,0 +1,89 @@
+schema_version: '1.1'
+name: 'stale-refresh'
+description: 'A stale scene is refreshed from the changed file alone and says what changed.'
+runs: 3
+execution:
+  max_turns: 30
+  timeout_seconds: 1200
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: '/explicador:explain login'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-show-first'
+    type: 'tool_order'
+    before: 'mcp__plugin_explicador_explicador__show_scene'
+    after: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+  - name: 'rule-reread-changed'
+    type: 'tool_used'
+    tool: 'Read'
+    weight: 1
+    input_match: 'sessions\.js'
+    min: 1
+  - name: 'rule-not-from-scratch'
+    type: 'tool_used'
+    tool: 'Read'
+    weight: 1
+    input_match: '(auth-routes|login-form|login-page|password|users|auth-service|require-session|http|server|cart-service|cart-routes)\.js'
+    max: 2
+    min: 0
+  - name: 'rule-rendered'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 2
+    input_match: '"topic"\s*:\s*"login"'
+    min: 1
+  - name: 'rule-no-warnings'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '"warnings"'
+    weight: 3
+    match: 'not_contains'
+  - name: 'updated-ttl'
+    type: 'regex'
+    target:
+      source: 'file'
+      path: '.explicador/scenes/login.json'
+    pattern: '30 ?min|30-minute|half an hour|media hora|30 minutos'
+    weight: 2
+    flags: 'i'
+  - name: 'reply-says-change'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '30 ?min|30-minute|half an hour|media hora|30 minutos'
+    weight: 1
+    flags: 'i'
+  - name: 'rule-reply-url'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'http://127\.0\.0\.1:\d+/\?t=[a-f0-9]+'
+    weight: 1
+  - name: 'reply-short'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '[\s\S]{1200}'
+    weight: 1
+    match: 'not_contains'
+  - name: 'reply-no-code'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '```'
+    weight: 1
+    match: 'not_contains'
