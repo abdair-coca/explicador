@@ -10,7 +10,7 @@ import { describeIndex, ensureIndex } from './index/index.ts';
 import { lessonHint, needsLesson } from './lessons.ts';
 import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
-import { formatErrors, limits, parseExl, parseRefString } from './parser/index.ts';
+import { formatErrors, limits, parseExl, parseRefString, topLevelTags } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
 import { slideWarnings } from './slides.ts';
@@ -55,12 +55,17 @@ const topicSchema = z
   .max(80)
   .describe('Short, stable name of what is explained, e.g. "login" or "checkout flow". Reuse it to hit the cache.');
 
+/** The scene tags as tool descriptions name them: always the parser's own list. */
+export const sceneTags = topLevelTags.map((tag) => `<${tag}>`).join(', ');
+
 export const instructions = [
   'Explicador explains software systems with animated diagrams in a local browser tab.',
   'For any explanation: call show_scene first; if it is fresh, answer from it without reading code.',
-  'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document',
-  '(Markdown plus scene tags such as <arch> and <flow>; the explicador skill documents the format).',
-  'Notebooks and data or ML code are explained as lessons: <chapter>s with <stats>, <journey>, <trace>, <chart>, <matrix>, <calc>, <threshold> and <quiz> over their real values.',
+  'Otherwise call ensure_index, read only the code you need, and call render_scene with an EXL document:',
+  `Markdown plus the scene tags ${sceneTags}.`,
+  'The explicador skill (SKILL.md and its guide presenting.md) documents them: read it before writing a scene.',
+  'render_scene refuses a scene with errors and, once it is saved, lists warnings: fix every error and every warning, and render again until none is left.',
+  'Notebooks and data or ML code are explained as lessons: <chapter>s over their real values, every number copied from an output.',
   'export_scene writes a cached scene as one offline HTML file for sharing.',
   'When the viewer sends a question about a box, reply with answer_question so the answer shows in its panel.',
   'To walk the user through code (a file, a function, a whole flow across files, "show me the code"), call explain_code: the viewer opens a code window and highlights each part with your notes.',
@@ -143,14 +148,14 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
     {
       description:
         'Validate an EXL document, cache it under the topic with hashes of the files its refs point to, and show it in the viewer. ' +
-        'On errors nothing is saved; fix them and call again.',
+        'On errors nothing is saved; fix them and call again. Once saved it may list warnings: fix every one and call again until none is left.',
       inputSchema: {
         topic: topicSchema,
         exl: z
           .string()
           .min(1)
           .max(200_000)
-          .describe('EXL: Markdown plus scene tags (<arch>, <flow>, <data>, <state>, and for lessons <chapter>, <stats>, <journey>, <trace>, <chart>, <matrix>, <quiz>, <calc>, <threshold>).'),
+          .describe(`EXL: Markdown plus the scene tags ${sceneTags}.`),
         background: z
           .boolean()
           .optional()

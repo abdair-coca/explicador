@@ -64,9 +64,9 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 
 ## EXL in short
 
-Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML.
+Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` takes an optional `id`.
 
-```
+```exl
 # Title in Markdown
 
 One short paragraph of context.
@@ -120,7 +120,7 @@ One short paragraph of context.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
   - `<theme name="ml" accent? />` once, right after the title (see "Theme" below).
   - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? stage? />` self-closing; runs until the next chapter. `stage` = the id of a `<journey>` stage: the chapter opens with the journey as a map, that stage lit.
-  - `<stats><stat value="0.833" label="test accuracy" ref? /></stats>` (1–6).
+  - `<stats title?>` with 1–6 `<stat value="0.833" label="test accuracy" ref? />`.
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
   - `<trace title ref?>` with `<value label kind? code? note? dims? ref?>the value</value>` (2–12; the first is the input; `kind` = `text`, `list` `a|b`, `table` `a=1|b=2`, `bars` `a=-0.3|b=0.5`, `number`, `vector` `0.83|0.56|0.00` with `dims="384"` for the real size when only the first 2–16 numbers are shown).
   - `<chart title type="bars|hbars|line" series="train|test"? unit? highlight? ref?>` with `<row label="BoW" values="1.000|0.833" />` (one value per series, up to 4 series and 40 rows).

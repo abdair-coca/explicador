@@ -16,6 +16,7 @@ import {
   readCode,
   readDesc,
   readDrill,
+  topLevelTags,
   withCodes,
   type Report,
 } from './common.ts';
@@ -50,9 +51,7 @@ import {
   type SceneNode,
 } from './types.ts';
 
-export { catalog, limits, parseRefString } from './common.ts';
-
-const topLevelTags = ['arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold', 'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine'];
+export { catalog, limits, parseRefString, topLevelTags } from './common.ts';
 
 // A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
 const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;

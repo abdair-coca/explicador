@@ -6,7 +6,7 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 
 - Anything that is not a scene tag is Markdown and appears as prose in the viewer, in order.
 - A scene tag starts at the beginning of a line (up to 3 spaces of indentation) outside code fences. Tags inside fenced code blocks, inline in a sentence, or autolinks such as `<https://…>` stay Markdown.
-- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>` and `<timeline>`. A document needs at least one. `<theme>` only decorates and does not count.
+- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons and deep dives `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<space>` and `<cosine>`, plus `<theme>`. A document needs at least one; `<theme>` only decorates and does not count. Every top-level tag except `<theme>` takes an optional `id`.
 - Any other tag at the start of a line is an error (`<script>`, `<div>`, …), and so is a child tag outside a block.
 - Attribute values are always quoted, with `"` or `'`. `attr={…}` is rejected. Entities `&amp; &lt; &gt; &quot; &apos;` are decoded.
 - `<!-- comments -->` are allowed inside blocks.
@@ -22,30 +22,30 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 
 | Tag | Attributes | Content |
 |---|---|---|
-| `<arch>` | `title` (required), `id` | `<node>`, `<group>`, `<edge>`, `<drill>` |
-| `<flow>` | `title` (required), `id` | `<node>`, `<step>`, `<drill>` |
+| `<arch>` | `title` (required), `id` | `<node>`, `<group>`, `<edge>`, `<drill>`, `<code>` |
+| `<flow>` | `title` (required), `id` | `<node>`, `<step>`, `<drill>`, `<code>` |
 | `<group>` | `id`, `label` (required), `desc`, `kind` | `<node>` and nested `<group>`, only in `<arch>` |
 | `<node>` | `id`, `label` (required), `desc`, `kind`, `ref` | optional text: the long description (or self-closing) |
 | `<edge>` | `from`, `to` (required), `label`, `kind` | none (self-closing), only in `<arch>` |
 | `<step>` | `from` (required), `to`, `label`, `kind`, `ref` | narration text (required), only in `<flow>` |
 | `<drill>` | `node`, `topic` (required) | none (self-closing) |
 | `<code>` | `node`, `ref` (required) | why these lines matter (required); in any block |
-| `<data>` | `title` (required), `id` | `<entity>`, `<relation>`, `<drill>` |
+| `<data>` | `title` (required), `id` | `<entity>`, `<relation>`, `<drill>`, `<code>` |
 | `<entity>` | `id`, `label` (required), `desc`, `ref` | `<field>` rows and optional text, the long description (may be empty or self-closing) |
 | `<field>` | `name` (required), `type`, `key` | none (self-closing) |
 | `<relation>` | `from`, `to`, `card` (required), `label` | none (self-closing) |
-| `<state>` | `title` (required), `id` | `<status>`, `<transition>`, one `<walk>`, `<drill>` |
+| `<state>` | `title` (required), `id` | `<status>`, `<transition>`, one `<walk>`, `<drill>`, `<code>` |
 | `<status>` | `id`, `label` (required), `desc`, `role`, `ref` | optional text: the long description (or self-closing) |
 | `<transition>` | `from`, `to`, `event` (required), `ref` | none (self-closing) |
 | `<walk>` | none | `<go>` steps |
 | `<go>` | `event` (required) | narration text (required) |
-| `<chapter>` | `title` (required), `id`, `goal`, `ref` | none (self-closing); the chapter runs until the next one |
+| `<chapter>` | `title` (required), `id`, `goal`, `ref`, `theme`, `stage` | none (self-closing); the chapter runs until the next one |
 | `<stats>` | `id`, `title` | 1–6 `<stat>` |
 | `<stat>` | `value`, `label` (required), `ref` | none (self-closing) |
 | `<journey>` | `title` (required), `id` | 2–12 `<stage>`, `<drill>`, `<code>` |
 | `<stage>` | `id`, `label` (required), `value`, `kind`, `op`, `ref` | narration text (required) |
 | `<trace>` | `title` (required), `id`, `ref` | 2–12 `<value>` |
-| `<value>` | `label` (required), `kind`, `code`, `note`, `ref` | the value as text, or its items (required) |
+| `<value>` | `label` (required), `kind`, `code`, `note`, `dims`, `ref` | the value as text, or its items (required) |
 | `<chart>` | `title`, `type` (required), `id`, `series`, `unit`, `highlight`, `ref` | 1–40 `<row>` |
 | `<matrix>` | `title`, `cols` (required), `id`, `kind`, `corner`, `positive`, `ref` | 1–12 `<row>`, up to 8 `<focus>` |
 | `<row>` | `label`, `values` (required) | none (self-closing), in `<chart>` and `<matrix>` |
@@ -58,7 +58,7 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<threshold>` | `title` (required), `id`, `classes`, `at`, `ref` | 2–200 `<point>` |
 | `<point>` | `score`, `actual` (required), `label` | none (self-closing), only in `<threshold>` |
 | `<plot>` | `title` (required), `id`, `x`, `y`, `from`, `to`, `ref` | 1–4 `<curve>`, 0–8 `<mark>` |
-| `<curve>` | `fn` or `points` (one of them), `label`, and the function's parameters | none (self-closing), only in `<plot>` |
+| `<curve>` | `fn` or `points` (one of them), `label`, and the function's parameters: `slope`, `intercept` (linear), `a`, `b`, `c` (quadratic), `rate` (exp), `mean`, `std` (gaussian) | none (self-closing), only in `<plot>` |
 | `<mark>` | `x`, `label` (required), `curve` | optional narration, only in `<plot>` |
 | `<scatter>` | `title`, `classes` (required), `id`, `x`, `y`, `ref` | 2–300 `<dot>`, at most one `<boundary>` |
 | `<dot>` | `x`, `y`, `class` (required), `label` | none (self-closing), only in `<scatter>` |
@@ -69,6 +69,12 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<event>` | `label` (required), `when`, `ref` | narration (required), only in `<timeline>` |
 | `<derive>` | `title` (required), `id`, `ref` | 2–8 `<line>` |
 | `<line>` | `note` | LaTeX without `$` (required), only in `<derive>` |
+| `<space>` | `title` (required), `id`, `x`, `y`, `k`, `dims`, `ref` | 2–40 `<item>`, at most one `<query>`, none or 2–8 `<cluster>` |
+| `<item>` | `id`, `label`, `x`, `y` (required), `cluster`, `score` | optional narration, only in `<space>` |
+| `<query>` | `label`, `x`, `y` (required), `cluster` | optional narration, only in `<space>` |
+| `<cluster>` | `id`, `label`, `x`, `y` (required) | optional narration, only in `<space>` |
+| `<cosine>` | `title`, `a`, `b` (required), `id`, `dims`, `score`, `ref` | 2–12 `<dim>` |
+| `<dim>` | `a`, `b` (required), `label` | none (self-closing), only in `<cosine>` |
 | `<theme>` | `name` (required), `accent` | none (self-closing), top level, once, before every other tag |
 | `<concept>` | `term` (required), `id`, `ref` | `<define>` (required), `<analogy>`, `<formula>`, `<example>`, each at most once |
 | `<define>`, `<analogy>` | none | the text, inline Markdown (required), only in `<concept>` |

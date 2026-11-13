@@ -1,4 +1,4 @@
-export { catalog, limits, parseExl, parseRefString } from './parse.ts';
+export { catalog, limits, parseExl, parseRefString, topLevelTags } from './parse.ts';
 export * from './types.ts';
 
 import type { ExlError } from './types.ts';

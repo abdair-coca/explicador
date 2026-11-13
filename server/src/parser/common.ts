@@ -89,6 +89,12 @@ export const catalog: Record<string, TagSpec> = {
   example: { attrs: {}, text: true },
 };
 
+/** Tags that open a block at the top level of a scene; every other tag lives inside one of them. */
+export const topLevelTags: readonly string[] = [
+  'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',
+  'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine',
+];
+
 export const limits = {
   idLength: 40,
   labelLength: 80,
