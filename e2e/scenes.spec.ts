@@ -25,7 +25,9 @@ for (const example of examples) {
       });
     }
 
-    test('walks Present with every animation, forward and back (desktop)', async ({ page, serve }) => {
+    test('walks Present with every animation, forward and back (desktop)', async ({ page, serve, browserName }) => {
+      // WebKit lets a slide's view transition finish before the next one starts, so a long scene takes minutes.
+      test.slow(browserName === 'webkit');
       await page.setViewportSize(sizes[0].viewport);
       await page.goto(await serve(example));
       await walkPresent(page);

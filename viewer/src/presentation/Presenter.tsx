@@ -77,10 +77,19 @@ function useFitToStage(stage: React.RefObject<HTMLElement | null>, slideKey: num
       if (!Number.isFinite(current) || Math.abs(current - next) > 1) element.style.setProperty('--fit-h', `${next}px`);
     };
     fit();
-    const observer = new ResizeObserver(fit);
+    // Fitting changes the slide's size, so it waits for the next frame: changing it inside the observer's callback makes
+    // the browser report "ResizeObserver loop completed with undelivered notifications" (Safari does, as an error).
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    });
     observer.observe(element);
     observer.observe(slide);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [stage, slideKey]);
 }
 
