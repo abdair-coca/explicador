@@ -477,6 +477,7 @@ Choices through a quiz (user, 2026-11-13):
 - **Evals on Haiku, Sonnet and Opus, with no spending cap.** Haiku must make very good presentations (not perfect); Sonnet and Opus excellent ones.
 - **Rules as warnings that must be fixed.** The server checks the skill's rules; `render_scene` saves the scene and lists each failure with how to fix it; the skill requires rendering again until none is left, and the evals fail while one remains.
 - **Evals run with a local command**, not in CI. CI runs the free checks on every push.
+- **Evals without LLM judges** (user, 2026-11-13, after calibrating Opus judges showed they took most of a run's cost and share the account's 5-hour limit with the session): every grader is deterministic. The quality rules a judge would read are covered by the server's warnings (a scene must end with none), regex graders over the cached scene (the components each case needs, at-least counts of concepts, analogies and flashcards, the facts and real numbers of each example, Spanish text) and over the reply (the viewer URL, short, no code).
 
 Defaults (taken with the plan):
 - **Evals use `claude plugin eval`** (Claude Code 2.1.323; format read on code.claude.com/docs/en/plugin-evals on 2026-11-13). It has no script graders: the deterministic ones are `regex`, `tool_used`, `tool_order` and `file_exists`, and each run starts in an empty workspace that a `scaffold_script` fills. So the server's own judgment is written where a grader can read it: the warnings of the last render are stored with the cached scene.

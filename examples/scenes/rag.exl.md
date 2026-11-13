@@ -4,7 +4,7 @@
 
 The help center answers questions by **retrieval**: it turns every paragraph into numbers once, keeps them in a table, groups them, and when a question arrives it turns the question into numbers too and looks for the paragraphs that point the same way. The real run of `npm run demo` in this project prints every number below.
 
-<stats title="One question, start to finish">
+<stats title="Only 3 of 12 chunks are compared, and the best scores 0.988">
 <stat value="12" label="chunks in the help center" ref="data/help-center.md" />
 <stat value="8" label="numbers per chunk" ref="src/embed.js:3" />
 <stat value="3 of 12" label="chunks compared, thanks to the index" ref="src/search.js:6-13" />
@@ -13,12 +13,12 @@ The help center answers questions by **retrieval**: it turns every paragraph int
 
 The whole process has five stops. Each chapter below opens one of them, with the same question and the same chunk all the way through.
 
-<journey id="map" title="From the help center to an answer">
-<stage id="embed" label="Embed" value="12 × 8" kind="text" op="embed(text)" ref="src/embed.js:73-77">Each chunk becomes a vector of 8 numbers.</stage>
-<stage id="store" label="Store" value="12 rows" kind="table" op="saveStore(rows)" ref="src/store.js:5-11">The vectors are saved as rows of a table.</stage>
-<stage id="index" label="Index" value="4 clusters" kind="split" op="buildIndex(rows)" ref="src/index.js:9-24">Similar rows are grouped into four clusters.</stage>
-<stage id="search" label="Search" value="3 of 12" kind="model" op="search(question)" ref="src/search.js:6-13">The question is embedded and sent to one cluster.</stage>
-<stage id="score" label="Score" value="0.988" kind="metric" op="cosine(a, b)" ref="src/similarity.js:6-8">Each compared row gets a cosine; the best three win.</stage>
+<journey id="map" title="Five stops take a question to its paragraph">
+<stage id="embed" label="Embed" value="12 × 8" kind="text" op="embed(text)" ref="src/embed.js:73-77">Each of the 12 chunks becomes a vector of 8 numbers, one per meaning.</stage>
+<stage id="store" label="Store" value="12 rows" kind="table" op="saveStore(rows)" ref="src/store.js:5-11">The 12 vectors are saved as the rows of a table, each next to its text.</stage>
+<stage id="index" label="Index" value="4 clusters" kind="split" op="buildIndex(rows)" ref="src/index.js:9-24">Rows that point the same way are grouped into 4 clusters of 3.</stage>
+<stage id="search" label="Search" value="3 of 12" kind="model" op="search(question)" ref="src/search.js:6-13">The question becomes a vector too and is compared with the 3 rows of its cluster only.</stage>
+<stage id="score" label="Score" value="0.988" kind="metric" op="cosine(a, b)" ref="src/similarity.js:6-8">Each compared row gets a cosine, and the refunds chunk wins with 0.988.</stage>
 </journey>
 
 <chapter title="A paragraph becomes 8 numbers" goal="Read an embedding: what each number means and why its length is 1." stage="embed" />
@@ -65,7 +65,7 @@ The **vector store** keeps one row per chunk: its id, its text and its 8 numbers
 <row label="c5 track parcel" values="0.00|0.00|1.00|0.10|0.00|0.00|0.00|0.00" />
 <row label="c6 free delivery" values="0.62|0.00|0.77|0.00|0.00|0.14|0.00|0.00" />
 <focus label="Our chunk" cells="1,*">Row c1 is the embedding from chapter 1, saved as it is.</focus>
-<focus label="Money" cells="*,1">Four of these rows carry money: the three about payments, and free delivery a little.</focus>
+<focus label="Money" cells="*,1">Four rows carry money: the three about payments, from 0.83 to 0.91, and free delivery with 0.62.</focus>
 </matrix>
 
 <quiz question="What does one row of the vector store hold?">
@@ -122,8 +122,8 @@ The picture flattens 8 numbers into 2, so *free delivery* looks close to the mon
 A question goes through the **same** embedding as the chunks, so both live in the same space and can be compared.
 
 <trace title="The question becomes a vector too" ref="src/search.js:6-13">
-<value label="The question" note="What the customer types.">When do I get my money back?</value>
-<value kind="list" label="Its words" code="tokens(question)" note="When, money and back are in the dictionary; do, I, get and my mostly are not.">when|do|i|get|my|money|back</value>
+<value label="The question" note="Seven words typed by a customer: the example this chapter follows to its answer.">When do I get my money back?</value>
+<value kind="list" label="Its words" code="tokens(question)" note="Four of the seven words are in the dictionary, when, get, money and back; do, I and my mean nothing.">when|do|i|get|my|money|back</value>
 <value kind="vector" label="Its embedding" code="embed(question)" note="Mostly money, some time, a hint of delivery from get: close to the refunds chunk.">0.88|0.47|0.10|0.00|0.00|0.00|0.00|0.00</value>
 </trace>
 

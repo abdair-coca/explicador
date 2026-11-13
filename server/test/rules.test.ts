@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl } from '../src/parser/index.ts';
-import { boxWarnings, codeWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
+import { boxWarnings, codeWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
 import type { Block } from '../src/scene.ts';
 import { tempProject } from './helpers.ts';
 
@@ -118,20 +118,31 @@ describe('lessonWarnings', () => {
   const trace = '<trace title="T">\n<value label="In">a</value>\n<value label="Out">b</value>\n</trace>';
   const concept = '<concept term="Term">\n<define>What it is.</define>\n</concept>';
   const review = `<chapter title="Review" goal="Practise." />\n\n${card(1)}\n\n${card(2)}\n\n${card(3)}`;
+  const map = '<journey title="The path">\n<stage id="a" label="A" value="12">First.</stage>\n<stage id="b" label="B" value="3">Then.</stage>\n</journey>';
 
-  it('says nothing about a lesson with goals, checks, a review, a trace and a concept', () => {
-    assert.deepEqual(lessonWarnings(blocksOf(`<chapter title="One" goal="Learn." />\n\n${concept}\n\n${trace}\n\n${quiz}\n\n${review}`)), []);
+  it('says nothing about a lesson with a map, goals, checks, a review, a trace and a concept', () => {
+    assert.deepEqual(lessonWarnings(blocksOf(`${map}\n\n<chapter title="One" goal="Learn." stage="a" />\n\n${concept}\n\n${trace}\n\n${quiz}\n\n${review}`)), []);
     assert.deepEqual(lessonWarnings(blocksOf(`${trace}\n\n${concept}`)), [], 'a scene without chapters is no lesson');
   });
 
   it('asks for what a lesson misses', () => {
     const warnings = lessonWarnings(blocksOf(`<chapter title="One" />\n\n${concept}\n\n<chapter title="Two" goal="Learn." />\n\n${quiz}`));
-    assert.match(warnings[0] ?? '', /Chapters without a goal: "One"/);
-    assert.match(warnings[1] ?? '', /Chapters without a check: "One"/);
-    assert.match(warnings[2] ?? '', /No final review/);
-    assert.match(warnings[3] ?? '', /No <trace>/);
-    assert.equal(warnings.length, 4);
-    assert.match(lessonWarnings(blocksOf(`<chapter title="One" goal="Learn." />\n\n${trace}\n\n${quiz}\n\n${review}`))[0] ?? '', /No <concept>/);
+    assert.match(warnings[0] ?? '', /No map: put a <journey> in the intro/);
+    assert.match(warnings[1] ?? '', /Chapters without a goal: "One"/);
+    assert.match(warnings[2] ?? '', /Chapters without a check: "One"/);
+    assert.match(warnings[3] ?? '', /No final review/);
+    assert.match(warnings[4] ?? '', /No <trace>/);
+    assert.equal(warnings.length, 5);
+    assert.match(lessonWarnings(blocksOf(`${map}\n\n<chapter title="One" goal="Learn." />\n\n${trace}\n\n${quiz}\n\n${review}`))[0] ?? '', /No <concept>/);
+  });
+});
+
+describe('sectionWarnings', () => {
+  it('asks for chapters when a scene is split by "##" headings, not for one or two', () => {
+    const scene = (n: number) => `# T\n\n${Array.from({ length: n }, (_, i) => `## Step ${i + 1}\n\nText.`).join('\n\n')}\n\n<stats>\n<stat value="1" label="one" />\n</stats>`;
+    assert.deepEqual(sectionWarnings(blocksOf(scene(2))), []);
+    assert.match(sectionWarnings(blocksOf(scene(3)))[0] ?? '', /split into 3 sections with "##" headings: make each one a <chapter/);
+    assert.deepEqual(sectionWarnings(blocksOf(`${scene(3)}\n\n<chapter title="C" />`)), [], 'chapters already');
   });
 });
 

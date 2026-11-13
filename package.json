@@ -15,7 +15,8 @@
     "test": "npm test --workspaces --if-present",
     "preview": "node server/src/preview.ts",
     "e2e": "playwright test --project chromium --trace off",
-    "e2e:all": "playwright test --trace off"
+    "e2e:all": "playwright test --trace off",
+    "eval": "node evals/run.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

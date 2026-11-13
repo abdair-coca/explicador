@@ -175,7 +175,8 @@ After a scene is saved, `render_scene` may add warnings, one `Warning:` line eac
 - Numbers, in a scene that refers to a notebook: every number a component shows as data (stat and stage values, chart and matrix rows, calc parts and total, threshold scores, trace numbers, bars, table values and vectors, plot marks, curve points and parameters, scatter dots and boundary, space positions and scores, cosine dimensions and score, compare cells, and the decimals of a derivation) must appear in an output or a cell of the notebooks it refers to, or in another file it refers to, as written or rounded to the decimals shown; a percentage may be a printed fraction × 100.
 - Boxes (`<node>`, `<group>`, `<entity>`, `<status>`) without `desc`, or whose `desc` repeats the label; more than 12 boxes on one level of an `<arch>` (its top or the inside of a group); more than 12 steps in a `<flow>`.
 - Subtitles of more than 25 words: the narration of flow and walk steps, journey stages, timeline events, plot marks, matrix highlights and `<space>` items, clusters and query, and the `note` of trace values, derivation lines and calc parts.
-- In a scene with chapters: a chapter without `goal`; a chapter without `<quiz>`, except the last one when it is the review; a last chapter with fewer than 3 flashcards (no review); no `<trace>`; no `<concept>`.
+- A scene without chapters but with more than two `##` headings: its sections should be chapters.
+- In a scene with chapters: no `<journey>` before the first chapter (the map); a chapter without `goal`; a chapter without `<quiz>`, except the last one when it is the review; a last chapter with fewer than 3 flashcards (no review); no `<trace>`; no `<concept>`.
 - A `why` that opens with a verdict ("Right,", "Wrong:", "Correcto.").
 - A scene with `<arch>`, `<flow>`, `<data>` or `<state>` and no `<code>`.
 

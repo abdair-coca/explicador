@@ -1,0 +1,53 @@
+schema_version: '1.1'
+name: 'export'
+description: 'Sharing a scene writes the offline HTML file with export_scene.'
+runs: 3
+execution:
+  max_turns: 15
+  timeout_seconds: 600
+  allowed_tools:
+    - 'Read'
+    - 'Glob'
+    - 'Grep'
+    - 'Skill'
+    - 'mcp__plugin_explicador_explicador__ensure_index'
+    - 'mcp__plugin_explicador_explicador__show_scene'
+    - 'mcp__plugin_explicador_explicador__render_scene'
+    - 'mcp__plugin_explicador_explicador__answer_question'
+    - 'mcp__plugin_explicador_explicador__explain_code'
+    - 'mcp__plugin_explicador_explicador__read_notebook'
+    - 'mcp__plugin_explicador_explicador__export_scene'
+    - 'mcp__plugin_explicador_explicador__add_finding'
+  env:
+    EVAL_EXPLICADOR_NO_BROWSER: '1'
+  prompt: 'Exporta la escena del login para que la pueda compartir con mi equipo.'
+context:
+  scaffold_script: 'scaffold.sh'
+graders:
+  - name: 'rule-export'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__export_scene'
+    weight: 3
+    input_match: '"topic"\s*:\s*"login"'
+    min: 1
+  - name: 'exported-file'
+    type: 'file_exists'
+    path: '.explicador/exports/login.html'
+    weight: 2
+  - name: 'rule-no-render'
+    type: 'tool_used'
+    tool: 'mcp__plugin_explicador_explicador__render_scene'
+    weight: 1
+    max: 0
+    min: 0
+  - name: 'reply-path'
+    type: 'regex'
+    target: 'last_message'
+    pattern: 'login\.html'
+    weight: 1
+  - name: 'rule-reply-spanish'
+    type: 'regex'
+    target: 'last_message'
+    pattern: '\b(?:archivo|fichero|navegador|equipo)\b'
+    weight: 1
+    flags: 'i'
