@@ -29,5 +29,6 @@ Change these only after the user approves:
 
 ## Checks and commits
 
-- A change is done when `npm run typecheck` and `npm run lint` exit 0 (and `npm test` once it exists).
+- A change is done when `npm run typecheck` and `npm run lint` exit 0 and `npm test` passes (run `npm run build` first: some tests need the built viewer). Changes to the viewer also need `npm run e2e` (Chromium; CI runs Firefox and WebKit).
+- `npm run eval` runs other models (Haiku, Sonnet, Opus) and costs usage: never run it, nor any other test with a model other than the session's, without telling the user first and getting their go-ahead.
 - Commit as `abdair-coca <cocaabdair@gmail.com>` with Conventional Commits, one commit per finished phase, without `Co-Authored-By` or other attribution lines.

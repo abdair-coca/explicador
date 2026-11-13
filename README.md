@@ -174,7 +174,7 @@ The code window only reads files inside the project. Hidden files and folders su
 - Questions, "Go deeper" and code tours need an interactive Claude Code session. Plugin monitors do not run under `claude -p`.
 - Exported files are read-only: no "Go deeper" and no questions.
 - Notebook cells are shown, not run yet.
-- Tested in Chromium. Safari and Firefox are not checked yet.
+- Browser tests run in Chromium, Firefox and WebKit in CI; only Chromium has been run on a real Windows machine.
 - The viewer's interface is in English for now.
 - Explanations are only as good as the code Claude reads. The detail panel shows each box's file and key lines, so you can check them.
 
@@ -189,9 +189,12 @@ The code window only reads files inside the project. Hidden files and folders su
 ```sh
 npm run typecheck
 npm run lint
-npm run build                 # run before npm test: some tests need the built viewer
+npm run build                 # run before npm test and the browser tests: both need the built viewer
 npm test
+npm run e2e                   # browser tests in Chromium (npm run e2e:all adds Firefox and WebKit)
 ```
+
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, build and test on Ubuntu, Windows and macOS, and the browser tests in the three browsers, on every push. `npm run eval` measures the skill with `claude plugin eval` on Haiku, Sonnet and Opus; it spends model usage, so it is a local command and not part of CI.
 
 ```
 .claude-plugin/    plugin manifest (the MCP server is declared here)
