@@ -36,10 +36,10 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 1. **The question.** Start with a `#` title that is the question the scene answers ("What happens when you log in?"), then `<theme>`. Done when the title has at most 12 words.
 2. **The ideas.** List for yourself 3 to 7 ideas, each one sentence. Done when each one could be a slide.
 3. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
-4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label`, `code` and `note` of a value: the first two show on the slide, the note only on the page.
+4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
 5. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
-6. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of at most about 20 words, with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
-7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when no warning is left. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
+6. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
+7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 8. **Check** against the checklist at the end. Done when every line is true.
 
 ## Which component for which question
@@ -88,12 +88,13 @@ When you log in, the shop never stores or compares your password as you typed it
 
 <arch title="Four parts take part in a login">
   <node id="you" label="You" desc="Type your email and password" kind="actor" />
-  <node id="page" label="Login page" desc="Sends what you typed" kind="ui" />
-  <node id="check" label="Password check" desc="Compares hashes, never passwords" kind="function" />
-  <node id="list" label="List of users" desc="Keeps each user's hash" kind="store" />
+  <node id="page" label="Login page" desc="Sends what you typed" kind="ui" ref="src/ui/login-page.js:4-15" />
+  <node id="check" label="Password check" desc="Compares hashes, never passwords" kind="function" ref="src/auth/password.js:14-19" />
+  <node id="list" label="List of users" desc="Keeps each user's hash" kind="store" ref="src/db/users.js:2-10" />
   <edge from="you" to="page" label="email + password" />
   <edge from="page" to="check" label="check this" />
   <edge from="check" to="list" label="find the hash" />
+  <code node="check" ref="src/auth/password.js:14-19">The comparison takes the same time whether the hashes match or not, so timing gives nothing away.</code>
 </arch>
 
 The password travels once, then only its hash is compared.
@@ -106,11 +107,11 @@ The password travels once, then only its hash is compared.
 </trace>
 
 <flow title="A match gives you a pass for one hour">
-  <node id="page" label="Login page" kind="ui" />
-  <node id="check" label="Password check" kind="function" />
-  <step from="page" to="check" label="email + password">The page sends what you typed, once, over a secure connection.</step>
-  <step from="check" label="compare hashes">It hashes what you typed the same way and compares it with the stored hash.</step>
-  <step from="check" to="page" kind="return" label="pass for one hour">If they match, your browser gets a pass that keeps you logged in for one hour.</step>
+  <node id="page" label="Login page" desc="Sends what you typed" kind="ui" ref="src/ui/login-page.js:4-15" />
+  <node id="check" label="Password check" desc="Compares hashes, never passwords" kind="function" ref="src/auth/password.js:14-19" />
+  <step from="page" to="check" label="email + password" ref="src/ui/login-page.js:9-12">The page sends what you typed, once, over a secure connection.</step>
+  <step from="check" label="compare hashes" ref="src/auth/password.js:14-19">It hashes what you typed the same way and compares it with the stored hash.</step>
+  <step from="check" to="page" kind="return" label="pass for one hour" ref="src/auth/sessions.js:7-11">If they match, your browser gets a pass that keeps you logged in for one hour.</step>
 </flow>
 
 > [!TIP]
@@ -122,7 +123,7 @@ The password travels once, then only its hash is compared.
 </quiz>
 ```
 
-With real code, every value of the trace comes from the code or a log, every node and step gets a `ref` with a line range, and 1–4 `<code>` blocks open on click.
+With your project's code, every value of the trace comes from the code or a log, every node and step gets a `ref` with a real line range (check the numbers), every box a `desc`, and 1–4 `<code>` blocks open on click.
 
 ## Template: a lesson chapter
 
@@ -146,6 +147,12 @@ The model gives each review a **score**, which can be any number. The **sigmoid*
 <mark x="0.438" label="our review">A score a little above 0 becomes a probability a little above one half.</mark>
 </plot>
 
+<trace title="Our review becomes 0.608">
+<value label="The review">a great film, really great</value>
+<value kind="number" label="Its score" code="model.decision_function(X)" note="Above 0, so it leans positive.">0.438</value>
+<value kind="number" label="Its probability" code="model.predict_proba(X)[:, 1]" note="The sigmoid turns the score into a probability.">0.608</value>
+</trace>
+
 <derive title="0.438 becomes 0.608">
 <line note="The definition.">\sigma(z) = \frac{1}{1 + e^{-z}}</line>
 <line note="Our review's score, as the notebook prints it.">\sigma(0.438) = \frac{1}{1 + e^{-0.438}}</line>
@@ -156,9 +163,23 @@ The model gives each review a **score**, which can be any number. The **sigmoid*
 <option correct="true" why="The sigmoid of 0 is exactly one half: the model cannot decide.">0.5</option>
 <option why="A probability of 0 needs a very negative score.">0</option>
 </quiz>
+
+<chapter title="Review" goal="Answer what a reviewer would ask about this model." />
+
+<quiz question="Why does the model turn a score into a probability?">
+<answer>A score can be any number; the sigmoid squeezes it between 0 and 1, so 0.438 reads as a 0.608 chance of positive.</answer>
+</quiz>
+
+<quiz question="What does a probability of 0.5 mean?">
+<answer>The score was 0: the model leans neither way.</answer>
+</quiz>
+
+<quiz question="Where does every number of this lesson come from?">
+<answer>From what the notebook printed: the score 0.438 and the probability 0.608 are its outputs.</answer>
+</quiz>
 ```
 
-Every number in a lesson comes from a notebook output (the rules are in `SKILL.md`, "Lessons").
+A whole lesson repeats the middle chapter once per section of the notebook, each with its `<quiz>`, and ends with the review: 5–8 flashcards. Every number in a lesson comes from a notebook output (the rules are in `SKILL.md`, "Lessons").
 
 ## LaTeX
 
@@ -211,8 +232,10 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 - Every technical term is introduced once by a `<concept>` with an analogy (or replaced by plain words for a non-technical audience).
 - Each formula has words before it and an example or real numbers after it.
 - The page reads well alone: prose and narration around every component.
-- Every step, stage, event, mark and trace value has a one-sentence narration or note: Present shows it as the subtitle.
+- Every step, stage, event, mark and trace value has a one-sentence narration or note of about 20 words: Present shows it as the subtitle.
+- Every box has a `desc` that says what it does, and a code diagram has 1–4 `<code>` blocks.
+- In a lesson, every chapter has a `goal` and a `<quiz>`, and the last chapter is a review of 5–8 flashcards.
 - For a whole process: a `<journey>` map in the intro and one chapter per stop with `stage`, the same example in each.
 - Every number comes from the code or its outputs.
-- `render_scene` returned no warnings.
+- `render_scene` answered "No warnings".
 - The scene text is in the user's language.

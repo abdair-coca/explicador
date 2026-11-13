@@ -68,6 +68,12 @@ The **vector store** keeps one row per chunk: its id, its text and its 8 numbers
 <focus label="Money" cells="*,1">Four of these rows carry money: the three about payments, and free delivery a little.</focus>
 </matrix>
 
+<quiz question="What does one row of the vector store hold?">
+<option correct="true" why="The store keeps each chunk's text with its 8 numbers, so a search can hand back the text it found by meaning.">A chunk's text and its embedding</option>
+<option why="The question is embedded when it arrives; it is never stored as a row.">The customer's question</option>
+<option why="Clusters come later, from the index; the store only keeps the rows.">The cluster the chunk belongs to</option>
+</quiz>
+
 <chapter title="The index sends a question to one zone" goal="Understand why an index compares a question with a few rows instead of all." stage="index" />
 
 Comparing a question with every row works for 12 rows, not for 12 million. An **index** groups rows that point the same way, so a question only visits its own group.
@@ -105,6 +111,12 @@ The picture flattens 8 numbers into 2, so *free delivery* looks close to the mon
 <pair label="Can miss a good row" a="never" b="when it sits in another cluster" winner="a" />
 </compare>
 
+<quiz question="Why is our question compared with 3 rows instead of 12?">
+<option correct="true" why="The question goes to the cluster whose centroid points its way, and only that cluster's 3 rows are compared.">It only visits the cluster that points its way</option>
+<option why="All 12 rows stay in the store; the index only groups them.">The index deletes the rows that look unrelated</option>
+<option why="Scores are computed only for the rows the index visits; nothing is kept from an earlier search.">It reuses the 3 best scores of an earlier search</option>
+</quiz>
+
 <chapter title="The question travels the same road" goal="Follow a question from words to the rows it is compared with." stage="search" />
 
 A question goes through the **same** embedding as the chunks, so both live in the same space and can be compared.
@@ -137,6 +149,12 @@ A question goes through the **same** embedding as the chunks, so both live in th
 
 > [!NOTE]
 > A full RAG would now hand these three chunks to a language model to write the answer. This project stops at retrieval, the part that decides what the model gets to read.
+
+<quiz question="Why must the question go through the same embedding as the chunks?">
+<option correct="true" why="Only vectors made by the same dictionary share their meanings position by position, so the angle between them means something.">So both live in the same space and can be compared</option>
+<option why="Every vector is divided by its length, the question included, but that is not why the embedding must be the same.">To make the question shorter</option>
+<option why="The embedding turns words into numbers; it does not correct them.">To fix spelling mistakes in the question</option>
+</quiz>
 
 <chapter title="The cosine measures the angle" goal="Compute a cosine similarity by hand and read what 0.988 means." stage="score" />
 

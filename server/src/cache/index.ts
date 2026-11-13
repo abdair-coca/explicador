@@ -18,6 +18,8 @@ export interface CachedScene {
   savedAt: string;
   /** Questions asked in the viewer about this scene; saving the scene again drops them. */
   questions?: Question[];
+  /** What render_scene asked to fix when it saved this version; absent when nothing was left to fix. */
+  warnings?: string[];
 }
 
 export type Lookup =
@@ -58,8 +60,8 @@ export class SceneCache {
     this.dir = stateDir(root, 'scenes');
   }
 
-  /** Hashes the referenced files and stores the scene; fails if a reference does not exist. */
-  save(topic: string, exl: string, refs: readonly string[]): SaveResult {
+  /** Hashes the referenced files and stores the scene with its warnings; fails if a reference does not exist. */
+  save(topic: string, exl: string, refs: readonly string[], warnings: readonly string[] = []): SaveResult {
     const key = topicKey(topic);
     const files: Record<string, string> = {};
     const missing: string[] = [];
@@ -70,7 +72,15 @@ export class SceneCache {
       else files[ref] = hash;
     }
     if (missing.length > 0) return { ok: false, missing };
-    const scene: CachedScene = { version: 1, topic, key, exl, files, savedAt: new Date().toISOString() };
+    const scene: CachedScene = {
+      version: 1,
+      topic,
+      key,
+      exl,
+      files,
+      savedAt: new Date().toISOString(),
+      ...(warnings.length > 0 ? { warnings: [...warnings] } : {}),
+    };
     writeFileAtomic(this.path(key), `${JSON.stringify(scene, null, 2)}\n`);
     return { ok: true, scene };
   }

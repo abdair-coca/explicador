@@ -12,8 +12,7 @@ import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
 import { formatErrors, limits, parseExl, parseRefString, topLevelTags } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
-import { boxesWithoutRange } from './ranges.ts';
-import { slideWarnings } from './slides.ts';
+import { sceneWarnings } from './rules.ts';
 import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
 import { buildTour, tourLimits } from './tours.ts';
@@ -34,6 +33,16 @@ const text = (value: string, isError = false): ToolResult => ({
 
 const MAX_ANSWER_LENGTH = 4000;
 const MAX_ANSWER_REFS = 3;
+/** Warnings listed in one tool result; the rest show once these are fixed. */
+const MAX_SHOWN_WARNINGS = 12;
+
+/** One `Warning:` line per rule the scene breaks, then what to do about them. */
+export function warningLines(warnings: readonly string[]): string[] {
+  if (warnings.length === 0) return [];
+  const lines = warnings.slice(0, MAX_SHOWN_WARNINGS).map((warning) => `Warning: ${warning}`);
+  if (warnings.length > MAX_SHOWN_WARNINGS) lines.push(`Warning: …and ${warnings.length - MAX_SHOWN_WARNINGS} more, listed once these are fixed.`);
+  return lines;
+}
 
 const tourSchema = z.object({
   title: z.string().min(1).max(tourLimits.title).describe("What the tour explains, in the user's language."),
@@ -116,13 +125,21 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           ].join('\n'),
         );
       }
-      const oldNotebook = needsLesson(shown.blocks, Object.keys(lookup.scene.files));
+      const refs = Object.keys(lookup.scene.files);
+      const oldNotebook = needsLesson(shown.blocks, refs);
+      // Rules are checked again on every lookup: a scene cached before a rule existed must follow it too.
+      const warnings = oldNotebook ? [] : sceneWarnings(root, shown.blocks, refs);
       if (lookup.status === 'fresh') {
         return text(
           [
-            `Scene "${topic}" is fresh: none of its ${Object.keys(lookup.scene.files).length} referenced files changed since ${lookup.scene.savedAt}.`,
+            `Scene "${topic}" is fresh: none of its ${refs.length} referenced files changed since ${lookup.scene.savedAt}.`,
             `Shown at ${bridge.url}`,
-            oldNotebook ? lessonHint : 'Answer from this EXL; do not read code or regenerate it unless the user asks for more.',
+            oldNotebook
+              ? lessonHint
+              : warnings.length > 0
+                ? `It breaks ${warnings.length === 1 ? 'a rule' : `${warnings.length} rules`} the server checks. Fix each warning below in this EXL (re-read only what a fix needs) and call render_scene with the same topic; then answer from it.`
+                : 'Answer from this EXL; do not read code or regenerate it unless the user asks for more.',
+            ...warningLines(warnings),
             '',
             lookup.scene.exl,
           ].join('\n'),
@@ -135,7 +152,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           ...changes.map((c) => `- ${c.path} (${c.change})`),
           oldNotebook
             ? lessonHint
-            : 'Re-read only these files (and the index if files moved), update the EXL below and call render_scene with the same topic.',
+            : `Re-read only these files (and the index if files moved), update the EXL below${warnings.length > 0 ? ', fix the warnings,' : ''} and call render_scene with the same topic.`,
+          ...warningLines(warnings),
           '',
           lookup.scene.exl,
         ].join('\n'),
@@ -166,7 +184,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       if (!safeKey(topic)) return text(`Topic "${topic}" needs letters or digits.`, true);
       const parsed = parseExl(exl);
       if (!parsed.ok) return text(`EXL errors, nothing saved:\n${formatErrors(parsed.errors)}`, true);
-      const saved = cache.save(topic, exl, parsed.refs);
+      const warnings = sceneWarnings(root, parsed.scene.blocks, parsed.refs);
+      const saved = cache.save(topic, exl, parsed.refs, warnings);
       if (!saved.ok) {
         return text(
           `These refs do not exist in the project (${root}), nothing saved:\n${saved.missing.map((p) => `- ${p}`).join('\n')}\n` +
@@ -178,22 +197,17 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       const hidden = background === true && bridge.current?.key !== saved.scene.key;
       if (!hidden) navigator.show(saved.scene, 'fresh', []);
       const blocks = parsed.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => `<${b.type} id="${b.id}">`);
-      const unfocused = boxesWithoutRange(root, parsed.scene.blocks);
-      const slides = slideWarnings(parsed.scene.blocks);
       return text(
         [
           hidden
             ? `Cached "${topic}" (${blocks.join(', ')}) without showing it. Pass scene "${topic}" to answer_question so the panel links to it.`
             : `Rendered "${topic}" (${blocks.join(', ')}) at ${bridge.url}`,
           `Cached as .explicador/scenes/${saved.scene.key}.json, tracking ${parsed.refs.length} referenced files.`,
-          bridge.viewerBuilt ? '' : 'Warning: the viewer is not built; run "npm run build" in the plugin folder.',
-          unfocused.length > 0
-            ? `Warning: these boxes point at a whole file, so the code window cannot focus their code: ${unfocused.slice(0, 12).join(', ')}${unfocused.length > 12 ? ', …' : ''}. ` +
-              'Give each a line range (path:start-end; for a notebook, cell numbers) and render again.'
-            : '',
-          slides.length > 0
-            ? `Warning: the presentation would suffer (see presenting.md in the explicador skill); fix these and render again:\n${slides.map((w) => `- ${w}`).join('\n')}`
-            : '',
+          bridge.viewerBuilt ? '' : 'Note: the viewer is not built; run "npm run build" in the plugin folder.',
+          ...warningLines(warnings),
+          warnings.length > 0
+            ? `The scene is saved, but it breaks ${warnings.length === 1 ? 'a rule' : `${warnings.length} rules`} of the explicador skill: fix every warning and call render_scene again with the same topic until none is left (presenting.md says how).`
+            : 'No warnings: the scene follows every rule the server checks.',
         ]
           .filter(Boolean)
           .join('\n'),

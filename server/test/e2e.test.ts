@@ -60,6 +60,7 @@ describe('MCP server over stdio', () => {
     const rendered = await call('render_scene', { topic: 'login', exl });
     assert.equal(rendered.isError, false, rendered.text);
     assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <flow id="login-flow">\)/);
+    assert.match(rendered.text, /No warnings: the scene follows every rule the server checks\./);
     viewerUrl = /at (http:\/\/127\.0\.0\.1:\d+\/\?t=[a-f0-9]+)/.exec(rendered.text)?.[1] ?? '';
     assert.ok(viewerUrl);
 
@@ -150,5 +151,29 @@ describe('MCP server over stdio', () => {
     assert.match(result.text, /Appended to/);
     assert.match(readFileSync(join(project, 'FINDINGS.md'), 'utf8'), /· login: Sessions are lost on restart/);
     writeFileSync(join(project, 'unused.txt'), '');
+  });
+
+  it('stores what a render asks to fix, and asks again before answering from the cache', async () => {
+    const sloppy = '# Logging in\n\n<arch title="The login">\n<node id="form" label="Login form" ref="src/ui/login-form.js:1-5" />\n</arch>';
+    const rendered = await call('render_scene', { topic: 'sloppy', exl: sloppy });
+    assert.equal(rendered.isError, false, 'warnings never block a render');
+    assert.match(rendered.text, /^Warning: No <theme>/m);
+    assert.match(rendered.text, /^Warning: These boxes have no desc.*"Login form"/m);
+    assert.match(rendered.text, /^Warning: No <code>/m);
+    assert.match(rendered.text, /breaks 3 rules of the explicador skill: fix every warning and call render_scene again/);
+    const cachePath = join(project, '.explicador/scenes/sloppy.json');
+    const saved = JSON.parse(readFileSync(cachePath, 'utf8')) as { warnings?: string[] };
+    assert.equal(saved.warnings?.length, 3, 'the cache keeps them, where an eval can read them');
+
+    const shown = await call('show_scene', { topic: 'sloppy' });
+    assert.match(shown.text, /is fresh/);
+    assert.match(shown.text, /It breaks 3 rules the server checks\. Fix each warning below/);
+    assert.match(shown.text, /^Warning: These boxes have no desc/m);
+    assert.doesNotMatch(shown.text, /Answer from this EXL/);
+
+    const fixed = await call('render_scene', { topic: 'sloppy', exl });
+    assert.match(fixed.text, /No warnings/);
+    assert.equal((JSON.parse(readFileSync(cachePath, 'utf8')) as { warnings?: string[] }).warnings, undefined);
+    assert.match((await call('show_scene', { topic: 'sloppy' })).text, /Answer from this EXL/);
   });
 });

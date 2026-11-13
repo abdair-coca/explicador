@@ -54,13 +54,13 @@ The browser form posts the credentials as JSON. The auth routes validate the inp
     The service looks the user up by email.
   </step>
   <step from="service" to="password" label="verifyPassword" ref="src/auth/password.js:15-20">
-    It re-hashes the password with the stored salt and compares in constant time. Unknown emails are checked against a dummy hash, so timing does not reveal which accounts exist.
+    It re-hashes the password with the stored salt and compares in constant time, even for unknown emails, so timing reveals no account.
   </step>
   <step from="service" to="sessions" label="createSession" ref="src/auth/sessions.js:7-11">
     On success it creates a random session id that expires after one hour.
   </step>
   <step from="service" to="routes" kind="return" label="session id + user" ref="src/auth/auth-service.js:11-13">
-    The service hands back the new session id and the user's name. A failed check returns only ok: false, and the route answers 401 with the same message for both mistakes.
+    The service returns the new session id and the user's name; a failure returns only ok: false, which the route answers with 401.
   </step>
   <step from="routes" to="form" kind="return" label="200 + sid cookie" ref="src/api/auth-routes.js:18-19">
     The route sets the session as an HttpOnly, SameSite=Strict cookie and the form moves on to the cart.

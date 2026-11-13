@@ -1,26 +1,26 @@
 # Current Task
 
-## F21a. One source of truth for the catalog
+## F21b. Rules the server checks
 
-**Goal:** what the model reads about EXL (tool descriptions, server instructions, `SKILL.md`, `presenting.md`, `docs/EXL.md`) always matches what the parser accepts, and tests fail when it drifts.
+**Goal:** the skill's rules that today depend on the model alone are checked by the server. `render_scene` lists every failure as a `Warning:` line with how to fix it, stores them with the cached scene (so evals can read them), and `show_scene` asks to fix pending warnings before answering from a cached scene. Warnings never block a render (user's choice: warn and require the fix).
 
 **Files:**
-- `server/src/parser/common.ts`, `server/src/parser/parse.ts`: export the top-level tags with the catalog.
-- `server/src/tools.ts`: `render_scene`'s `exl` description and `instructions` list the tags from the catalog.
-- `server/test/catalog.test.ts` (new): the consistency checks.
-- `docs/EXL.md`, `skills/explicador/SKILL.md`, `skills/explicador/presenting.md`: the drift the tests find.
+- `server/src/rules.ts` (new): the rules and `sceneWarnings(root, blocks, refs)`, which also gathers the existing range and slide warnings.
+- `server/src/tools.ts`: `render_scene` and `show_scene` use it; one `Warning:` line per warning.
+- `server/src/cache/index.ts`: `warnings` stored with the scene when there are any.
+- `server/test/rules.test.ts` (new), `server/test/e2e.test.ts`, `server/test/slides.test.ts`, `server/test/interactivity.test.ts`: tests.
+- `examples/scenes/*.exl.md`: the examples follow every rule.
+- `skills/explicador/SKILL.md`, `skills/explicador/presenting.md`, `docs/EXL.md`: the rules and their limits, said the same way.
 
-**Plan:**
-1. Move `topLevelTags` next to `catalog` and export both from the parser.
-2. Build the tag list of `render_scene` and `instructions` from them.
-3. Tests:
-   - every tag in the catalog has a row in the table of `docs/EXL.md`; its attributes are exactly the catalog's, with the required ones marked "(required)"; its children are named in its content cell; the top-level list in "Document" names every top-level tag;
-   - every tag appears in `SKILL.md`, and every attribute other than a block's `id` appears on a line that names its tag;
-   - every component (top-level tag except `<chapter>` and `<theme>`) is in the table "Which component for which question" of `presenting.md`;
-   - every EXL code block in `SKILL.md`, `presenting.md` and `docs/EXL.md` parses (the templates already must draw no warning);
-   - the descriptions of `render_scene` and `instructions` name every top-level tag.
-4. Fix the drift until they pass.
+**Rules (all warnings):**
+1. Numbers: in a scene that refers to a notebook, every number in a component's data (stat and stage values, chart and matrix rows, calc parts and total, threshold scores, trace numbers, bars, table values and vectors, plot marks, curve points and parameters, scatter dots and boundary, space positions and scores, cosine dimensions and score, compare cells, decimals in derivations) appears, as printed or rounded from a printed number, in an output or a cell of the referred notebooks or in another referred file. A percentage may be a printed fraction × 100.
+2. Boxes (`<node>`, `<group>`, `<entity>`, `<status>`): a `desc`, not equal to the label.
+3. Size: at most 12 boxes per level of an `<arch>` (top level or inside a group) and 12 steps per `<flow>`.
+4. Subtitles (narration and notes that Present shows under a part): at most 25 words.
+5. Lessons (scenes with `<chapter>`): every chapter has a `goal` and a `<quiz>`, the last chapter is a review of at least 3 flashcards, and the lesson has a `<trace>` and a `<concept>`.
+6. Quizzes: a `why` does not open with a verdict ("Right,", "Wrong:", "Correcto.", …): the viewer already says it.
+7. Code diagrams (`<arch>`, `<flow>`, `<data>`, `<state>`): at least one `<code>`.
 
-**Validation:** `npm run typecheck`, `npm run lint`, `npm run build`, `npm test`.
+**Validation:** rule tests (each passes and fails), the example scenes give no warning, `render_scene` stores warnings and `show_scene` asks to fix them (e2e); `npm run typecheck`, `npm run lint`, `npm run build`, `npm test`.
 
-**Results:** typecheck 0, lint 0, build OK, server 203/203 (9 new in `catalog.test.ts`), viewer 162/162. Drift fixed in `docs/EXL.md` (six missing rows, `theme`/`stage`/`dims`/curve parameters, `<code>` children, the top-level list) and `SKILL.md` (`title` on `<stats>`, the optional `id` sentence, the example tagged ```exl).
+**Results:** typecheck 0, lint 0, build OK, server 220/220 (16 new in `rules.test.ts`, 1 new e2e), viewer 162/162. The five example scenes, the guide's two templates and the skill's example give no warning.

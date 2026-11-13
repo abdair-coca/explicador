@@ -24,4 +24,5 @@ A visitor is anonymous until a login succeeds. The session then lives for one ho
     <go event="next request">findSession sees it expired, deletes it, and the visitor is anonymous again.</go>
   </walk>
   <drill node="active" topic="sessions" />
+  <code node="expired" ref="src/auth/sessions.js:13-21">An expired session is removed only when someone uses it: findSession deletes it and answers as if it never existed.</code>
 </state>

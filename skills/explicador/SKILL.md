@@ -14,12 +14,13 @@ Every scene is a page that explains in full and a presentation someone can watch
 1. **Pick a topic**: a short, stable name for what is explained ("login", "checkout flow"). Reuse the same topic for the same question so the cache hits.
 2. **Call `show_scene`** with the topic.
    - **fresh**: the scene is already in the viewer and its EXL is in the result. Do **not** read code or call other tools. Reply with 2–4 sentences summarizing it from the EXL and give the viewer URL.
+     Exception: when the result lists `Warning:` lines, the scene breaks rules added since it was cached: fix them in that EXL (read only what a fix needs) and call `render_scene` with the same topic, then answer.
      Exception: a scene about a notebook (or data or ML code) without `<chapter>`s is an old format; rebuild it as a lesson (see "Lessons") under the same topic.
    - **stale**: re-read only the changed files it lists, update the EXL it returned and call `render_scene` with the same topic.
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line (a missing cover or theme, a chapter without a component, a title too long for its slide) and render again until none is left.
+5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
 6. **Reply in the chat** with a short explanation (3–6 sentences) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -68,6 +69,8 @@ Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of
 
 ```exl
 # Title in Markdown
+
+<theme name="security" />
 
 One short paragraph of context.
 
@@ -155,7 +158,7 @@ Give every scene a `<theme name="…" />` right after its title, before any othe
 
 - Pick each block because it answers a question the reader has: the table "Which picture for which question" in [presenting.md](presenting.md). Three or four different kinds carry a scene better than ten.
 - `<arch>` and `<flow>`: 4–10 visible boxes per level, 4–10 steps. With more parts, put related nodes in `<group>`s.
-- Labels say what a part does in words the audience knows, at most 80 characters; narration is one or two plain sentences per step.
+- Labels say what a part does in words the audience knows, at most 80 characters; narration is one plain sentence of about 20 words per step (never more than 25: Present shows it as a subtitle).
 - Formulas are LaTeX (the cheat sheet is in [presenting.md](presenting.md)). Use them for definitions the code really uses (TF-IDF, the sigmoid, precision), never as decoration; numbers inside them come from the outputs like any other number.
 - Explain what the code does, not what it might do; if you are unsure, say so in the prose.
 
@@ -166,4 +169,4 @@ Give every scene a `<theme name="…" />` right after its title, before any othe
 - **Async** (`kind="async"`) for queues, events, timers and background jobs: nobody waits for them.
 - **Checks before the handler** (middleware, guards, feature flags) are steps through each check in order, or one action step inside the route; never a call from the route to the middleware.
 - **Labels name what travels**, in one to four words ("credentials", "JWT", "15 candidates"), on steps and on `<arch>` edges alike.
-- **Narration says what happens and why it matters**, in one or two sentences, without repeating the label.
+- **Narration says what happens and why it matters**, in one sentence of about 20 words, without repeating the label.

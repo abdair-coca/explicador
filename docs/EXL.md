@@ -168,7 +168,18 @@ line 7, column 1: Unclosed <arch>: expected </arch>
 
 Syntax errors (unclosed tags, input that ends inside a tag, bad quoting) stop parsing at the first one; validation errors are all reported together.
 
-After a scene is saved, `render_scene` may add warnings, which never block it (`server/src/slides.ts`). Besides boxes whose ref has no line range, it warns about what would weaken the presentation, where a speaker shows the `#` title as the cover and one component per slide with its `title` as its sentence: a scene without `<theme>`; a scene that does not open with a `# ` title; a chapter (or a scene without chapters) with no component, unless it holds two or more `<quiz>` (a review); and a block or chapter `title` of more than 12 words. `<chapter>`, `<quiz>` and `<theme>` are not components. The skill's `presenting.md` says how to fix each one.
+After a scene is saved, `render_scene` may add warnings, one `Warning:` line each, which never block it: the skill asks the agent to fix every one and render again until the result says "No warnings". They are stored with the cached scene, and `show_scene` lists them again (computed anew, so rules added later apply to older scenes) and asks to fix them before answering from the cache. The rules (`server/src/slides.ts`, `server/src/rules.ts`):
+
+- A box whose `ref` names a whole file of more than 30 lines (or 2 notebook cells) instead of a line range.
+- The presentation, where a speaker shows the `#` title as the cover and one component per slide with its `title` as its sentence: a scene without `<theme>`; a scene that does not open with a `# ` title; a chapter (or a scene without chapters) with no component, unless it holds two or more `<quiz>` (a review); a block or chapter `title` of more than 12 words. `<chapter>`, `<quiz>` and `<theme>` are not components.
+- Numbers, in a scene that refers to a notebook: every number a component shows as data (stat and stage values, chart and matrix rows, calc parts and total, threshold scores, trace numbers, bars, table values and vectors, plot marks, curve points and parameters, scatter dots and boundary, space positions and scores, cosine dimensions and score, compare cells, and the decimals of a derivation) must appear in an output or a cell of the notebooks it refers to, or in another file it refers to, as written or rounded to the decimals shown; a percentage may be a printed fraction × 100.
+- Boxes (`<node>`, `<group>`, `<entity>`, `<status>`) without `desc`, or whose `desc` repeats the label; more than 12 boxes on one level of an `<arch>` (its top or the inside of a group); more than 12 steps in a `<flow>`.
+- Subtitles of more than 25 words: the narration of flow and walk steps, journey stages, timeline events, plot marks, matrix highlights and `<space>` items, clusters and query, and the `note` of trace values, derivation lines and calc parts.
+- In a scene with chapters: a chapter without `goal`; a chapter without `<quiz>`, except the last one when it is the review; a last chapter with fewer than 3 flashcards (no review); no `<trace>`; no `<concept>`.
+- A `why` that opens with a verdict ("Right,", "Wrong:", "Correcto.").
+- A scene with `<arch>`, `<flow>`, `<data>` or `<state>` and no `<code>`.
+
+The skill's `presenting.md` says how to fix each one.
 
 ## Example
 

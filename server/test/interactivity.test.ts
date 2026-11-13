@@ -324,7 +324,7 @@ describe('clicks reach the monitor of the same session', () => {
     const exl = (ref: string) => `<arch id="nb" title="Notebook">\n<node id="n" label="Analysis" ref="${ref}" />\n</arch>`;
     const whole = await call('render_scene', { topic: 'notebook whole', exl: exl('analysis.ipynb') });
     assert.ok(!whole.isError, whole.text);
-    assert.match(whole.text, /Warning: these boxes point at a whole file.*Analysis \(analysis\.ipynb\)/);
+    assert.match(whole.text, /Warning: These boxes point at a whole file.*Analysis \(analysis\.ipynb\)/);
     const ranged = await call('render_scene', { topic: 'notebook cells', exl: exl('analysis.ipynb:2-3') });
     assert.ok(!ranged.isError && !ranged.text.includes('point at a whole file'), ranged.text);
     // The cached notebook scene has no chapters: show_scene asks for a lesson instead of answering from it.
