@@ -2,3 +2,5 @@ node_modules/
 dist/
 .explicador/
 *.log
+test-results/
+playwright-report/

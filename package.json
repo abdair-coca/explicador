@@ -10,12 +10,15 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e",
     "lint": "oxlint",
     "test": "npm test --workspaces --if-present",
-    "preview": "node server/src/preview.ts"
+    "preview": "node server/src/preview.ts",
+    "e2e": "playwright test --project chromium --trace off",
+    "e2e:all": "playwright test --trace off"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^26.6.6",
     "oxlint": "^1.93.0",
     "typescript": "^7.0.2"

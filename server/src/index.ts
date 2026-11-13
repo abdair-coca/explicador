@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { Bridge } from './bridge/index.ts';
 import { SceneCache } from './cache/index.ts';
 import { removeRuntime, writeRuntime } from './clicks/index.ts';
-import { serveFile, serveTree } from './files.ts';
+import { serveProject } from './files.ts';
 import { Navigator } from './navigation.ts';
 import { projectRoot } from './project.ts';
 import { instructions, registerTools } from './tools.ts';
@@ -19,8 +19,7 @@ bridge.action('open', (body) => navigator.open(body));
 bridge.action('ask', (body) => navigator.ask(body));
 bridge.action('follow', (body) => navigator.follow(body));
 bridge.action('explain', (body) => navigator.explain(body));
-bridge.reader('file', (query) => serveFile(root, query.get('path')));
-bridge.reader('tree', () => serveTree(root));
+serveProject(bridge, root);
 
 // The monitor of this same session finds the bridge through this file.
 const sessionId = process.env.CLAUDE_CODE_SESSION_ID;

@@ -5,6 +5,7 @@ import { existsSync, readFileSync, watchFile } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { Bridge } from './bridge/index.ts';
+import { serveProject } from './files.ts';
 import { formatErrors, parseExl } from './parser/index.ts';
 import { resolveInside } from './project.ts';
 import { withSnippets } from './snippets.ts';
@@ -21,6 +22,8 @@ if (!file) {
 const path = resolve(file);
 const project = resolve(values.project ?? process.cwd());
 const bridge = new Bridge();
+// The code window reads the project's files, as with Claude; clicks and questions need Claude and stay off.
+serveProject(bridge, project);
 const url = await bridge.start(values.port ? Number(values.port) : 0);
 console.log(`Viewer: ${url}`);
 

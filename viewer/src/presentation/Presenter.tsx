@@ -116,7 +116,9 @@ function moveSlide(travel: Travel, update: () => void): void {
     return;
   }
   document.documentElement.dataset.travel = travel;
-  document.startViewTransition(() => flushSync(update));
+  const transition = document.startViewTransition(() => flushSync(update));
+  // A move made while this one plays skips it, and the browser rejects its promises: expected, not an error.
+  for (const done of [transition.ready, transition.finished, transition.updateCallbackDone]) done.catch(() => {});
 }
 
 /** A yellow wipe crosses the whole presenter; the slide changes while it covers everything. */
@@ -267,6 +269,8 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       data-tone={night ? 'night' : undefined}
       style={{ '--accent': theme.accent } as React.CSSProperties}
       data-idle={idle ? '' : undefined}
+      // Where the presentation is, as "slide:part" (both from 0): the browser tests follow it.
+      data-position={`${at.slide}:${at.part}`}
       className="presenter fixed inset-0 z-50 flex flex-col overflow-hidden bg-background text-foreground outline-none"
     >
       {/* Outside the stage, so the decoration stays put while the slide moves; every slide has its own composition. */}

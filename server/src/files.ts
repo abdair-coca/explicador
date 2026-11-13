@@ -80,3 +80,9 @@ export function serveTree(root: string): { status: number; body: unknown } {
   const { paths, truncated } = listProjectFiles(root);
   return { status: 200, body: { files: paths, truncated } };
 }
+
+/** The code window's readers on a bridge: the project's files and its tree, behind the bridge's token and Host check. */
+export function serveProject(bridge: { reader(name: string, handler: (query: URLSearchParams) => { status: number; body: unknown }): void }, root: string): void {
+  bridge.reader('file', (query) => serveFile(root, query.get('path')));
+  bridge.reader('tree', () => serveTree(root));
+}
