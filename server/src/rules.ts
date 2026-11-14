@@ -698,7 +698,7 @@ const nameOf = (shape: Shape, i: number): string => (shape.id ? `"${shape.id}"` 
 /** Distance from a point to the edge of a circle or a box. */
 function edgeDistance(input: Shape, [x, y]: [number, number]): number | undefined {
   const shape = asBox(input);
-  if (shape.kind === 'circle') return Math.abs(Math.hypot(x - shape.x, y - shape.y) - shape.r);
+  if (shape.kind === 'circle') return Math.abs(Math.hypot((x - shape.x) / shape.r, (y - shape.y) / (shape.ry ?? shape.r)) - 1) * Math.min(shape.r, shape.ry ?? shape.r);
   if (shape.kind !== 'box') return undefined;
   const dx = Math.max(shape.x - x, 0, x - (shape.x + shape.w));
   const dy = Math.max(shape.y - y, 0, y - (shape.y + shape.h));
@@ -712,7 +712,7 @@ const asBox = (shape: Shape): Shape =>
 
 const covers = (input: Shape, [x, y]: [number, number]): boolean => {
   const shape = asBox(input);
-  return shape.kind === 'circle' ? Math.hypot(x - shape.x, y - shape.y) < shape.r : shape.kind === 'box' ? x > shape.x && x < shape.x + shape.w && y > shape.y && y < shape.y + shape.h : false;
+  return shape.kind === 'circle' ? Math.hypot((x - shape.x) / shape.r, (y - shape.y) / (shape.ry ?? shape.r)) < 1 : shape.kind === 'box' ? x > shape.x && x < shape.x + shape.w && y > shape.y && y < shape.y + shape.h : false;
 };
 
 /**

@@ -97,7 +97,7 @@ export const catalog: Record<string, TagSpec> = {
   push: { attrs: { factor: 'required', change: 'required', ask: 'optional' }, text: true },
   effect: { attrs: { from: 'required', to: 'required', ask: 'optional' }, text: true },
   figure: { attrs: { id: 'optional', title: 'required', size: 'optional', ref: 'optional' }, children: ['circle', 'box', 'arrow', 'angle', 'zone', 'normal', 'icon', 'arc', 'measure', 'label', 'show'] },
-  circle: { attrs: { id: 'optional', desc: 'optional', x: 'required', y: 'required', r: 'required', label: 'optional', color: 'optional' } },
+  circle: { attrs: { id: 'optional', desc: 'optional', x: 'required', y: 'required', r: 'required', ry: 'optional', label: 'optional', color: 'optional' } },
   box: { attrs: { id: 'optional', desc: 'optional', x: 'required', y: 'required', w: 'required', h: 'required', label: 'optional', color: 'optional' } },
   arrow: { attrs: { id: 'optional', desc: 'optional', points: 'required', label: 'optional', color: 'optional', head: 'optional', dashed: 'optional' } },
   angle: { attrs: { id: 'optional', desc: 'optional', at: 'required', from: 'required', to: 'required', label: 'optional', color: 'optional' } },

@@ -166,6 +166,17 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure('<circle id="c" x="98" y="10" r="5" />\n<arrow points="1 1 c@0" />')), /"points" 103 10 is outside the figure/);
   });
 
+  it('draws an ellipse with ry, with its places, its normal and its edge (F36)', () => {
+    const block = blockOf(figure('<circle id="earth" x="50" y="30" r="20" ry="10" label="Earth and its tides" />\n<arrow id="a" points="5 5 earth.top" />\n<arrow id="b" points="95 55 earth@90" />\n<normal at="earth@0" />\n<circle id="moon" x="90" y="10" r="3" ry="3" />'));
+    assert.deepEqual(block.shapes[0], { kind: 'circle', id: 'earth', x: 50, y: 30, r: 20, ry: 10, label: 'Earth and its tides', color: 'ink', appear: 0 });
+    assert.equal(block.shapes[4]?.kind === 'circle' && block.shapes[4].ry, undefined, 'ry equal to r is a circle');
+    assert.deepEqual(block.shapes[1]?.kind === 'arrow' && block.shapes[1].points.at(-1), [50, 20]);
+    assert.deepEqual(block.shapes[2]?.kind === 'arrow' && block.shapes[2].points.at(-1), [50, 40]);
+    const warn = (body: string): string => figureWarnings([blockOf(figure(body))]).join('\n');
+    assert.match(warn('<circle id="e" x="50" y="30" r="20" ry="10" />\n<arrow id="ray" points="50 5 50 18.5" />'), /the arrow "ray" ends 1.5 from the edge of "e"/);
+    assert.equal(warn('<circle id="e" x="50" y="30" r="20" ry="10" />\n<arrow id="ray" points="50 5 e.top" />'), '');
+  });
+
   it('warns when an arrow stops short, an angle is drawn at another angle, or a shape hides a label', () => {
     const warn = (body: string): string => figureWarnings([blockOf(figure(body))]).join('\n');
     const drop = '<circle id="drop" x="60" y="24" r="10" label="Drop" />';

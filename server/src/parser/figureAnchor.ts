@@ -59,13 +59,15 @@ export function pointOn(shape: FigureShape, side: string | undefined, degrees?: 
   if (degrees !== undefined) {
     if (shape.kind !== 'circle' && shape.kind !== 'arc') return undefined;
     const a = (degrees * Math.PI) / 180;
-    return [shape.x + shape.r * Math.cos(a), shape.y + shape.r * Math.sin(a)];
+    const ry = shape.kind === 'circle' ? (shape.ry ?? shape.r) : shape.r;
+    return [shape.x + shape.r * Math.cos(a), shape.y + ry * Math.sin(a)];
   }
   if (!side || !anchorSides[shape.kind].includes(side)) return undefined;
   switch (shape.kind) {
     case 'circle': {
       const { x, y, r } = shape;
-      return ({ center: [x, y], left: [x - r, y], right: [x + r, y], top: [x, y - r], bottom: [x, y + r] } as Record<string, Point>)[side];
+      const ry = shape.ry ?? r;
+      return ({ center: [x, y], left: [x - r, y], right: [x + r, y], top: [x, y - ry], bottom: [x, y + ry] } as Record<string, Point>)[side];
     }
     case 'box': {
       const { x, y, w, h } = shape;
@@ -120,8 +122,12 @@ export function surfaceNormal(shape: FigureShape, side: string | undefined, degr
     if (shape.kind === 'arc' && degrees === undefined) return undefined;
     const p = pointOn(shape, side, degrees);
     if (!p || side === 'center') return undefined;
-    const l = Math.hypot(p[0] - shape.x, p[1] - shape.y);
-    return l === 0 ? undefined : [(p[0] - shape.x) / l, (p[1] - shape.y) / l];
+    // On an ellipse the normal is the gradient of (x/r)² + (y/ry)²: it leans toward the flatter side.
+    const ry = shape.kind === 'circle' ? (shape.ry ?? shape.r) : shape.r;
+    const gx = (p[0] - shape.x) / (shape.r * shape.r);
+    const gy = (p[1] - shape.y) / (ry * ry);
+    const l = Math.hypot(gx, gy);
+    return l === 0 ? undefined : [gx / l, gy / l];
   }
   if (shape.kind === 'box' && degrees === undefined) return ({ left: [-1, 0], right: [1, 0], top: [0, -1], bottom: [0, 1] } as Record<string, Point>)[side ?? ''];
   return undefined;

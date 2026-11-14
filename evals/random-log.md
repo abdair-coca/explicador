@@ -37,3 +37,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | seasons-en | en | 6 | 1.00 | space science nature | figure, concept, compare, timeline, argument, quiz | — |
 | 2026-11-14 | corazon | es | 7 | 1.00 | health science | trace, concept, concept, compare, figure, stats, quiz | "Nuestra gota" was cut to "ra gota" at the figure's edge (label widths are estimated): the frame now widens to take a label past the grid |
 | 2026-11-14 | acordes | es | 6 | 1.00 | art science | trace, concept, compare, figure, matrix, quiz | a matrix highlight's name showed twice in Present (badge and note): the note shows only for a metric |
+| 2026-11-14 | monty-hall | es | 4 | 1.00 | math society | figure, concept, compare, quiz | — |
+| 2026-11-14 | tides-en | en | 6 | 1.00 | space nature science | figure, concept, compare, derive, timeline, quiz | the tidal bulges were three circles on top of each other (no oval shape): `<circle ry>` draws an ellipse, with its places, normal and checks |
+| 2026-11-14 | digestion | es | 4 | 1.00 | health food | figure, concept, compare, quiz | — |

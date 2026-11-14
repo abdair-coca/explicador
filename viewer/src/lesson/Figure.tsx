@@ -29,7 +29,7 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
   const className = cn('fig-shape', `fig-${shape.kind}`, `fig-${color}`);
   switch (shape.kind) {
     case 'circle':
-      return <circle className={className} cx={shape.x} cy={shape.y} r={shape.r} />;
+      return shape.ry !== undefined ? <ellipse className={className} cx={shape.x} cy={shape.y} rx={shape.r} ry={shape.ry} /> : <circle className={className} cx={shape.x} cy={shape.y} r={shape.r} />;
     case 'box':
       return <rect className={className} x={shape.x} y={shape.y} width={shape.w} height={shape.h} rx={Math.min(1.5, shape.w / 4, shape.h / 4)} />;
     case 'zone':

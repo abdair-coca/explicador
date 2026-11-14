@@ -89,12 +89,13 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
   const under = half + size * 0.525;
   switch (shape.kind) {
     case 'circle': {
-      const below: Point = [shape.x, shape.y + shape.r + under];
-      const above: Point = [shape.x, shape.y - shape.r - over];
+      const ry = shape.ry ?? shape.r;
+      const below: Point = [shape.x, shape.y + ry + under];
+      const above: Point = [shape.x, shape.y - ry - over];
       const side = (labelBox([0, 0], lines, size).x1 + shape.r + 1) * 1;
       const around: Point[] = [below, above, [shape.x + side, shape.y], [shape.x - side, shape.y]];
       // Inside a circle big enough to hold it, around a small one.
-      return shape.r >= 7 ? [[shape.x, shape.y], ...around] : around;
+      return Math.min(shape.r, ry) >= 7 ? [[shape.x, shape.y], ...around] : around;
     }
     case 'box':
       return [[shape.x + shape.w / 2, shape.y + shape.h / 2], [shape.x + shape.w / 2, shape.y + shape.h + under], [shape.x + shape.w / 2, shape.y - over]];
@@ -248,7 +249,7 @@ function solidOverlap(shape: FigureShape, [ox, oy]: Point, box: Box): number {
     for (let j = 0; j < 4; j += 1) {
       const x = box.x0 + ((i + 0.5) * (box.x1 - box.x0)) / 6;
       const y = box.y0 + ((j + 0.5) * (box.y1 - box.y0)) / 4;
-      if (Math.hypot(x - shape.x - ox, y - shape.y - oy) < shape.r) inside += 1;
+      if (Math.hypot((x - shape.x - ox) / shape.r, (y - shape.y - oy) / (shape.ry ?? shape.r)) < 1) inside += 1;
     }
   }
   return (inside / 24) * (box.x1 - box.x0) * (box.y1 - box.y0);
@@ -259,8 +260,10 @@ export function nearestOn(shape: FigureShape, at: Point): Point {
   const [x, y] = at;
   switch (shape.kind) {
     case 'circle': {
-      const [dx, dy] = unit(x - shape.x, y - shape.y);
-      return [shape.x + dx * shape.r, shape.y + dy * shape.r];
+      // On an ellipse, the point at the same angle once both radii are scaled to one: near enough for a leader.
+      const ry = shape.ry ?? shape.r;
+      const [dx, dy] = unit((x - shape.x) / shape.r, (y - shape.y) / ry);
+      return [shape.x + dx * shape.r, shape.y + dy * ry];
     }
     case 'box':
       return [Math.min(shape.x + shape.w, Math.max(shape.x, x)), Math.min(shape.y + shape.h, Math.max(shape.y, y))];
@@ -420,10 +423,11 @@ export function frameOf(block: Pick<FigureBlock, 'width' | 'height'> & Partial<P
     const { shape } = item;
     for (const [ox, oy] of offsets) {
       for (const line of polylines(shape)) for (const [x, y] of line) take(x + ox, y + oy);
-      const half = shape.kind === 'circle' ? shape.r : shape.kind === 'icon' ? shape.size / 2 : undefined;
-      if ((shape.kind === 'circle' || shape.kind === 'icon') && half !== undefined) {
-        take(shape.x - half + ox, shape.y - half + oy);
-        take(shape.x + half + ox, shape.y + half + oy);
+      if (shape.kind === 'circle' || shape.kind === 'icon') {
+        const across = shape.kind === 'circle' ? shape.r : shape.size / 2;
+        const down = shape.kind === 'circle' ? (shape.ry ?? shape.r) : shape.size / 2;
+        take(shape.x - across + ox, shape.y - down + oy);
+        take(shape.x + across + ox, shape.y + down + oy);
       }
       if (shape.kind === 'box') {
         take(shape.x + ox, shape.y + oy);

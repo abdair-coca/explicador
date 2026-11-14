@@ -716,7 +716,8 @@ interface ShapeBase {
 
 /** One shape of a figure, on its grid (0 to `width` across, 0 to `height` down). */
 export type FigureShape =
-  | (ShapeBase & { kind: 'circle'; x: number; y: number; r: number })
+  /** A circle, or (F36) an ellipse when `ry`, its vertical radius, differs from `r`, then its horizontal one. */
+  | (ShapeBase & { kind: 'circle'; x: number; y: number; r: number; ry?: number })
   | (ShapeBase & { kind: 'box'; x: number; y: number; w: number; h: number })
   /** A line through its points, with a head at its end, both ends or none: a ray of light, a path, a push. */
   | (ShapeBase & { kind: 'arrow'; points: Point[]; head: ArrowHead; dashed: boolean })

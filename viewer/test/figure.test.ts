@@ -5,7 +5,7 @@ import { parseExl } from '../../server/src/parser/index.ts';
 import type { Block, FigureBlock } from '../../server/src/scene.ts';
 import { iconPaths, litLamp } from '../src/lesson/figureIcons.ts';
 import { figureIcons } from '../../server/src/parser/types.ts';
-import { angleArc, arcPath, frameOf, lengthInside, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { angleArc, arcPath, frameOf, type Placed, lengthInside, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
 import { stripOf } from '../src/lesson/traceShape.ts';
 import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
@@ -46,6 +46,13 @@ describe('figure geometry', () => {
     assert.ok(frame.y > 30 && frame.y + frame.h <= 60, JSON.stringify(frame));
     const block = figureOf(rainbow());
     assert.deepEqual(frameOf(block, placeFigure(block)), { x: 0, y: 0, w: block.width, h: block.height });
+  });
+
+  it('labels a flat ellipse beside its own height, not its width (F36)', () => {
+    const [orbit] = placeFigure({ width: 100, height: 60, shapes: [{ kind: 'circle', x: 50, y: 30, r: 30, ry: 6, label: 'Orbit', color: 'gray', appear: 0 }] });
+    assert.ok(orbit?.labelAt && Math.abs(orbit.labelAt[1] - 30) < 12, JSON.stringify(orbit?.labelAt));
+    const frame = frameOf({ width: 100, height: 60 }, [orbit as Placed]);
+    assert.ok(frame.h < 40, `the frame follows the ellipse's height: ${JSON.stringify(frame)}`);
   });
 
   it('keeps a label of two lines off the box it names (F36)', () => {

@@ -98,7 +98,8 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
       const x = number(s.x, 'x', child);
       const y = number(s.y, 'y', child);
       const r = number(s.r, 'r', child, 0.5);
-      if (x !== undefined && y !== undefined && r !== undefined && inside([x, y], 'x', child)) shape = { kind: 'circle', x, y, r, ...common };
+      const ry = s.ry === undefined ? undefined : number(s.ry, 'ry', child, 0.5);
+      if (x !== undefined && y !== undefined && r !== undefined && inside([x, y], 'x', child)) shape = { kind: 'circle', x, y, r, ...(ry !== undefined && ry !== r ? { ry } : {}), ...common };
     } else if (child.name === 'box') {
       const x = number(s.x, 'x', child);
       const y = number(s.y, 'y', child);
