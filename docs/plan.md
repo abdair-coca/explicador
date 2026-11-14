@@ -207,3 +207,41 @@ The brief says what the scene is for; the arc says what each slide does for it. 
 3. **Bench**: with the rules of F23–F24 the eight old bench scenes get 1–2 warnings each (mean 1.0 over the ten): "No <brief>", plus ATP used before it is spelled out in `fotosintesis` and a label title in `imprenta`. No eval was run.
 4. **Limits**: the arc is declared by the author, so the server checks its order, not whether a slide does what it declares; "the scene answers the question" is an `answer` slide after the example, not a reading of it.
 5. **Pending**: decoration and counters are the viewer's (F29); F25 adds `<structure>`, the form that draws a tree or an organization chart as itself.
+
+## F25 — Form "structure with states": `<structure>`
+
+A tree, an organization chart, a file system or the outline of a law is drawn as itself, and when it changes (a value is inserted, a team moves, a node is removed) the scene animates the object changing, not boxes arriving (principle 5). The case that started the plan, the binary search tree drawn as a left-to-right box diagram, becomes a tree that grows value by value.
+
+### Scope
+
+1. **`<structure title direction? ref? arc?>`** with `<member>`s and `<change>`s:
+   ```exl
+   <structure title="Five values in, a tree three levels deep" arc="example">
+   <member id="n50" label="50" />
+   <member id="n30" label="30" parent="n50" side="left" />
+   <member id="n70" label="70" parent="n50" side="right" />
+   <member id="n20" label="20" parent="n30" side="left" />
+   <change label="Insert 50" add="n50">50 is the first value, so it becomes the root.</change>
+   <change label="Insert 30" add="n30" mark="n50">30 is smaller than 50, so it goes to the left.</change>
+   <change label="Insert 70" add="n70" mark="n50">70 is larger than 50, so it goes to the right.</change>
+   <change label="Insert 20" add="n20" mark="n50 n30">20 is smaller than 50 and than 30: left, then left again.</change>
+   </structure>
+   ```
+   - `<member id label parent? side? desc? ref?/>`: one part of the structure; `parent` names another member (none: a root; several roots are a forest); `side="left|right"` keeps a binary tree's shape when a child is alone. Up to 40 members.
+   - `<change label add? remove? move? mark?>narration</change>`: one step from a state to the next. `add` and `remove` list member ids, separated by spaces; `move="a>b"` gives `a` the parent `b` (`a>b:left` with a side, `a>` makes it a root); `mark` lists the members the step points at (the path compared, the part that changed). Up to 20 changes, each with its narration.
+   - Members that no change adds are there from the start. The parser plays the changes and refuses one that adds a member already there, removes or marks one that is not, moves a member under itself or its own descendant, leaves a member without its parent, or puts two children of one parent on the same side; the block carries every state, so the viewer only draws.
+   - `direction="down"` (default: the root at the top) or `"right"` (the root at the left, like a file tree).
+2. **Viewer**: a tidy tree (each parent centered over its children, a lone child on its `side`), members as boxes and links as lines. Between two states the members glide to their new places, a new member grows out of its parent, a removed one fades, and the marked ones light up; a step taken back with ← plays back. In Present each state is a part with its narration as the subtitle; on the page the same states play with step controls and the narration under the picture. With reduced motion, the states change without movement. Wide trees scroll inside their frame on a phone.
+3. **Server and rules**: the tag in the catalog, `componentTags`, refs, the subtitle rule (change narrations), the scene text of the eval, the slide count.
+4. **Docs and skill**: `docs/EXL.md` (rows and the section), `SKILL.md`, `presenting.md` (the table: "How does the structure change, step by step?"), `AGENTS.md` decision 5 and 8, `README.md`.
+5. **An example** over a small project, `examples/trees` (a binary search tree in Python): `examples/scenes/search-tree.exl.md` follows the brief and the arc and draws the tree growing; it joins the examples the browser tests play.
+6. **Screenshots** for the stop: the tree at its first and last state in Present, desktop and phone.
+
+### Acceptance criteria
+
+- Parser tests: a valid structure and its states; every refusal above; limits; `direction`.
+- Viewer tests: the layout of a binary tree (a lone left child sits left), a forest, a file tree to the right, positions inside the frame.
+- Browser tests: the new example draws, walks Present forward and back with and without motion, and has no sideways scroll.
+- The example renders with no warnings.
+- `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
+- **Stop**: deliver the screenshots and a summary; wait for the user.
