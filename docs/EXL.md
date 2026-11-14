@@ -78,13 +78,13 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<dim>` | `a`, `b` (required), `label` | none (self-closing), only in `<cosine>` |
 | `<structure>` | `title` (required), `id`, `direction`, `ref` | 1–40 `<member>`, up to 20 `<change>` |
 | `<member>` | `id`, `label` (required), `parent`, `side`, `desc`, `ref` | none (self-closing), only in `<structure>` |
-| `<change>` | `label` (required), `add`, `remove`, `move`, `mark` | narration (required), only in `<structure>` |
+| `<change>` | `label` (required), `add`, `remove`, `move`, `mark`, `ask` | narration (required), only in `<structure>` |
 | `<system>` | `title` (required), `id`, `ref` | 2–12 `<factor>`, 1–30 `<link>`, `<loop>` names, then up to 20 `<push>` and `<effect>` steps |
 | `<factor>` | `id`, `label` (required), `desc`, `ref` | none (self-closing), only in `<system>` |
 | `<link>` | `from`, `to`, `sign` (required), `label` | none (self-closing), only in `<system>` |
 | `<loop>` | `through`, `label` (required) | none (self-closing), only in `<system>` |
-| `<push>` | `factor`, `change` (required) | narration (required), only in `<system>` |
-| `<effect>` | `from`, `to` (required) | narration (required), only in `<system>` |
+| `<push>` | `factor`, `change` (required), `ask` | narration (required), only in `<system>` |
+| `<effect>` | `from`, `to` (required), `ask` | narration (required), only in `<system>` |
 | `<annotated>` | `title` (required), `id`, `ref` | one `<passage>`, 1–12 `<note>` |
 | `<passage>` | none | the text as written, line breaks kept (required), only in `<annotated>` |
 | `<note>` | `quote` (required), `label` | narration (required), only in `<annotated>` |
@@ -225,6 +225,7 @@ Lesson tags explain notebooks and data or ML code with their real values. They w
   - `<change label add? remove? move? mark?>narration</change>` is one step from a state to the next: `add` and `remove` list member ids separated by spaces, `move="a>b"` puts `a` under `b` (`a>b:left` with a side, `a>` makes it a root), `mark` lists the members the step points at (the path compared, the part that changed). Up to 20 changes, each with its narration (the subtitle of its state).
   - Members that no change adds are there from the start. The parser plays the changes and refuses one that adds a member already there, removes, moves or marks one that is not, moves a member under itself or below itself, leaves a member there without its parent, or does nothing. The block carries every state.
   - `direction` is `down` (default: the root on top) or `right` (the root on the left, like a file tree).
+  - `ask` (up to 300 characters) on a `<change>` makes the reader predict it (F29): a part before the change shows the structure as it was, the change's `label` and the question under a "Predict" tag, with no subtitle; the next part shows the change. The same `ask` works on a `<system>`'s `<push>` and `<effect>`. On the page, autoplay leaves the question about five seconds before the answer.
   - The viewer lays each state out as a tidy tree (a parent centered over its children) on one frame for every state. Between two states each member glides to its new place, a new one grows out of its parent, a removed one fades, and the marked ones and the links between them light up; a part taken back plays backwards. In Present mode each state is a part, the change's `label` shows above the picture and its narration is the subtitle; on the page the states play with step controls. A wide tree scrolls inside its frame on a phone.
 - `<system title>`: a web of causes (a cache under load, inflation, an ecosystem), for "what causes what, and what feeds back".
   - `<factor id label desc? ref? />` is a quantity that can go up or down; 2 to 12.

@@ -72,6 +72,7 @@ Every component says what it does for the brief's question with `arc`. The order
 - **Acronyms spelled out.** The first time, write the words and the acronym after them: "time to live (TTL)". Leave out only those the `<audience>` says the reader knows.
 - **One `contrast`, one `answer`, an end.** One slide sets the misconception against the fact; one answers the question; the last is a `check` or a `recap`. In a lesson, each chapter repeats example → idea → check, and the review is the recap.
 - **Titles are claims.** A title of one or two words ("Weights") is a label: say the slide's point.
+- **Let the reader predict.** Before the step that carries the idea (where the new value lands, which way a factor turns), add `ask="…"` to that `<change>` or `<effect>`: Present shows the picture as it was and the question, and the next → shows the answer. One or two per scene; the brief's `check` stays the closing `<quiz>`.
 
 ### Form → tags
 

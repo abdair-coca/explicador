@@ -60,7 +60,7 @@ Here is the whole system, with the sale played through it one link at a time.
 <effect from="slow" to="retries">A read slower than 0.5 s is sent again at once, up to 3 times.</effect>
 <effect from="retries" to="traffic">Every retry is a new read: the loop feeds itself.</effect>
 <effect from="misses" to="cached">Meanwhile every answer that arrives is kept in the cache.</effect>
-<effect from="cached" to="misses">A fuller cache misses less: this loop pushes back.</effect>
+<effect from="cached" to="misses" ask="The cache is filling up. Which way do the misses go now?">A fuller cache misses less: this loop pushes back.</effect>
 </system>
 
 The cache's loop pushes back, but slowly: it needs answers to arrive, and the retry storm keeps them from arriving. The fix is in the client.

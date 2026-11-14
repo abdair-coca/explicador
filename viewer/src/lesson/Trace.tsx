@@ -235,7 +235,7 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   return (
     <div className={cn('space-y-3', speaker && 'trace-large')}>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={index === 0 ? 'dark' : 'step'}>{index === 0 ? 'Input' : `Step ${index} of ${block.values.length - 1}`}</Badge>
+        <Badge variant={index === 0 ? 'dark' : 'step'}>{index === 0 ? 'Input' : `Step ${index}`}</Badge>
         <span className="trace-label text-lg font-extrabold">{value.label}</span>
         {value.code && <code className="op-pill text-[0.8rem]">{value.code}</code>}
         {kind !== 'number' && (

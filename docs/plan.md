@@ -380,3 +380,29 @@ A scene over a lease, a report or a dataset needs what a scene over code has: a 
 2. **How it was tested**: `server/test/sources.test.ts` (5 tests) and a stdio test of the refusal; typecheck, lint, build, `npm test` (server 282, viewer 176, evals 50) and `npm run e2e` (82 in Chromium) pass.
 3. **Limits**: sections need Markdown headings (`#`); text inside PDFs and Word files is out of the server's reach; CSV rows are referred to as lines.
 4. **Pending**: F29 (interactivity that teaches).
+
+## F29 — Interactivity that teaches
+
+The reader learns more by predicting before seeing (the principle behind the brief's `check`), and less when the screen counts three things at once.
+
+### Scope
+
+1. **Predict, then see**: `ask="…"` on a `<structure>`'s `<change>` and on a `<system>`'s `<push>` and `<effect>`. A part before that step shows the picture as it was, the step's label and the question under a "Predict" tag, with no subtitle (the narration would give it away); the next part shows the step. On the page, autoplay leaves the question about five seconds before the answer.
+2. **One counter**: the "Step N of M" badges of flow, journey and calc slides go, and a trace's badge says "Step N"; the header's counter and the progress bar stay.
+3. The examples ask once each (`search-tree`: where 40 goes; `cache-storm`: which way the misses go once the cache fills); docs and skill ("Let the reader predict" in "The arc").
+
+### Acceptance criteria
+
+- Parser tests keep `ask`; viewer tests map a slide's parts with questions in them, with no subtitle on a question.
+- typecheck, lint, build, `npm test` and `npm run e2e` pass; the question parts seen in the browser.
+
+### Deviations from the request
+
+- **Decoration was not changed.** Principle 6 (decoration never competes) would mean drawing the theme only on the cover and chapter cards, but product decision 5 says themes decorate every slide (F17); changing it needs the user's approval, so it is proposed at the F30 stop instead.
+- **`ask` is on the two forms that animate a change of state**, where a prediction has one answer the next part shows; flows and traces keep their quizzes.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `ask` in the parser (`<change>`, `<push>`, `<effect>`), `viewer/src/lesson/{askParts.ts,AskCard.tsx}`, the structure and system views, slides and subtitles; step badges removed from Present; examples, docs; screenshots in `docs/images/f29/`.
+2. **How it was tested**: 2 parser tests and 2 viewer tests; typecheck, lint, build, `npm test` (server 284, viewer 178, evals 50) and `npm run e2e` (82 in Chromium) pass.
+3. **Pending**: F30 (measure the result; stop). Its eval calls Haiku and needs the user's go-ahead.

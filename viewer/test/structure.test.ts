@@ -75,3 +75,23 @@ describe('a structure in Present', () => {
     assert.equal(subtitleOf(withStart, 0), undefined, 'the start has no change to tell');
   });
 });
+
+describe('predict, then see', () => {
+  it('puts a question part before an asked change, drawing the state before it, with no subtitle', async () => {
+    const { structureParts } = await import('../src/lesson/askParts.ts');
+    const asked: StructureBlock = { ...bst, changes: bst.changes.map((change, i) => (i === 0 || i === 2 ? { ...change, ask: `Where does ${change.label.slice(7)} go?` } : change)) };
+    assert.deepEqual(structureParts(asked), [{ state: -1, ask: 'Where does 50 go?' }, { state: 0 }, { state: 1 }, { state: 1, ask: 'Where does 20 go?' }, { state: 2 }]);
+    assert.equal(buildSlides([asked])[0]?.parts, 5);
+    assert.equal(subtitleOf(asked, 3), undefined, 'the narration would give the answer away');
+    assert.equal(subtitleOf(asked, 4), 'Left of 30.');
+  });
+
+  it('does the same for a system step', async () => {
+    const { systemParts } = await import('../src/lesson/askParts.ts');
+    const steps = [
+      { kind: 'push' as const, factor: 'a', change: 'up' as const, narration: 'Up.' },
+      { kind: 'effect' as const, factor: 'b', change: 'down' as const, link: 0, narration: 'Down.', ask: 'Which way does b go?' },
+    ];
+    assert.deepEqual(systemParts({ steps }), [{ played: 0 }, { played: 1 }, { played: 1, ask: 'Which way does b go?' }, { played: 2 }]);
+  });
+});

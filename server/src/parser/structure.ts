@@ -2,7 +2,7 @@
 // parser plays the changes and keeps every state on the block, so a change that would break the structure (a member
 // without its parent, a member under its own child) is an error the agent fixes, and the viewer only draws.
 import type { Element } from './reader.ts';
-import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, readAttrs, readDesc, readEnum, readRef, type Report } from './common.ts';
+import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readDesc, readEnum, readRef, type Report } from './common.ts';
 import {
   structureDirections,
   structureSides,
@@ -79,9 +79,11 @@ export function buildStructure(element: Element, ordinal: number, report: Report
       move.push({ id: member, ...(parent ? { parent } : {}), ...(side && parent ? { side } : {}) });
     }
     if (c.label === undefined) continue;
+    const ask = optionalText(c.ask, 'ask', limits.questionLength, child, report);
     const change = {
       label: checkText(c.label, 'label', limits.labelLength, child, report),
       narration,
+      ...(ask ? { ask } : {}),
       add: known(list(c.add), 'add', child),
       remove: known(list(c.remove), 'remove', child),
       move,

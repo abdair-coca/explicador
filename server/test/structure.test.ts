@@ -117,3 +117,11 @@ describe('<structure>', () => {
     assert.match(subtitleWarnings([block])[0] ?? '', /change "Insert 50" \(30 words\)/);
   });
 });
+
+describe('ask', () => {
+  it('keeps the question a change asks before it shows, and checks its length', () => {
+    const asked = inserts.replace('<change label="Insert 20"', '<change label="Insert 20" ask="Where does 20 go?"');
+    assert.equal(blockOf(tree(asked)).changes[3]?.ask, 'Where does 20 go?');
+    assert.match(errorsOf(tree(inserts.replace('<change label="Insert 20"', `<change label="Insert 20" ask="${'x'.repeat(301)}"`))), /"ask" is longer than 300 characters/);
+  });
+});

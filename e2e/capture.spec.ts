@@ -18,9 +18,9 @@ const wanted: Record<string, Shot[]> = {
   'bench-arboles-binarios': [1, 5],
   'bench-interes-compuesto': [1, 2],
   login: [1, 2],
-  'search-tree': [{ slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],
+  'search-tree': [{ slide: 1, part: 4 }, { slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],
   lease: [{ slide: 1, part: 3 }, 5, { slide: 1, part: 3, phone: true }],
-  'cache-storm': [{ slide: 4, part: 0 }, { slide: 4, part: 5 }, 4, { slide: 4, part: 5, phone: true }],
+  'cache-storm': [{ slide: 4, part: 8 }, { slide: 4, part: 0 }, { slide: 4, part: 5 }, 4, { slide: 4, part: 5, phone: true }],
 };
 
 test.skip(!folder, 'set EXPLICADOR_CAPTURE to a folder to capture slides');

@@ -356,9 +356,6 @@ function StepSlide(props: { title: string; step: number; of: number; kind?: Link
     <div className="space-y-6">
       <h2 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight">
         {props.title}
-        <Badge variant="step">
-          Step {props.step + 1} of {props.of}
-        </Badge>
         {props.kind === 'return' && <Badge variant="muted">Answer back</Badge>}
         {props.kind === 'async' && <Badge variant="info">Async</Badge>}
       </h2>
@@ -475,9 +472,6 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
         <div className="space-y-6">
           <h2 className="flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight">
             {block.title}
-            <Badge variant="step">
-              Step {part + 1} of {slide.parts}
-            </Badge>
           </h2>
           <div className="rounded-2xl border border-border-soft bg-card p-6 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <CalcView block={block} index={part} />

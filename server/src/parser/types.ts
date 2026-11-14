@@ -584,6 +584,8 @@ export interface StructurePlace {
 export interface StructureChange {
   label: string;
   narration: string;
+  /** A question the reader answers before the change shows (F29): "Where does 40 go?". */
+  ask?: string;
   add: string[];
   remove: string[];
   move: StructurePlace[];
@@ -658,6 +660,8 @@ export interface SystemStep {
   /** The factor had moved the other way before: this step pushes it back. */
   reversed?: boolean;
   narration: string;
+  /** A question the reader answers before the step shows (F29). */
+  ask?: string;
 }
 
 /**

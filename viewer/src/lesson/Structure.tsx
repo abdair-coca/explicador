@@ -12,6 +12,8 @@ import { SceneFrame, StepControls } from '../components/scenes';
 import { subtitleOf } from '../presentation/subtitles';
 import { cn } from '@/lib/utils';
 import { useFirstVisible } from './hooks';
+import { ASK_MS, AskCard } from './AskCard';
+import { structureParts } from './askParts';
 import { layoutStructure, spotOf, type Spot } from './structureLayout';
 
 const pct = (n: number): string => `${(n * 100).toFixed(3)}%`;
@@ -19,13 +21,17 @@ const LINK_SCALE = 100;
 
 export function StructureView({ block, shown }: { block: StructureBlock; shown?: number }) {
   const layout = useMemo(() => layoutStructure(block), [block]);
-  const last = Math.max(0, block.states.length - 1);
-  const index = Math.max(0, Math.min(last, shown ?? last));
+  const parts = useMemo(() => structureParts(block), [block]);
+  const part = parts[Math.max(0, Math.min(parts.length - 1, shown ?? parts.length - 1))];
+  const ask = part?.ask;
+  // A question shows the state before its change (-1: nothing yet), without that state's marks.
+  const index = part?.state ?? 0;
   const state = block.states[index] ?? { members: [], mark: [], added: [] };
   const places = new Map(state.members.map((place) => [place.id, place]));
-  const marked = new Set(state.mark);
-  const added = new Set(state.added);
-  const change = state.change === undefined ? undefined : block.changes[state.change];
+  const marked = new Set(ask ? [] : state.mark);
+  const added = new Set(ask ? [] : state.added);
+  const upcoming = ask ? block.states[index + 1]?.change : state.change;
+  const change = upcoming === undefined ? undefined : block.changes[upcoming];
   const reduced = useReducedMotion();
   const frame = useRef<HTMLDivElement>(null);
   const previous = useRef<number | undefined>(undefined);
@@ -90,6 +96,7 @@ export function StructureView({ block, shown }: { block: StructureBlock; shown?:
           {change.label}
         </p>
       )}
+      {ask && <AskCard key={`ask-${index}`} question={ask} />}
       <div className="structure-scroll">
         <div
           ref={frame}
@@ -143,8 +150,9 @@ export function StructureView({ block, shown }: { block: StructureBlock; shown?:
 
 export function StructureScene({ block }: { block: StructureBlock }) {
   const reducedMotion = useReducedMotion();
-  const steps = block.states.length > 1;
-  const durations = useMemo(() => block.states.map((_, i) => stepDuration(subtitleOf(block, i) ?? '') + 600), [block]);
+  const parts = useMemo(() => structureParts(block), [block]);
+  const steps = parts.length > 1;
+  const durations = useMemo(() => parts.map((part, i) => (part.ask ? ASK_MS : stepDuration(subtitleOf(block, i) ?? '') + 600)), [block, parts]);
   const playback = usePlayback(durations, false);
   const frame = useRef<HTMLDivElement>(null);
   useFirstVisible(frame, () => {

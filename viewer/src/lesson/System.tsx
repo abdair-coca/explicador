@@ -14,14 +14,20 @@ import { fonts, wrapText } from '../layout/elk';
 import { subtitleOf } from '../presentation/subtitles';
 import { cn } from '@/lib/utils';
 import { useFirstVisible } from './hooks';
+import { ASK_MS, AskCard } from './AskCard';
+import { systemParts } from './askParts';
 import { FACTOR, systemGeometry } from './systemLayout';
 
 const ARROW: Record<Direction, string> = { up: '↑', down: '↓' };
 
 export function SystemView({ block, shown }: { block: SystemBlock; shown?: number }) {
   const geometry = useMemo(() => systemGeometry(block), [block]);
-  const index = Math.max(0, Math.min(block.steps.length, shown ?? block.steps.length));
-  const step = index > 0 ? block.steps[index - 1] : undefined;
+  const parts = useMemo(() => systemParts(block), [block]);
+  const part = parts[Math.max(0, Math.min(parts.length - 1, shown ?? parts.length - 1))];
+  const ask = part?.ask;
+  // How many steps have played: a question shows the system before its step.
+  const index = part?.played ?? 0;
+  const step = !ask && index > 0 ? block.steps[index - 1] : undefined;
   const moved = index > 0 ? (block.moved[index - 1] ?? {}) : {};
   const marker = useId().replace(/:/g, '');
   const reduced = useReducedMotion();
@@ -64,6 +70,7 @@ export function SystemView({ block, shown }: { block: SystemBlock; shown?: numbe
 
   return (
     <div className="overflow-x-auto">
+      {ask && <AskCard key={`ask-${index}`} question={ask} />}
       <svg
         ref={svg}
         viewBox={`0 0 ${geometry.width} ${geometry.height}`}
@@ -155,8 +162,9 @@ export function SystemView({ block, shown }: { block: SystemBlock; shown?: numbe
 
 export function SystemScene({ block }: { block: SystemBlock }) {
   const reducedMotion = useReducedMotion();
-  const steps = block.steps.length > 0;
-  const durations = useMemo(() => [1800, ...block.steps.map((_, i) => stepDuration(subtitleOf(block, i + 1) ?? '') + 400)], [block]);
+  const parts = useMemo(() => systemParts(block), [block]);
+  const steps = parts.length > 1;
+  const durations = useMemo(() => parts.map((part, i) => (i === 0 ? 1800 : part.ask ? ASK_MS : stepDuration(subtitleOf(block, i) ?? '') + 400)), [block, parts]);
   const playback = usePlayback(durations, false);
   const frame = useRef<HTMLDivElement>(null);
   useFirstVisible(frame, () => {

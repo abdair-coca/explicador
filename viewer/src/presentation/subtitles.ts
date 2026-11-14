@@ -4,6 +4,7 @@
 import type { Block } from '../../../server/src/scene.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
 import { spaceModel } from '../lesson/spaceGeometry.ts';
+import { structureParts, systemParts } from '../lesson/askParts.ts';
 
 const KEY = 'explicador.subtitles';
 
@@ -65,10 +66,14 @@ export function subtitleOf(block: Block | undefined, part: number): string | und
       return part > 0 ? said(block.notes[part - 1]?.narration) : undefined;
     case 'argument':
       return part > 0 ? said(block.points[part - 1]?.narration) : undefined;
-    case 'system':
-      return part > 0 ? said(block.steps[part - 1]?.narration) : undefined;
+    case 'system': {
+      // A question part has no subtitle: the narration would give the answer away.
+      const at = systemParts(block)[part];
+      return at && !at.ask && at.played > 0 ? said(block.steps[at.played - 1]?.narration) : undefined;
+    }
     case 'structure': {
-      const change = block.states[part]?.change;
+      const at = structureParts(block)[part];
+      const change = at && !at.ask ? block.states[at.state]?.change : undefined;
       return change === undefined ? undefined : said(block.changes[change]?.narration);
     }
     case 'space': {

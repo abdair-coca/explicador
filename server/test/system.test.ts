@@ -99,3 +99,10 @@ describe('<system>', () => {
     assert.match(subtitleWarnings([block])[0] ?? '', /step 1 \(30 words\)/);
   });
 });
+
+describe('ask on a system step', () => {
+  it('keeps the question on a push or an effect', () => {
+    const block = blockOf(system('<push factor="traffic" change="up" ask="What does a sale do?">Up.</push>\n<effect from="traffic" to="misses" ask="And the misses?">More.</effect>'));
+    assert.deepEqual(block.steps.map((step) => step.ask), ['What does a sale do?', 'And the misses?']);
+  });
+});

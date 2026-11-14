@@ -16,6 +16,7 @@ import { conceptParts } from '../lesson/conceptParts.ts';
 import { matrixFocuses } from '../lesson/focuses.ts';
 import { scatterParts } from '../lesson/scatterGeometry.ts';
 import { spaceModel } from '../lesson/spaceGeometry.ts';
+import { structureParts, systemParts } from '../lesson/askParts.ts';
 import { cosineModel } from '../lesson/cosineMath.ts';
 import { proseSlide } from './prose.ts';
 
@@ -78,9 +79,9 @@ function partsOf(block: Block): number {
     case 'cosine':
       return cosineModel(block).parts.length;
     case 'structure':
-      return block.states.length;
+      return structureParts(block).length;
     case 'system':
-      return 1 + block.steps.length;
+      return systemParts(block).length;
     case 'annotated':
       return 1 + block.notes.length;
     case 'argument':

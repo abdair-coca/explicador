@@ -23,7 +23,7 @@ Five values arrive one by one: 50, 30, 70, 20 and 40. At every node it passes, `
 <change label="Insert 30" add="n30" mark="n50">30 is smaller than 50, so it goes down the left.</change>
 <change label="Insert 70" add="n70" mark="n50">70 is not smaller than 50, so it goes down the right.</change>
 <change label="Insert 20" add="n20" mark="n50 n30">20 is smaller than 50, then smaller than 30: left, and left again.</change>
-<change label="Insert 40" add="n40" mark="n50 n30">40 is smaller than 50 but not than 30: left, then right.</change>
+<change label="Insert 40" add="n40" mark="n50 n30" ask="Where does 40 go: which node, and which side?">40 is smaller than 50 but not than 30: left, then right.</change>
 </structure>
 
 Three words name what the picture shows.

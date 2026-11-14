@@ -3,7 +3,7 @@
 // already moved, and the parser works out which way its target goes, so the scene cannot claim an effect the links do
 // not carry.
 import type { Element } from './reader.ts';
-import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, readAttrs, readDesc, readEnum, readRef, type Report } from './common.ts';
+import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readDesc, readEnum, readRef, type Report } from './common.ts';
 import { directions, linkSigns, type Direction, type LinkSign, type SystemBlock, type SystemFactor, type SystemLink, type SystemLoop, type SystemStep } from './types.ts';
 
 const spec = (name: string) => catalog[name] ?? { attrs: {} };
@@ -93,6 +93,8 @@ export function buildSystem(element: Element, ordinal: number, report: Report): 
       else step = { kind: 'effect', factor: s.to, change: link.sign === 'same' ? source : flip(source), link: index, narration };
     }
     if (!step) continue;
+    const ask = optionalText(s.ask, 'ask', limits.questionLength, child, report);
+    if (ask) step.ask = ask;
     const before = now[step.factor];
     if (before !== undefined && before !== step.change) step.reversed = true;
     now[step.factor] = step.change;

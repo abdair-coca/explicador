@@ -1015,3 +1015,7 @@ body {
 .argument-reply { color: var(--muted-foreground); font-weight: 700; }
 .argument-verdict { margin: 0; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; border-radius: 16px; background: var(--foreground); color: var(--background, #fff); padding: 0.85rem 1.1rem; font-size: 1.1rem; font-weight: 800; }
 .argument-verdict-tag { border-radius: 9999px; background: var(--primary); color: var(--foreground); padding: 0.1rem 0.6rem; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Predict, then see (F29): the question before a step. */
+.ask-card { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0 0 0.75rem; border: 2.5px dashed var(--foreground); border-radius: 14px; background: var(--primary-light); padding: 0.6rem 0.9rem; font-size: 1.1rem; font-weight: 800; line-height: 1.35; }
+.ask-tag { border-radius: 9999px; background: var(--foreground); color: var(--primary); padding: 0.1rem 0.6rem; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }

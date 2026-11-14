@@ -512,7 +512,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F26. Form "causal system": `<system>`. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F27. Forms "annotated space" and "argument". Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F28. Sources beyond code. Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F29. Interactivity that teaches.
+- [x] F29. Interactivity that teaches. Done 2026-11-14; outcome in `docs/plan.md`.
 - [ ] F30. Measure the result (stop).
 
 ### Unattended mode (user, 2026-11-10)
@@ -631,4 +631,5 @@ Open points:
 | F26 | done (2026-11-14) |
 | F27 | done (2026-11-14) |
 | F28 | done (2026-11-14) |
-| F29–F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F29 | done (2026-11-14) |
+| F30 | planned (user, 2026-11-13); see `docs/plan.md` |
