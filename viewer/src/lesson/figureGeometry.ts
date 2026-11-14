@@ -358,7 +358,8 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
       const cost =
         taken.reduce((sum, other) => sum + overlap(box, other), 0) * 10 +
         obstacles.lines.reduce((sum, line) => sum + lengthInside(line.a, line.b, box) * line.weight, 0) +
-        obstacles.solids.reduce((sum, solid) => sum + (solid.owner === i ? 0 : solidOverlap(solid.shape, solid.offset, box) * 3), 0) +
+        // A label may sit inside its own circle or box, never on its own pictogram (F36: an eye at the bottom edge).
+        obstacles.solids.reduce((sum, solid) => sum + (solid.owner === i && solid.shape.kind !== 'icon' ? 0 : solidOverlap(solid.shape, solid.offset, box) * 3), 0) +
         rank * 0.25;
       if (cost < least) [best, least] = [at, cost];
     });

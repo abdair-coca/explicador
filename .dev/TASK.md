@@ -19,3 +19,4 @@ A loop until the user stops it: Sonnet writes a presentation on a random topic w
 ## Validation
 - Round 1 (iva, compound-interest-en; Sonnet 1.00 both, $0.47): typecheck 0, lint 0, build OK, server 301, viewer 199, evals 50, e2e 97 in Chromium.
 - Round 2 (hipoteca, oferta-demanda; Sonnet 1.00 both, $0.59): typecheck 0, lint 0, server 301, viewer 199, evals 50, e2e 97.
+- Round 3 (arcoiris-doble, ciclo-agua; Sonnet 1.00 both, $0.62): typecheck 0, lint 0, server 301, viewer 200, evals 50, e2e 97.

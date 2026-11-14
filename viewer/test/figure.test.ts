@@ -40,6 +40,19 @@ describe('figure geometry', () => {
     );
   });
 
+  it('keeps a label off its own pictogram at the edge of the figure', () => {
+    const [eye] = placeFigure({
+      width: 100,
+      height: 60,
+      shapes: [{ kind: 'icon', id: 'eye', icon: 'eye', x: 50, y: 56, size: 7, label: 'Tu ojo', color: 'ink', appear: 0 }],
+    });
+    assert.ok(eye?.labelAt);
+    const box = labelBox(eye.labelAt, eye.lines);
+    const across = Math.min(box.x1, 53.5) - Math.max(box.x0, 46.5);
+    const down = Math.min(box.y1, 59.5) - Math.max(box.y0, 52.5);
+    assert.ok(across <= 0 || down <= 0, `the label ${JSON.stringify(box)} lies on its eye`);
+  });
+
   it('puts a label beside its arrow, not on it, and inside a big circle', () => {
     const [arrow, circle] = placeFigure({
       width: 100,
