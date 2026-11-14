@@ -93,3 +93,40 @@ Done. The 10 topics, the eval, the human protocol, 50 tests and 24 browser tests
 3. **Result**: with today's rules all 10 scenes have 0 warnings; Haiku gets 2.4 of 5 without the scene and 4.9 with it. The first set of questions was saturated (4.6 of 5 without the scene) and was rewritten.
 4. **Limit found**: the model eval measures content (it caught the 5 % renewal cap missing from the lease scene) but not clarity: a text with the facts scores 5 of 5 whatever its order, picture or hierarchy. Clarity is for the human protocol and the rules of F24.
 5. **Pending**: three topics (`imprenta`, `ley-aprobacion`, `login-tienda`) are still answerable from general knowledge (4–5 of 5 without the scene); the baseline has one run per condition; nobody has yet run the human protocol.
+
+## F23 — Mandatory pedagogical brief
+
+Before designing, the model has to think. Every scene opens with a `<brief>` the server checks; `render_scene` refuses a scene whose brief is missing or invalid.
+
+### Scope
+
+1. **`<brief form>`** with the children `<audience>`, `<question>`, `<example>`, `<misconception>`, `<check>` and `<terms>` (a comma-separated list), each required once, one line of text, at most 300 characters (`<terms>`: 1–12 terms of at most 60 characters).
+   ```exl
+   <brief form="structure">
+   <audience>Second-year engineering students; they know what a linked list is</audience>
+   <question>How does a binary search tree decide where each value goes, and what shape does it end up with?</question>
+   <example>Insert 50, 30, 70, 20 in that order</example>
+   <misconception>Believing the tree always stays balanced</misconception>
+   <check>Predict where 40 goes and whether the tree becomes full</check>
+   <terms>node, child, height (in levels), full tree, degenerate tree</terms>
+   </brief>
+   ```
+2. **Errors** (the parser, so `render_scene` saves nothing): a missing, repeated, empty or too long field; an `<example>` with no concrete data (no digit, no quoted literal and no capitalized name after its first word); a `form` outside the catalog; a `<brief>` that is not the first tag (Markdown, the `#` title, may come before it) or appears twice. `render_scene` refuses a scene without `<brief>`, with a template.
+3. **Forms catalog** (closed, `form`): `structure` (parts and how they relate or change: a tree, an organization chart, an architecture), `process` (something goes through steps or states: a request, a law, a recipe), `quantity` (amounts, scale and how they change: interest, a funnel, metrics), `system` (causes and feedback: inflation, an ecosystem, a cache under load), `annotated` (a document, image or code read part by part: a lease, an interface), `argument` (a thesis with evidence and objections, or a decision with options and costs), `timeline` (events in order: a history). F25–F27 add the tags that draw the forms that lack one today; F27 writes the full form → tags table.
+4. **Warnings** (rules that never block, like F21's; the skill requires fixing them): the misconception is not taken up by any component, check or concept (at least half of its key words in one block's text); the scene has no `<quiz>` with options, the slide where the reader predicts the `check`; and, for a cached scene from before F23, the brief is missing (so `show_scene` asks to rebuild it with one).
+5. **The brief is not shown**: it travels as `scene.brief`, outside `blocks`, so the viewer, the slides, exports and the comprehension eval's scene text ignore it.
+6. **Skill and docs**: `presenting.md` makes the brief step 1 and designs every later step from it, with 2 example briefs (one technical, one not); `SKILL.md`, `docs/EXL.md` (reference rows, the forms) and `AGENTS.md` (decision 8). The example scenes and the guide's templates gain a brief.
+
+Taken to the per-slide checks of the request: "every slide declares its part of the arc", "the scene answers the `question`" and "every term is defined before its first use" need the arc of F24 and are built there.
+
+### Deviations from the request
+
+- **Tag form instead of `key: value` lines.** EXL bodies are text or child tags (as in `<concept>`), so the fields are children with English names; their text is in the scene's language. `form` is an attribute because its value is a closed list, like `<theme name>`.
+- **Field names in English** (`audience`, `question`, `example`, `misconception`, `check`, `terms`), like every tag and attribute of the catalog; `<example>` is the same tag as in `<concept>`.
+- **The cross-checks are warnings, not refusals.** Whether the misconception is taken up is a heuristic over words, and "a check exists" depends on the rest of the scene; since F21 rules of that kind never block a render, but the skill and the evals require a scene with none left.
+
+### Acceptance criteria
+
+- Parser tests: a valid brief; each field missing, repeated, empty, too long; a vague example; an unknown form; a brief after another tag; two briefs. Rule tests: misconception addressed and not; a check quiz and only flashcards; no brief.
+- `render_scene` refuses a scene without a brief (stdio test); the example scenes and the guide's templates carry one and render with no warnings.
+- `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
