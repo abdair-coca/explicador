@@ -125,6 +125,9 @@ describe('the skill (SKILL.md)', () => {
     assert.ok(plan > skill.indexOf('4. **Read only what you need**') && plan < skill.indexOf('\n5. '), 'the plan sits in step 4');
     const step = skill.slice(plan, skill.indexOf('\n5. '));
     assert.match(step, /the slides you plan, one line each/);
+    // A real session planned in its thinking and asked "go ahead?" with no plan in sight (F38 fix).
+    assert.match(step, /First write it as a chat message/);
+    assert.match(step, /the whole plan again as the `preview` of the go-ahead option/);
     assert.match(step, /write nothing until they answer/);
     assert.match(step, /When nobody can answer, skip it/);
   });
