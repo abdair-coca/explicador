@@ -16,3 +16,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | recursion | es | 6 | 1.00 | code math | trace, concept, compare, derive, figure, quiz | — (a call stack drawn as a figure whose frames pop) |
 | 2026-11-14 | vote-counting | en | 5 | 0.57 | society math | trace, concept, compare, flow, chart | left 2 warnings (no check quiz, no figure) to keep the "exactly 5 slides" asked: the guide ("A number of slides asked") and render_scene now say to replace or merge slides, never to leave a warning |
 | 2026-11-14 | jet-engine | en | 7 | 1.00 | hardware science | trace, concept, compare, figure, derive, quiz, stats | — |
+| 2026-11-14 | juicio | es | 6 | 1.00 | society history | figure, concept, compare, timeline, state, quiz | pending: a six-state machine shrinks to ~8 px text on a slide; ELK's row wrapping (aspect 1.4, or top-down) broke edges into slanted pieces and was reverted |
+| 2026-11-14 | porcentajes | es | 7 | 1.00 | business society | trace, concept, compare, derive, derive, chart, quiz | — |
+| 2026-11-14 | cielo-azul | es | 7 | 1.00 | nature science | trace, concept, chart, compare, figure, timeline, quiz | — |
