@@ -315,3 +315,21 @@ Some ideas are not a structure or a sequence but a web of causes: more traffic m
 3. **Seen in the browser**: each step draws its link with dots flowing along it and lights the factor it reaches; the cache's loop pushes "Cache misses" back down (red arrow, ringed).
 4. **Limits**: on a phone, Present shrinks the ring to the screen's width like other diagrams, so its text is small; the page scrolls it sideways instead. One push per system; a second push is a second `<system>`.
 5. **Pending**: F27 (forms "annotated space" and "argument").
+
+## F27 — Forms "annotated space" and "argument"
+
+Two forms of the brief still had no picture: a document read part by part (a lease, a law, a page of an interface) and an argument (a thesis with its reasons and objections). F27 adds a tag for each, and closes the forms catalog with the full form → tags table and a rule that the scene draws its brief's form.
+
+### Scope
+
+1. **`<annotated title ref? arc?>`** with one `<passage>` (the text as written, line breaks kept, up to 3000 characters) and 1–12 `<note quote label?>narration</note>`. Each `quote` is words of the passage (spaces and line breaks match any whitespace); the parser finds it and refuses a quote that is not there or overlaps another note's. The viewer shows the passage with each quoted span marked and numbered; in Present the passage arrives first, then each note is a part: its span lights up and its note appears beside it, the earlier ones staying marked. On the page the notes play with step controls.
+2. **`<argument title ref? arc?>`** with one `<claim>` (one line, required), 1–8 `<support label>narration</support>` and `<objection label reply?>narration</objection>` in the order they are weighed, and an optional `<verdict>` (one line). The viewer draws the claim on top, reasons on one side and objections on the other, each objection with its reply; in Present the claim comes first, then each point, then the verdict. Useful for a decision (options and costs), a scientific claim and its evidence, a legal argument.
+3. **Form → tags** in `presenting.md` and `docs/EXL.md`, and a warning when the scene has no component of its brief's form: `structure` (`<structure>`, `<arch>`, `<data>`), `process` (`<flow>`, `<state>`, `<journey>`, `<trace>`, `<timeline>`), `quantity` (`<chart>`, `<calc>`, `<plot>`, `<stats>`, `<derive>`, `<matrix>`, `<threshold>`, `<scatter>`, `<space>`, `<cosine>`), `system` (`<system>`), `annotated` (`<annotated>`), `argument` (`<argument>`, `<compare>`), `timeline` (`<timeline>`, `<journey>`).
+4. Server (catalog, refs, subtitles, scene text), viewer (Present, page, subtitles, CSS), docs and skill.
+5. **An example** that is not code: `examples/lease/lease.md` (a fictional lease) and `examples/scenes/lease.exl.md`, with `<annotated>` and `<argument>`, a brief and an arc.
+
+### Acceptance criteria
+
+- Parser tests for both tags (quotes found across line breaks, missing and overlapping quotes, limits; a claim, points in order, replies, a verdict) and for the form rule.
+- Viewer tests: the passage split into marked spans; parts and subtitles of both.
+- The example renders with no warnings and plays in every browser test; typecheck, lint, build, `npm test` and `npm run e2e` pass.
