@@ -129,6 +129,10 @@ describe('MCP server over stdio', () => {
     assert.match(ghost.text, /- src\/ghost\.js/);
     assert.match((await call('show_scene', { topic: 'ghost' })).text, /No cached scene/);
 
+    const section = await call('render_scene', { topic: 'section', exl: `${testBrief}\n<arch title="A"><node id="a" label="A" ref="README.md#Nope" /></arch>` });
+    assert.equal(section.isError, true, 'a section the document lacks is refused');
+    assert.match(section.text, /^These sections do not exist, nothing saved:\n- README\.md#Nope: no such heading; it has "Sample shop"/);
+
     const unplanned = await call('render_scene', { topic: 'unplanned', exl: '# A\n\n<arch title="A">\n<node id="a" label="A" ref="src/ui/login-form.js:1-5" />\n</arch>' });
     assert.equal(unplanned.isError, true, 'a scene without a brief is refused');
     assert.match(unplanned.text, /^No <brief>, nothing saved\. Every scene opens with one, right after the # title/);

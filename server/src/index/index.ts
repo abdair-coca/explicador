@@ -1,15 +1,20 @@
-// Light project index in `.explicador/index/`: the file tree and an import grep.
+// Light project index in `.explicador/index/`: the file tree, an import grep and, for sources that are not code (F28),
+// an outline of the documents: their headings, the columns of data files, and the files the agent reads with its tools.
 // The agent reads it before opening code. Rebuilds are incremental by size and mtime.
 import { existsSync, openSync, readFileSync, readSync, closeSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { stateDir, writeFileAtomic } from '../project.ts';
+import { headingsOf } from '../headings.ts';
 import { grepImports, hasImportPatterns, resolveImport } from './imports.ts';
 
 export const indexLimits = {
   files: 5000,
   grepBytes: 512 * 1024,
-  /** Characters of tree and imports returned inline to the agent. */
+  /** Characters of tree, imports and documents returned inline to the agent. */
   inlineChars: 24_000,
+  /** Documents outlined, and headings listed per document. */
+  documents: 200,
+  headings: 24,
 } as const;
 
 /** Directories that never hold the project's own source. */
@@ -41,6 +46,46 @@ export interface IndexResult {
   importsPath: string;
   tree: string;
   imports: string;
+  documentsPath: string;
+  documents: string;
+}
+
+const TEXT_DOCUMENTS = /\.(md|markdown|mdx|txt|rst|adoc)$/i;
+const DATA_FILES = /\.(csv|tsv)$/i;
+const OTHER_DOCUMENTS = /\.(pdf|docx?|odt|rtf|xlsx?|ods|pptx?|odp|epub)$/i;
+
+/** First bytes of a file as text, or undefined when it is too big to outline. */
+function headOf(root: string, path: string, size: number): string | undefined {
+  if (size > indexLimits.grepBytes) return undefined;
+  try {
+    return readFileSync(join(root, path), 'utf8');
+  } catch {
+    return undefined;
+  }
+}
+
+/** One line per document: its headings with their lines, a data file's columns and rows, or how to read it. */
+export function outlineDocuments(root: string, paths: string[], sizeOf: (path: string) => number): string {
+  const lines: string[] = [];
+  for (const path of paths) {
+    if (lines.length >= indexLimits.documents) break;
+    if (TEXT_DOCUMENTS.test(path)) {
+      const text = headOf(root, path, sizeOf(path));
+      if (text === undefined) continue;
+      const headings = headingsOf(text).slice(0, indexLimits.headings);
+      const listed = headings.map((heading) => `${'#'.repeat(heading.level)} ${heading.text} (L${heading.line})`).join('; ');
+      lines.push(`${path} (${text.split(/\r?\n/).length} lines)${listed ? `: ${listed}` : ''}`);
+    } else if (DATA_FILES.test(path)) {
+      const text = headOf(root, path, sizeOf(path));
+      if (text === undefined) continue;
+      const rows = text.split(/\r?\n/).filter((line) => line.trim());
+      const columns = (rows[0] ?? '').split(/\.tsv$/i.test(path) ? '\t' : ',').map((cell) => cell.trim()).filter(Boolean);
+      lines.push(`${path}: ${Math.max(0, rows.length - 1)} rows; columns ${columns.join(', ')}`);
+    } else if (OTHER_DOCUMENTS.test(path)) {
+      lines.push(`${path} (not text: read it with your own tools; refs can only name the file)`);
+    }
+  }
+  return lines.join('\n');
 }
 
 export function ensureIndex(root: string): IndexResult {
@@ -75,13 +120,16 @@ export function ensureIndex(root: string): IndexResult {
   const status = !previous ? 'created' : changed > 0 || removed > 0 ? 'updated' : 'unchanged';
   const treePath = join(dir, 'tree.txt');
   const importsPath = join(dir, 'imports.txt');
-  if (status !== 'unchanged' || !existsSync(treePath) || !existsSync(importsPath)) {
+  const documentsPath = join(dir, 'documents.txt');
+  const documents = outlineDocuments(root, paths, (path) => files[path]?.size ?? Infinity);
+  if (status !== 'unchanged' || !existsSync(treePath) || !existsSync(importsPath) || !existsSync(documentsPath)) {
     writeFileAtomic(treePath, `${tree}\n`);
     writeFileAtomic(importsPath, `${imports}\n`);
+    writeFileAtomic(documentsPath, `${documents}\n`);
     const meta: IndexMeta = { version: 1, builtAt: new Date().toISOString(), truncated, files };
     writeFileAtomic(metaPath, `${JSON.stringify(meta)}\n`);
   }
-  return { status, files: paths.length, changed, removed, truncated, treePath, importsPath, tree, imports };
+  return { status, files: paths.length, changed, removed, truncated, treePath, importsPath, tree, imports, documentsPath, documents };
 }
 
 /** Text returned by the `ensure_index` tool: a summary plus as much of the index as fits. */
@@ -91,8 +139,9 @@ export function describeIndex(result: IndexResult): string {
     result.truncated ? `Only the first ${indexLimits.files} files were indexed.` : '',
     `Full tree: ${result.treePath}`,
     `Imports (file -> imported files or packages): ${result.importsPath}`,
+    `Documents (headings with their lines, data columns): ${result.documentsPath}`,
   ].filter(Boolean);
-  const budget = Math.floor(indexLimits.inlineChars / 2);
+  const budget = Math.floor(indexLimits.inlineChars / 3);
   return [
     ...header,
     '',
@@ -101,7 +150,13 @@ export function describeIndex(result: IndexResult): string {
     '',
     '## Imports',
     clip(result.imports || '(no imports found)', budget, result.importsPath),
-  ].join('\n');
+    '',
+    '## Documents',
+    clip(result.documents || '(no documents found)', budget, result.documentsPath),
+    result.documents ? 'Refs to a section of a document: "path#Heading" (the heading as written, with or without its number).' : '',
+  ]
+    .join('\n')
+    .trimEnd();
 }
 
 function clip(text: string, max: number, path: string): string {

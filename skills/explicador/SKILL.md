@@ -17,6 +17,7 @@ First decide what is asked, because each answer has its own tool:
 - **A message from the viewer** (it starts with `Explicador viewer:`): steps 7 to 9, as it says.
 - **A file to share**: `export_scene`, step 10.
 - **Anything else that asks to understand the project**: a scene, steps 1 to 6.
+- **A topic that is not code** (a contract, a report, a dataset, a process at work, or a subject with no file at all): a scene too, steps 1 to 6, with the sources of "Topics that are not code" below.
 
 1. **Pick a topic**: a short, stable name for what is explained ("login", "checkout flow"). Reuse the same topic for the same question so the cache hits.
 2. **Call `show_scene`** with the topic.
@@ -45,6 +46,15 @@ First decide what is asked, because each answer has its own tool:
    - **Notebooks (`.ipynb`)**: never read the raw JSON. Call `read_notebook` (an outline of numbered cells; pass `cells: "3-5"` to read some whole). Refs to a notebook are **cell numbers**: `analysis.ipynb:3-5` is cells 3 to 5 (1-based, Markdown cells count), in scenes, `<code>`, answers and tours. The window shows the notebook as cells with their outputs.
 10. **Sharing and teaching**: the viewer's **Present** button shows the scene as slides that advance manually. When the user wants a file to share or present elsewhere, call `export_scene` with the topic and give them the path; the file works offline.
 11. **Findings**: when you notice something non-obvious and worth keeping (a risk, a surprising behavior, a design decision), call `add_finding` once, in English, with refs. Do not record trivia.
+
+## Topics that are not code
+
+The same scene, brief and arc explain a document, a dataset or any subject; only the sources change.
+
+- **Documents in the project** (Markdown, text, CSV): `ensure_index` lists them under "Documents" with their headings and lines, and data files with their columns and rows. Read the parts the explanation needs and point at them like code: `lease.md#Deposit` names a section by its heading (with or without its number), `lease.md:9-12` names lines, `rents.csv:2-14` names rows. The server checks the heading exists, and the scene goes stale when the document changes.
+- **Files that are not text** (PDF, Word, slides, spreadsheets): read them with your own tools; a ref can only name the whole file, so quote the words you rely on in an `<annotated>` passage or in the prose.
+- **No file at all** (a general subject, or what the user said): write the scene without refs, say in the prose what it rests on ("the figures are the example's, not a real loan's"), and keep every number either from a source or clearly marked as the example's.
+- Pick the picture by the brief's form ([presenting.md](presenting.md), "Form → tags"): a document is often `annotated` (an `<annotated>` passage, then the terms and an `<argument>` for the decision it asks for); a dataset `quantity`; a history `timeline`; causes `system`.
 
 ## Lessons (notebooks, data and ML code)
 
@@ -159,7 +169,7 @@ One short paragraph of context.
 - Long description: text inside `<node>…</node>`, `<entity>` or `<status>` (Markdown, up to 1200 characters, blank line between paragraphs). Clicking the box shows it in the detail panel. Write one for the 2–5 boxes a reader will open: what it does, why it matters, and any gotcha, in 2–6 sentences.
 - `<code node ref>why</code>`: the key lines of a box, shown in its panel. `ref` is a line range of at most 40 lines (check the numbers), the text says in one sentence why these lines matter; at most 3 per box, 1–4 per scene. The server copies the lines from the file: never paste code into EXL.
 - **Every box that is a function, class, route or block gets a line range** (`path:start-end`), so the code window can focus its code when the user clicks it, and the code follows the flow while it plays. A bare `path` is only for a whole small file, a folder-like module or a data file; `render_scene` warns about the others. For notebooks the range is cells.
-- `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
+- `ref`: `path`, `path:line`, `path:start-end` or, for a document's section, `path#Heading`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
   - `<theme name="ml" accent? />` once, right after the brief (see "Theme" below).

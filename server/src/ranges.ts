@@ -11,7 +11,7 @@ export function boxesWithoutRange(root: string, blocks: Block[]): string[] {
   const found: string[] = [];
   const sizes = new Map<string, number | undefined>();
   const check = (label: string, ref: Ref | undefined): void => {
-    if (!ref || ref.start !== undefined) return;
+    if (!ref || ref.start !== undefined || ref.heading !== undefined) return;
     if (!sizes.has(ref.path)) {
       const file = readProjectFile(root, ref.path);
       sizes.set(ref.path, file.ok ? sizeOf(file) : undefined);

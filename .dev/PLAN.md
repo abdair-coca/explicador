@@ -511,7 +511,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F25. Form "structure with states": `<structure>` (stop). Done 2026-11-14; outcome in `docs/plan.md`; stopped for the user's review of F23–F25.
 - [x] F26. Form "causal system": `<system>`. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F27. Forms "annotated space" and "argument". Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F28. Sources beyond code.
+- [x] F28. Sources beyond code. Done 2026-11-14; outcome in `docs/plan.md`.
 - [ ] F29. Interactivity that teaches.
 - [ ] F30. Measure the result (stop).
 
@@ -630,4 +630,5 @@ Open points:
 | F25 | done (2026-11-14), stopped for the user's review |
 | F26 | done (2026-11-14) |
 | F27 | done (2026-11-14) |
-| F28–F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F28 | done (2026-11-14) |
+| F29–F30 | planned (user, 2026-11-13); see `docs/plan.md` |

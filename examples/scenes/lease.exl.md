@@ -13,7 +13,7 @@
 
 Leo Park is about to rent the flat at 12 Rose Street. Six clauses fit on one page; four of them decide what he pays, and when.
 
-<annotated id="clauses" title="Four clauses decide what Leo pays, and when" arc="example" ref="lease.md:7-13">
+<annotated id="clauses" title="Four clauses decide what Leo pays, and when" arc="example" ref="lease.md#Clauses">
 <passage>
 2. Rent. The rent is 900 euros a month, paid by the 5th day of each month by bank transfer.
 
@@ -32,25 +32,25 @@ Leo Park is about to rent the flat at 12 Rose Street. Six clauses fit on one pag
 
 Two words of clause 3 carry most of its weight.
 
-<concept term="Deposit" ref="lease.md:9">
+<concept term="Deposit" ref="lease.md#Deposit">
 <define>Money the tenant hands over at the start, which the landlord holds only to pay for damage, and returns at the end.</define>
 <analogy>The deposit on a glass bottle: you get it back when you bring the bottle back unbroken.</analogy>
 <example>Leo pays 1,800 euros on 1 March and gets them back within 30 days of leaving, less any damage.</example>
 </concept>
 
-<concept term="Normal wear" ref="lease.md:9-11">
+<concept term="Normal wear" ref="lease.md#Repairs">
 <define>The ageing a flat goes through when it is lived in with care: faded paint, a worn floor.</define>
 <analogy>A car's tyres wear down even when it is driven well.</analogy>
 <example>Paint faded by the sun is normal wear; a hole in the wall from a shelf is damage.</example>
 </concept>
 
-<compare id="deposit-vs-fee" title="The deposit comes back; a fee does not" a="A fee" b="The deposit of clause 3" ref="lease.md:9" arc="contrast">
+<compare id="deposit-vs-fee" title="The deposit comes back; a fee does not" a="A fee" b="The deposit of clause 3" ref="lease.md#Deposit" arc="contrast">
 <pair label="Who keeps it" a="the landlord, for good" b="the landlord, only while the lease lasts" />
 <pair label="When it comes back" a="never" b="within 30 days of the end" winner="b" />
 <pair label="What it can pay for" a="anything" b="only damage beyond normal wear" winner="b" />
 </compare>
 
-<argument id="sign" title="Leo can sign as it is, with one precaution" ref="lease.md:5-15" arc="answer">
+<argument id="sign" title="Leo can sign as it is, with one precaution" ref="lease.md#Clauses" arc="answer">
 <claim>Leo can sign this lease as it is</claim>
 <support label="The rent is capped">At renewal it can rise by 5 % at most, so the second year costs at most 945 euros a month.</support>
 <support label="Big repairs are not his">Anything over 100 euros, and everything due to age, is paid by the landlord.</support>

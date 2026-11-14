@@ -3,11 +3,13 @@
 export const nodeKinds = ['actor', 'ui', 'service', 'module', 'function', 'store', 'external'] as const;
 export type NodeKind = (typeof nodeKinds)[number];
 
-/** A pointer into the analyzed project: `path`, `path:line` or `path:start-end`. */
+/** A pointer into the analyzed project: `path`, `path:line`, `path:start-end`, or a document's section, `path#Heading`. */
 export interface Ref {
   path: string;
   start?: number;
   end?: number;
+  /** A section of a document by its heading (F28); the server fills `start` and `end` with its lines when it shows the scene. */
+  heading?: string;
 }
 
 export interface SceneNode {

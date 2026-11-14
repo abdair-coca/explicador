@@ -310,6 +310,16 @@ export function readDesc(value: string | undefined, element: Element, report: Re
 }
 
 export function parseRefString(value: string): Ref | string {
+  const hash = value.indexOf('#');
+  if (hash > 0) {
+    const heading = value.slice(hash + 1).trim();
+    if (!heading) return 'name the section after "#": "notes.md#Deposit"';
+    if (heading.length > limits.titleLength) return `the heading is longer than ${limits.titleLength} characters`;
+    const ref = parseRefString(value.slice(0, hash));
+    if (typeof ref === 'string') return ref;
+    if (ref.start !== undefined) return 'give either a line range or a heading, not both';
+    return { ...ref, heading };
+  }
   const m = REF.exec(value.trim());
   if (!m?.[1]) return 'expected "path", "path:line" or "path:start-end"';
   const path = m[1].replace(/^\.\//, '');

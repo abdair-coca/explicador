@@ -1,5 +1,6 @@
 // Key code: the lines each <code> points to, copied from the analyzed project when a scene is shown,
 // so the viewer shows the real code and the agent never writes it out.
+import { withSections } from './headings.ts';
 import { readFileSync } from 'node:fs';
 import { isNotebookPath, readProjectFile } from './files.ts';
 import { quoteCells } from './notebook.ts';
@@ -52,7 +53,8 @@ function lineReader(root: string, outputs = false): (ref: Ref) => Lines {
 export function withSnippets(root: string, blocks: Block[]): Block[] {
   const read = lineReader(root);
   const readChapter = lineReader(root, true);
-  return blocks.map((block) => {
+  // Section refs (`notes.md#Deposit`) get their lines first, so everything below sees ranges.
+  return withSections(root, blocks).map((block) => {
     if (block.type === 'chapter') return block.ref ? { ...block, ...readChapter(block.ref) } : block;
     if (!('codes' in block) || !block.codes) return block;
     return { ...block, codes: block.codes.map((code) => ({ ...code, ...read(code.ref) })) };

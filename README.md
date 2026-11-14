@@ -111,6 +111,8 @@ Claude writes scenes in **EXL**, a closed catalog of tags. There is no JavaScrip
 | `<annotated>`, `<argument>` | A text read part by part, its quoted words marked as each note arrives; a claim weighed with its reasons, objections and a verdict |
 | `<brief>`, `arc` | Nothing: the plan every scene opens with (audience, question, one example, the misconception, the check, the terms) and each component's part of the narrative. The server refuses a scene without a brief and checks the order: the example before any rule or answer, the misconception corrected on a slide, terms and acronyms defined before use, a check at the end |
 
+Scenes can rest on documents as well as code: a ref like `lease.md#Deposit` names a section of a document by its heading, and the index lists the project's documents with their headings and its data files with their columns.
+
 The full format is in [`docs/EXL.md`](docs/EXL.md).
 
 ## Deep dives

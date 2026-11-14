@@ -321,6 +321,7 @@ export function ArchScene({ block }: { block: ArchBlock }) {
 }
 
 export function formatRef(ref: Ref): string {
+  if (ref.heading) return `${ref.path}#${ref.heading}`;
   return `${ref.path}${ref.start ? `:${ref.start}${ref.end ? `-${ref.end}` : ''}` : ''}`;
 }
 

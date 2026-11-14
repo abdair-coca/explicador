@@ -349,3 +349,34 @@ Two forms of the brief still had no picture: a document read part by part (a lea
 3. **Seen in the browser**: each note turns its words yellow and rises beside the passage (below it on a phone, where the subtitle carries it); the argument fills its two columns point by point.
 4. **Limits**: a passage is plain text (no images or tables) of up to 3000 characters; on a phone a long passage pushes its notes below the slide, and the subtitle tells them.
 5. **Pending**: F28 (sources beyond code).
+
+## F28 — Sources beyond code
+
+A scene over a lease, a report or a dataset needs what a scene over code has: a way to find the parts that matter, refs that point at them and stay right when the file changes, and a workflow that does not assume code.
+
+### Scope
+
+1. **Section refs**: `path#Heading` names a section of a Markdown or text document by its heading, with or without its number, case and accents aside. `render_scene` refuses a heading the document lacks and lists its headings; when a scene is shown or exported the server fills in the section's lines, so the code window opens it like a range. It counts as a range for the whole-file warning.
+2. **The index outlines documents**: `ensure_index` adds "Documents" (`documents.txt`): each Markdown or text file with its headings and their lines, each CSV or TSV with its columns and rows, and the files that are not text (PDF, Word, slides, spreadsheets), which the agent reads with its own tools.
+3. **The skill** gains "Topics that are not code": documents in the project, files that are not text, and subjects with no file at all (no refs, and the prose says what the scene rests on); the server instructions and `ensure_index`'s description name documents and data.
+4. **The lease example** gets headings, and its scene points at sections (`lease.md#Deposit`).
+
+### Acceptance criteria
+
+- Tests: parsing section refs; headings outside code fences; a section's lines (with and without its number, with subsections, without trailing blank lines); lines filled in nested refs; missing headings named, also over stdio; the outline of documents.
+- typecheck, lint, build, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase
+
+- **Headings, not anchors**: a ref names the heading as written ("3. Deposit" or "Deposit"), compared without case, accents or punctuation, because that is what the agent reads in the index; GitHub-style slugs would be one more thing to get wrong.
+- **Resolved when shown, not when saved**: the cache keeps `path#Heading`, so a section that moves inside its file stays right, and the scene goes stale through the file's hash like any other.
+- **No new reader for PDF or Word**: the server only reads text; those files are listed in the index for the agent's own tools, and a ref can name them whole. No dependency was added.
+- **Product decision 2 in `AGENTS.md`** now says the index also outlines documents: an extension of the light index, flagged for the user's review.
+- `SKILL.md`'s frontmatter (`description`, `when_to_use`) was not changed: the official docs were not re-checked in this session, as `AGENTS.md` asks before changing skills' manifests; the body and the server instructions name documents and data.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `server/src/headings.ts` (headings, sections, `withSections`, `missingSections`), section refs in the parser and `formatRef`, the refusal in `render_scene`, `outlineDocuments` in the index; `SKILL.md` "Topics that are not code", `docs/EXL.md`, `AGENTS.md`, `README.md`; `examples/lease/lease.md` with headings and its scene over sections.
+2. **How it was tested**: `server/test/sources.test.ts` (5 tests) and a stdio test of the refusal; typecheck, lint, build, `npm test` (server 282, viewer 176, evals 50) and `npm run e2e` (82 in Chromium) pass.
+3. **Limits**: sections need Markdown headings (`#`); text inside PDFs and Word files is out of the server's reach; CSV rows are referred to as lines.
+4. **Pending**: F29 (interactivity that teaches).

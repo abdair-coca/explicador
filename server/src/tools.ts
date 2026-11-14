@@ -12,6 +12,7 @@ import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
 import { briefForms, briefTemplate, formatErrors, limits, parseExl, parseRefString, topLevelTags } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
+import { missingSections } from './headings.ts';
 import { sceneWarnings } from './rules.ts';
 import type { Ref } from './scene.ts';
 import { withSnippets } from './snippets.ts';
@@ -69,7 +70,7 @@ export const sceneTags = topLevelTags.map((tag) => `<${tag}>`).join(', ');
 
 export const instructions = [
   'Explicador shows explanations of this project as scenes: animated diagrams in a local browser tab.',
-  'Whenever the user asks to explain or understand code, a feature, a flow, an architecture or a notebook of this project, in any language, the answer is a scene, not a text-only reply:',
+  'Whenever the user asks to explain or understand code, a feature, a flow, an architecture, a notebook, a document or data of this project, or a topic they want explained as a scene, in any language, the answer is a scene, not a text-only reply:',
   '1. Load the explicador skill first (Skill tool, skill "explicador"): it holds the scene format and the rules every scene follows.',
   '2. Call show_scene with a short topic (the one the user names, if any). Fresh: answer from it without reading code.',
   '3. Missing or stale: call ensure_index, read only the code you need, write the scene as EXL and call render_scene;',
@@ -91,8 +92,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
     'ensure_index',
     {
       description:
-        'Build or refresh the light project index (file tree + import grep) in .explicador/index/ and return it. ' +
-        'Read it before opening code to find the files that matter.',
+        'Build or refresh the light project index (file tree, import grep, and an outline of the documents: headings with their lines, data columns) in .explicador/index/ and return it. ' +
+        'Read it before opening code or documents to find the files that matter.',
     },
     async () =>
       text(
@@ -201,6 +202,8 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
           true,
         );
       }
+      const sections = missingSections(root, parsed.scene.blocks);
+      if (sections.length > 0) return text(`These sections do not exist, nothing saved:\n${sections.join('\n')}\nUse a heading of the document as written (with or without its number), or a line range.`, true);
       const warnings = sceneWarnings(root, parsed.scene, parsed.refs);
       const saved = cache.save(topic, exl, parsed.refs, warnings);
       if (!saved.ok) {
