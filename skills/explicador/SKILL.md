@@ -27,7 +27,7 @@ First decide what is asked, because each answer has its own tool:
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the brief, then the EXL, and call `render_scene`**. Every scene opens with a `<brief>` right after its `#` title: for whom, which question, which one example, which misconception and which check, decided before any slide ([presenting.md](presenting.md), step 1); `render_scene` refuses a scene without one. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
+5. **Write the brief, then the EXL in the order of the arc, and call `render_scene`**. Every scene opens with a `<brief>` right after its `#` title: for whom, which question, which one example, which misconception and which check, decided before any slide ([presenting.md](presenting.md), step 1); `render_scene` refuses a scene without one. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (the brief and the arc, terms and acronyms defined before use, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
 6. **Reply in the chat** with a short explanation (3–6 sentences, no list of the scene's steps, no code) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -51,7 +51,7 @@ First decide what is asked, because each answer has its own tool:
 When the topic is a Jupyter notebook, or a data or ML script, explain it as a **lesson** for a beginner: chapters that follow the notebook, each concept from zero, the real data on screen, and checks. Full tag reference: "Lessons" in `docs/EXL.md`; a complete example is `examples/scenes/notebook-lesson.exl.md` in the plugin.
 
 1. **Outline first**: `read_notebook` without `cells` gives the numbered cells; then read the cells of each section whole (`cells: "5-9"`), outputs included. Refs are cell numbers.
-2. **Intro** (before the first chapter): a `#` title that states the problem as a question ("Can a model tell a good review from a bad one?"), one short paragraph, then `<stats>` with 2–4 headline numbers (the result first) and a `<journey>` of the data's path: one `<stage>` per big step with its real size as `value` ("24 reviews", "18 × 70", "0.833") and the operation as `op` (`train_test_split()`).
+2. **Intro** (before the first chapter): a `#` title that states the problem as a question ("Can a model tell a good review from a bad one?"), one short paragraph, then `<stats arc="question">` with 2–4 headline numbers about the problem (the size of the data, not the result: that comes once the example has led to it), the case the brief's example names as a component with `arc="example"`, and a `<journey arc="question">` of the data's path: one `<stage>` per big step with its real size as `value` ("24 reviews", "18 × 70", "0.833") and the operation as `op` (`train_test_split()`).
 3. **One `<chapter>` per notebook section**, in notebook order: `ref` = the section's cells (a range), a `title` a beginner understands, and a `goal` ("Read a confusion matrix and compute precision from it"). The server attaches the cells with their outputs.
 4. **In each chapter**, short blocks, one idea each:
    - **Prose is for the page**: Present shows only components and their narration as subtitles, so everything the audience must see goes into a component whose `title` states the point in at most 12 words, and every step, stage, note and mark gets one short sentence of narration that works as a subtitle (see [presenting.md](presenting.md)). On the page, write one idea per paragraph in at most two sentences, put the key term in **bold** (it gets a marker stroke) and write numbers as digits (they count up).
@@ -72,25 +72,42 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 
 ## EXL in short
 
-Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`.
+Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`. Every component (every top-level tag except `<brief>`, `<theme>` and `<chapter>`) takes an optional `arc`: what it does for the brief's question (`question`, `example`, `idea`, `contrast`, `apply`, `answer`, `check`, `recap`; [presenting.md](presenting.md), "The arc").
 
 ```exl
 # What happens when you log in?
 
 <brief form="process">
-<audience>Developers new to this code; they know HTTP and JSON</audience>
+<audience>Developers new to this code; they know HTTP (GET, POST) and JSON</audience>
 <question>What happens between typing a password and getting a session cookie?</question>
 <example>Ada logs in as "ada@example.com" with the password "lovelace"</example>
 <misconception>Believing the server stores the password as the user typed it</misconception>
 <check>Predict what the server compares when Ada logs in</check>
-<terms>scrypt, salt, constant-time comparison, session cookie</terms>
+<terms>scrypt key</terms>
 </brief>
 
 <theme name="security" />
 
 One short paragraph of context.
 
-<arch id="overview" title="The server checks the password and keeps only a hash">
+<trace id="example" title="Ada's password is checked, never stored" arc="example">
+<value label="What the user types">ada@example.com · lovelace</value>
+<value kind="table" label="What the form posts" code="JSON.stringify(body)" note="The form sends both fields once, as JSON, to POST /api/login.">email=ada@example.com|password=lovelace</value>
+<value kind="table" label="What the check derives" code="scryptAsync(password, salt, 64)" ref="src/auth/password.js:17" note="scrypt runs on what was typed with the stored salt, and gives the stored key back.">salt=5f1d0c7e…|key=2149472b…</value>
+<value label="The answer" code="timingSafeEqual(key, expected)" ref="src/auth/password.js:18" note="Both keys match, compared in constant time, so the login succeeds.">true</value>
+</trace>
+
+<concept term="Scrypt key" ref="src/auth/password.js:14-19">
+<define>What scrypt makes from a password and a random salt: 64 bytes that cannot be turned back into the password.</define>
+<analogy>A fingerprint: it proves who you are, but nobody can rebuild your hand from it.</analogy>
+</concept>
+
+<compare id="belief" title="The server keeps a key, never the password" a="What one might think" b="What the code does" arc="contrast">
+<pair label="What it stores" a="the password as typed" b="a salt and the scrypt key" />
+<pair label="What it compares" a="the typed password with the stored one" b="the key of what was typed with the stored key" />
+</compare>
+
+<arch id="overview" title="The server checks the password and keeps only a hash" arc="idea">
   <node id="form" label="Login form" desc="Posts the credentials as JSON" kind="ui" ref="src/ui/login-form.js" />
   <node id="api" label="Auth routes" desc="Validate input, set the cookie" kind="service" ref="src/api/auth-routes.js:6-20" />
   <node id="users" label="Users table" desc="Users and password hashes" kind="store" ref="src/db/users.js" />
@@ -109,14 +126,7 @@ One short paragraph of context.
   <code node="password" ref="src/auth/password.js:14-19">The comparison that keeps timing constant.</code>
 </arch>
 
-<trace id="example" title="The password is never stored: only its scrypt key is compared">
-<value label="What the user types">ada@example.com · lovelace</value>
-<value kind="table" label="What the form posts" code="JSON.stringify(body)" note="The form sends both fields once, as JSON, to POST /api/login.">email=ada@example.com|password=lovelace</value>
-<value kind="table" label="What the check derives" code="scryptAsync(password, salt, 64)" ref="src/auth/password.js:17" note="scrypt runs on what was typed with the stored salt, and gives the stored key back.">salt=5f1d0c7e…|key=2149472b…</value>
-<value label="The answer" code="timingSafeEqual(key, expected)" ref="src/auth/password.js:18" note="Both keys match, compared in constant time, so the login succeeds.">true</value>
-</trace>
-
-<flow id="login" title="A right password earns a session cookie">
+<flow id="login" title="A right password earns a session cookie" arc="answer">
   <node id="form" label="Login form" desc="Sends the credentials" kind="ui" />
   <node id="api" label="Auth routes" desc="Validate and reply" kind="service" />
   <step from="form" to="api" label="credentials" ref="src/ui/login-form.js:7-11">
@@ -135,6 +145,7 @@ One short paragraph of context.
 ```
 
 - `<brief form>` comes first, right after the `#` title, and is never shown: `<audience>`, `<question>`, `<example>` (concrete data: numbers, a quoted value or a name), `<misconception>`, `<check>` and `<terms>` (comma-separated, 1–12), each exactly once, one line of at most 300 characters. `form` = `structure`, `process`, `quantity`, `system`, `annotated`, `argument` or `timeline`. How to write it: [presenting.md](presenting.md), step 1. The server warns when no component takes up the misconception and when no `<quiz>` with options asks the check.
+- `arc` on every component: the brief's example comes first (`example`), then the rule or term it motivates (`idea`), the misconception corrected (`contrast`), the `answer` to the question, and a `check` or `recap` at the end; a `<concept>` is an `idea`, a `<quiz>` a `check` and a flashcard a `recap` without saying so. Every term of `<terms>` gets a `<concept>` before any slide shows it, and every acronym is spelled out the first time ("time to live (TTL)") unless the `<audience>` knows it.
 
 - `<arch title>`: the static picture: `<node>`s and `<edge from to label?>`s. Use it for "what are the parts".
 - `<group id label kind?>` (in `<arch>` only) boxes related nodes; the viewer shows it collapsed and zooms in on click, without asking you. Edges may point at a group.

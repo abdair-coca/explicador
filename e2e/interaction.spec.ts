@@ -16,7 +16,7 @@ test('a box opens its details with key code copied from the file, and the code w
   await page.getByRole('group', { name: /^Flow diagram/ }).locator('[data-node-id="sessions"]').click();
   const panel = page.getByRole('complementary', { name: 'Details: Session store' });
   await expect(panel).toBeVisible();
-  await expect(panel.getByText('Random ids, 1 h TTL')).toBeVisible();
+  await expect(panel.getByText('Random ids that expire in one hour')).toBeVisible();
   // The key code is the project's own lines, not text the scene wrote.
   await expect(panel.getByText(/randomBytes\(24\)/).first()).toBeVisible();
   const code = page.getByRole('region', { name: 'Code' });

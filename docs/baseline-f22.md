@@ -4,21 +4,23 @@ Measured on 2026-11-13 with `npm run eval:comprension -- --runs 1` on Haiku 5.5 
 
 ## The table
 
-| Topic | Kind | Components | Rule warnings | Without the scene | With the scene | Gain |
-|---|---|---|---|---|---|---|
-| arboles-binarios | algorithm | 17 | 0 | 2 / 5 | 5 / 5 | +3 |
-| login-tienda | architecture | 3 | 0 | 4 / 5 ⚠ | 5 / 5 | +1 |
-| regresion-resenas | notebook | 22 | 0 | 2 / 5 | 5 / 5 | +3 |
-| interes-compuesto | personal finance | 8 | 0 | 1 / 5 | 5 / 5 | +4 |
-| fotosintesis | science | 6 | 0 | 2 / 5 | 5 / 5 | +3 |
-| ley-aprobacion | institutions | 5 | 0 | 4 / 5 ⚠ | 5 / 5 | +1 |
-| contrato-alquiler | document | 5 | 0 | 2 / 5 | 4 / 5 | +2 |
-| embudo-ventas | business | 7 | 0 | 0 / 5 | 5 / 5 | +5 |
-| imprenta | history | 5 | 0 | 5 / 5 ⚠ | 5 / 5 | +0 |
-| pan | everyday | 6 | 0 | 2 / 5 | 5 / 5 | +3 |
-| **Mean** | | 8.4 | 0 | **2.4 / 5** | **4.9 / 5** | **+2.5** |
+| Topic | Kind | Components | Rule warnings | Warnings F23–F24 | Without the scene | With the scene | Gain |
+|---|---|---|---|---|---|---|---|
+| arboles-binarios | algorithm | 17 | 0 | 1 | 2 / 5 | 5 / 5 | +3 |
+| login-tienda | architecture | 3 | 0 | 0 ¹ | 4 / 5 ⚠ | 5 / 5 | +1 |
+| regresion-resenas | notebook | 22 | 0 | 0 ¹ | 2 / 5 | 5 / 5 | +3 |
+| interes-compuesto | personal finance | 8 | 0 | 1 | 1 / 5 | 5 / 5 | +4 |
+| fotosintesis | science | 6 | 0 | 2 | 2 / 5 | 5 / 5 | +3 |
+| ley-aprobacion | institutions | 5 | 0 | 1 | 4 / 5 ⚠ | 5 / 5 | +1 |
+| contrato-alquiler | document | 5 | 0 | 1 | 2 / 5 | 4 / 5 | +2 |
+| embudo-ventas | business | 7 | 0 | 1 | 0 / 5 | 5 / 5 | +5 |
+| imprenta | history | 5 | 0 | 2 | 5 / 5 ⚠ | 5 / 5 | +0 |
+| pan | everyday | 6 | 0 | 1 | 2 / 5 | 5 / 5 | +3 |
+| **Mean** | | 8.4 | 0 | 1.0 | **2.4 / 5** | **4.9 / 5** | **+2.5** |
 
 ⚠ = Haiku gets 4 or more right without the scene, so those questions can be answered from general knowledge and the gain says little. The eval marks them itself.
+
+"Warnings F23–F24" is the same count with the rules of F23 and F24 (2026-11-14, no model call): each of the eight scenes written before F23 gets "No <brief>", `fotosintesis` also an acronym used before it is spelled out (ATP), and `imprenta` a title that is a label. The rules of the arc, the terms and the misconception need a brief, so they apply once F30 rebuilds these scenes. ¹ `login-tienda` and `regresion-resenas` are the example scenes, rebuilt in F23–F24 with a brief and an arc; their comprehension numbers are those of their F22 version.
 
 "Rule warnings" is what `render_scene` would list with today's rules (`sceneWarnings`). **All ten scenes have zero**, which is the problem this plan starts from: every scene is valid and the rules cannot tell a good one from a bad one. The rules of F24 will be added as a column here.
 

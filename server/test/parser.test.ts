@@ -108,7 +108,7 @@ describe('parseExl: invalid documents', () => {
       ].join('\n'),
     );
     assert.deepEqual(errors, [
-      '1:17 Unknown attribute "color" on <arch>; allowed: id, title',
+      '1:17 Unknown attribute "color" on <arch>; allowed: id, title, arc',
       '2:9 Invalid id "1a": start with a letter, then letters, digits, "-" or "_" (max 40)',
       '2:27 Unknown kind "robot"; use actor, ui, service, module, function, store, external',
       '2:40 Invalid ref "../secret.txt": the path must stay inside the project',

@@ -44,13 +44,34 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 
    Every later step comes from the brief: the title is its question, the example is the one the `<trace>` follows, each term gets a `<concept>` card the first time it appears, one slide corrects the misconception with its own words (a `<quiz>` option and its why, a `<compare>`, a `<concept>`, or the narration of the step that disproves it), and the last `<quiz>` asks the check. Done when every field names something concrete; `render_scene` refuses a scene without a brief.
 2. **The question.** The `#` title is the brief's question in at most 12 words ("What happens when you log in?"); then `<brief>`, then `<theme>`. Done when the title has at most 12 words.
-3. **The ideas.** List for yourself 3 to 7 ideas, each one sentence. Done when each one could be a slide.
-4. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
+3. **The ideas, in the order of the arc.** List for yourself 3 to 7 ideas, each one sentence, and give each its part of the arc (below): first the brief's example, then the idea it motivates, the misconception set against the fact, the answer to the question, and the check. Done when each one could be a slide and the first one is the example.
+4. **A component per idea.** Pick it from the table below and write its part as `arc="…"`. Done when every idea, and every chapter, has its component, and every component its `arc`.
 5. **One example through everything.** Take the brief's example and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
 6. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
 7. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
-8. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a misconception the scene takes up and a `<quiz>` that asks the check, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
+8. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a misconception the scene takes up and a `<quiz>` that asks the check, the arc in order, terms and acronyms defined before use, titles that are claims, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 9. **Check** against the checklist at the end. Done when every line is true.
+
+### The arc
+
+Every component says what it does for the brief's question with `arc`. The order is the principle "concrete first": the reader meets the case before the rule, and the answer after the case.
+
+| `arc` | The slide… | Often |
+|---|---|---|
+| `question` | poses the problem: the case or the stakes, before anything is explained | `<stats>` of the data's size, a `<journey>` map without the results |
+| `example` | shows the brief's example with its real data | `<trace>`, `<timeline>`, a small `<matrix>` |
+| `idea` | draws the rule, the mechanism or the term from the example | `<concept>` (its default), `<arch>`, `<chart>` |
+| `contrast` | puts the misconception against what really happens | `<compare>` of the belief and the fact, the `<calc>` that disproves it |
+| `apply` | uses the idea on a new case or shows a consequence | `<plot>`, `<derive>`, `<threshold>` |
+| `answer` | answers the brief's question | the `<flow>`, `<state>` or `<data>` that shows the whole mechanism |
+| `check` | asks the reader to predict | `<quiz>` with options (its default) |
+| `recap` | sums up | flashcards (their default), a last `<stats>` |
+
+- **Concrete first.** The first `example` comes before any `idea` and any `answer`; it shows one of the brief's numbers, quoted values or names. A map or a headline that shows the result before the case is an `answer` too early: show the size of the problem there, and the result once the example has led to it.
+- **Terms after the case.** Every term of `<terms>` gets a `<concept>` before any slide shows it, so the first example says what happens in plain words ("a pass for one hour") and the card names it next. A chapter card may name the term its section defines.
+- **Acronyms spelled out.** The first time, write the words and the acronym after them: "time to live (TTL)". Leave out only those the `<audience>` says the reader knows.
+- **One `contrast`, one `answer`, an end.** One slide sets the misconception against the fact; one answers the question; the last is a `check` or a `recap`. In a lesson, each chapter repeats example → idea → check, and the review is the recap.
+- **Titles are claims.** A title of one or two words ("Weights") is a label: say the slide's point.
 
 ### Two briefs
 
@@ -123,19 +144,33 @@ A list of more than 3 bullets is almost always one of these: steps in order → 
 <example>Ana logs in as "ana@shop.com" with the password "hunter2"</example>
 <misconception>Believing the shop keeps your password and could email it back to you</misconception>
 <check>Explain why the shop cannot email you your password</check>
-<terms>password hash, session</terms>
+<terms>password hash</terms>
 </brief>
 
 <theme name="security" />
 
-When you log in, the shop never stores or compares your password as you typed it. It keeps a **hash**, and compares hashes.
+Ana types her email and her password, and the shop lets her in. What happens to her password in between?
+
+<trace title="Ana types her password once and gets a pass for one hour" arc="example">
+<value label="What Ana types">ana@shop.com hunter2</value>
+<value kind="table" label="What the page sends" code="JSON.stringify({ email, password })" note="The page sends both, once, over a secure connection.">email=ana@shop.com|password=hunter2</value>
+<value label="What she gets back" note="Her browser shows the pass on every visit, so she does not type her password again.">a pass for one hour</value>
+</trace>
+
+The shop never compares what Ana typed with a stored password. It keeps a **hash**, and compares hashes.
 
 <concept term="Password hash">
 <define>A scrambled version of the password that cannot be turned back into it.</define>
 <analogy>Like a fingerprint: it proves who you are, but nobody can rebuild your hand from it.</analogy>
+<example>hunter2 always gives `9f2c…e71a`; any other password gives something else.</example>
 </concept>
 
-<arch title="Four parts take part in a login">
+<compare title="The shop keeps a hash, never your password" a="What you might think" b="What the shop does" arc="contrast">
+<pair label="What it keeps" a="hunter2" b="its hash, 9f2c…e71a" />
+<pair label="What it compares" a="what you typed with hunter2" b="the hash of what you typed with the stored hash" />
+</compare>
+
+<arch title="Four parts take part in a login" arc="idea">
   <node id="you" label="You" desc="Type your email and password" kind="actor" />
   <node id="page" label="Login page" desc="Sends what you typed" kind="ui" ref="src/ui/login-page.js:4-15" />
   <node id="check" label="Password check" desc="Compares hashes, never passwords" kind="function" ref="src/auth/password.js:14-19" />
@@ -146,16 +181,7 @@ When you log in, the shop never stores or compares your password as you typed it
   <code node="check" ref="src/auth/password.js:14-19">The comparison takes the same time whether the hashes match or not, so timing gives nothing away.</code>
 </arch>
 
-The password travels once, then only its hash is compared.
-
-<trace title="Your password never travels as itself">
-<value label="What you type">ana@shop.com hunter2</value>
-<value kind="table" label="What the page sends" code="JSON.stringify({ email, password })">email=ana@shop.com|password=hunter2</value>
-<value kind="table" label="What the check compares" code="scrypt(password, salt)">email=ana@shop.com|hash=9f2c…e71a</value>
-<value kind="number" label="The answer">match</value>
-</trace>
-
-<flow title="A match gives you a pass for one hour">
+<flow title="The shop hashes what you type and compares hashes" arc="answer">
   <node id="page" label="Login page" desc="Sends what you typed" kind="ui" ref="src/ui/login-page.js:4-15" />
   <node id="check" label="Password check" desc="Compares hashes, never passwords" kind="function" ref="src/auth/password.js:14-19" />
   <step from="page" to="check" label="email + password" ref="src/ui/login-page.js:9-12">The page sends what you typed, once, over a secure connection.</step>
@@ -185,20 +211,28 @@ With your project's code, every value of the trace comes from the code or a log,
 <example>The review "a great film, really great" gets the score 0.438 and the probability 0.608</example>
 <misconception>Believing the score is already a probability</misconception>
 <check>Predict the probability the model gives to a score of 0</check>
-<terms>score, sigmoid, probability</terms>
+<terms>sigmoid</terms>
 </brief>
 
 <theme name="ml" />
 
-<journey title="A review becomes a verdict in three steps">
+<journey title="A review becomes a verdict in three steps" arc="question">
 <stage id="review" label="Review" value="1 review" kind="text">The review, as its author wrote it.</stage>
 <stage id="score" label="Score" value="0.438" kind="model" op="decision_function()">The model adds up what each word weighs.</stage>
-<stage id="probability" label="Probability" value="0.608" kind="metric" op="predict_proba()">The sigmoid turns the score into a probability.</stage>
+<stage id="probability" label="Probability" value="0.608" kind="metric" op="predict_proba()">A function squeezes the score between 0 and 1.</stage>
 </journey>
 
 <chapter title="A score becomes a probability" goal="Read a score as a probability between 0 and 1." stage="probability" />
 
-The model gives each review a **score**, which can be any number. The **sigmoid** turns it into a probability.
+The model gives each review a **score**, which can be any number. Follow one review first.
+
+<trace title="Our review becomes 0.608" arc="example">
+<value label="The review">a great film, really great</value>
+<value kind="number" label="Its score" code="model.decision_function(X)" note="Above 0, so it leans positive.">0.438</value>
+<value kind="number" label="Its probability" code="model.predict_proba(X)[:, 1]" note="A function squeezes the score between 0 and 1.">0.608</value>
+</trace>
+
+The function that turns 0.438 into 0.608 is the **sigmoid**.
 
 <concept term="Sigmoid">
 <define>A function that squeezes any number into a value between 0 and 1.</define>
@@ -206,18 +240,12 @@ The model gives each review a **score**, which can be any number. The **sigmoid*
 <formula>\sigma(z) = \frac{1}{1 + e^{-z}}</formula>
 </concept>
 
-<plot title="A score just above 0 gives just over one half" x="score" y="probability of positive">
+<plot title="A score just above 0 gives just over one half" x="score" y="probability of positive" arc="contrast">
 <curve fn="sigmoid" />
-<mark x="0.438" label="our review">A score a little above 0 becomes a probability a little above one half.</mark>
+<mark x="0.438" label="our review">A score of 0.438 is not a probability: on the curve it becomes 0.608, a little above one half.</mark>
 </plot>
 
-<trace title="Our review becomes 0.608">
-<value label="The review">a great film, really great</value>
-<value kind="number" label="Its score" code="model.decision_function(X)" note="Above 0, so it leans positive.">0.438</value>
-<value kind="number" label="Its probability" code="model.predict_proba(X)[:, 1]" note="The sigmoid turns the score into a probability.">0.608</value>
-</trace>
-
-<derive title="0.438 becomes 0.608">
+<derive title="0.438 becomes 0.608" arc="answer">
 <line note="The definition.">\sigma(z) = \frac{1}{1 + e^{-z}}</line>
 <line note="Our review's score, as the notebook prints it.">\sigma(0.438) = \frac{1}{1 + e^{-0.438}}</line>
 <line note="The probability the notebook prints.">\sigma(0.438) = 0.608</line>
@@ -291,7 +319,9 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 ## Checklist before you answer
 
 - The scene opens with a `#` question of at most 12 words, then a `<brief>` whose six fields are concrete, then a `<theme>`.
-- One slide corrects the brief's misconception in its own words, and a `<quiz>` with options asks its check.
+- One slide corrects the brief's misconception in its own words (`arc="contrast"`), and a `<quiz>` with options asks its check.
+- Every component has its `arc`; the brief's example comes first, before any idea or answer, and the scene ends on a check or a recap.
+- Every term of the brief has its `<concept>` before any slide uses it, and every acronym is spelled out the first time.
 - Every idea and every chapter has a component; every component's `title` is its point, in at most 12 words.
 - One `<trace>` follows a real example through the whole process, from the real input to the real output.
 - Every technical term is introduced once by a `<concept>` with an analogy (or replaced by plain words for a non-technical audience).

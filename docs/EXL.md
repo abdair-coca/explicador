@@ -6,7 +6,7 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 
 - Anything that is not a scene tag is Markdown and appears as prose in the viewer, in order.
 - A scene tag starts at the beginning of a line (up to 3 spaces of indentation) outside code fences. Tags inside fenced code blocks, inline in a sentence, or autolinks such as `<https://…>` stay Markdown.
-- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons and deep dives `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<space>` and `<cosine>`, plus `<theme>` and `<brief>`. A document needs at least one; `<theme>` only decorates and `<brief>` is never shown, so neither counts. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`.
+- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons and deep dives `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<space>` and `<cosine>`, plus `<theme>` and `<brief>`. A document needs at least one; `<theme>` only decorates and `<brief>` is never shown, so neither counts. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`. Every component (every top-level tag except `<brief>`, `<theme>` and `<chapter>`) takes an optional `arc`: its part of the narrative (see "The arc").
 - Every scene opens with a `<brief>` (see "The brief"): only Markdown, the `#` title, may come before it. The parser accepts a document without one, so scenes cached before it existed still open, but `render_scene` refuses to save it.
 - Any other tag at the start of a line is an error (`<script>`, `<div>`, …), and so is a child tag outside a block.
 - Attribute values are always quoted, with `"` or `'`. `attr={…}` is rejected. Entities `&amp; &lt; &gt; &quot; &apos;` are decoded.
@@ -123,7 +123,7 @@ Before designing, the model decides for whom the scene is, which question it ans
 
 <theme name="code" />
 
-<arch title="Smaller values go left, larger ones right">
+<arch title="Smaller values go left, larger ones right" arc="example">
   <node id="n50" label="50" desc="The first value: the root" />
   <node id="n30" label="30" desc="Smaller than 50: left" />
   <node id="n70" label="70" desc="Larger than 50: right" />
@@ -136,6 +136,25 @@ Before designing, the model decides for whom the scene is, which question it ans
 - `<audience>`: who reads it and what they already know. `<question>`: the one question the scene answers. `<example>`: the one concrete case followed from start to finish. `<misconception>`: the wrong idea the reader most likely brings, which the scene corrects. `<check>`: what the reader predicts or works out at the end. `<terms>`: the terms the reader meets, separated by commas. Their text is in the scene's language.
 - Each field is required exactly once and is one line of at most 300 characters; `<terms>` holds 1–12 terms of at most 60 characters. The `<example>` must hold concrete data: a digit, a quoted literal (`"…"`, `«…»`, `` `…` ``) or a capitalized name after its first word that does not start a sentence ("Gutenberg", "Ana"). "Inserting some values" is refused.
 - The brief is not a block: it travels as `scene.brief`, so the viewer, the slides, exports and the eval's scene text never show it.
+
+## The arc
+
+Every component says what it does for the brief's question with `arc`, one of:
+
+| `arc` | The slide… |
+|---|---|
+| `question` | poses the problem: the case or the stakes, before anything is explained (a map of the process, the size of the data) |
+| `example` | shows the brief's concrete example, with its real data |
+| `idea` | draws the rule, the mechanism or the term from the example |
+| `contrast` | puts the misconception against what really happens |
+| `apply` | uses the idea on a new case or shows a consequence |
+| `answer` | answers the brief's question |
+| `check` | asks the reader to predict or work something out |
+| `recap` | sums up or reviews |
+
+- An unknown value is an error; `arc` on `<brief>`, `<theme>` or `<chapter>` is an unknown attribute. Without `arc`, a `<concept>` is an `idea`, a `<quiz>` with options a `check` and a flashcard a `recap`; every other component needs it.
+- The order the server checks (warnings): the first `example` comes before any `idea` and any `answer` (concrete first); an `example` slide shows the brief's example (one of its numbers, quoted values or names); there is a `contrast` and an `answer`; the last component is a `check` or a `recap`. Several components may share a part, and parts may repeat (one `example`, `idea` and `check` per chapter).
+- The arc is not shown: it travels on each block as `arc`.
 
 ## Lessons
 
@@ -209,6 +228,10 @@ Syntax errors (unclosed tags, input that ends inside a tag, bad quoting) stop pa
 After a scene is saved, `render_scene` may add warnings, one `Warning:` line each, which never block it: the skill asks the agent to fix every one and render again until the result says "No warnings". They are stored with the cached scene, and `show_scene` lists them again (computed anew, so rules added later apply to older scenes) and asks to fix them before answering from the cache. The rules (`server/src/slides.ts`, `server/src/rules.ts`):
 
 - The brief: no component, check or concept takes up its misconception (at least half of the misconception's key words, the words of 4 letters or more that are not in its question and do not just frame it, such as "believing", in the text of one block); no `<quiz>` with options, where the reader predicts its check; or, for a scene cached before briefs existed, no `<brief>` at all (rebuild it with one).
+- The arc, in a scene with a brief: components that declare no part; an `idea` or an `answer` before the first `example`; no `example` slide that shows the brief's example; no `contrast`; no `answer`; a last component that is no `check` or `recap`.
+- Terms, in a scene with a brief: a term of `<terms>` that no `<concept term>` names, or that a component shows before its card (chapter cards may name it).
+- Acronyms: a word of 2–6 capital letters (two such words may be joined by a hyphen, "TF-IDF") that a component or a chapter card shows before the scene spells it out (`ACR (words)` or `words (ACR)`, emphasis allowed, in that block or one before it, prose included) or a `<concept term>` names it, unless the brief's `<audience>` or `<terms>` name it. Roman numerals and codes such as `BOOK-1843` are not acronyms.
+- Titles of one or two words on a component: a label, not the slide's point.
 - A box whose `ref` names a whole file of more than 30 lines (or 2 notebook cells) instead of a line range.
 - The presentation, where a speaker shows the `#` title as the cover and one component per slide with its `title` as its sentence: a scene without `<theme>`; a scene that does not open with a `# ` title; a chapter (or a scene without chapters) with no component, unless it holds two or more `<quiz>` (a review); a block or chapter `title` of more than 12 words. `<chapter>`, `<quiz>` and `<theme>` are not components.
 - Numbers, in a scene that refers to a notebook: every number a component shows as data (stat and stage values, chart and matrix rows, calc parts and total, threshold scores, trace numbers, bars, table values and vectors, plot marks, curve points and parameters, scatter dots and boundary, space positions and scores, cosine dimensions and score, compare cells, and the decimals of a derivation) must appear in an output or a cell of the notebooks it refers to, or in another file it refers to, as written or rounded to the decimals shown; a percentage may be a printed fraction × 100.

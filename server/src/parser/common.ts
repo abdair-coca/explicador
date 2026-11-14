@@ -96,6 +96,17 @@ export const catalog: Record<string, TagSpec> = {
   terms: { attrs: {}, text: true },
 };
 
+/** Top-level tags that are slides of their own: every one but the brief, the theme and the chapter cards. */
+export const componentTags: readonly string[] = [
+  'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'calc', 'threshold',
+  'concept', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine',
+];
+// Every component declares its part of the narrative arc (F24).
+for (const tag of componentTags) {
+  const spec = catalog[tag];
+  if (spec) spec.attrs = { ...spec.attrs, arc: 'optional' };
+}
+
 /** Tags that open a block at the top level of a scene; every other tag lives inside one of them. */
 export const topLevelTags: readonly string[] = [
   'brief', 'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',

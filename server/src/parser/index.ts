@@ -1,4 +1,4 @@
-export { catalog, limits, parseExl, parseRefString, topLevelTags } from './parse.ts';
+export { catalog, componentTags, limits, parseExl, parseRefString, topLevelTags } from './parse.ts';
 export * from './types.ts';
 export { briefTemplate, isConcrete } from './brief.ts';
 

@@ -106,7 +106,7 @@ Claude writes scenes in **EXL**, a closed catalog of tags. There is no JavaScrip
 | `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<calc>`, `<threshold>`, `<quiz>` | Lessons: chapters, numbers, data paths, one example changing form step by step, charts, matrices, calculations, thresholds and checks |
 | `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<theme>` | Concept cards, functions with marks, formulas changed line by line, classes and their boundary, comparisons, events in order, and the scene's decoration |
 | `<space>`, `<cosine>`, `<value kind="vector">`, `<chapter stage>` | Vector spaces with their index, angles and nearest items, the cosine worked out step by step, embeddings as vectors, and a map of the whole process at each chapter |
-| `<brief>` | Nothing: the plan every scene opens with (audience, question, one example, the misconception, the check, the terms). The server refuses a scene without it and checks that a slide corrects the misconception and a quiz asks the check |
+| `<brief>`, `arc` | Nothing: the plan every scene opens with (audience, question, one example, the misconception, the check, the terms) and each component's part of the narrative. The server refuses a scene without a brief and checks the order: the example before any rule or answer, the misconception corrected on a slide, terms and acronyms defined before use, a check at the end |
 
 The full format is in [`docs/EXL.md`](docs/EXL.md).
 

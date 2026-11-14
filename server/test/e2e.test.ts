@@ -60,7 +60,10 @@ describe('MCP server over stdio', () => {
 
     const rendered = await call('render_scene', { topic: 'login', exl });
     assert.equal(rendered.isError, false, rendered.text);
-    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <trace id="login-trace">, <flow id="login-flow">, <quiz id="login-check">\)/);
+    assert.match(
+      rendered.text,
+      /Rendered "login" \(<theme id="theme">, <trace id="login-case">, <concept id="concept-\d+">, <concept id="concept-\d+">, <trace id="login-trace">, <concept id="concept-\d+">, <arch id="login-architecture">, <flow id="login-flow">, <quiz id="login-check">\)/,
+    );
     assert.match(rendered.text, /No warnings: the scene follows every rule the server checks\./);
     viewerUrl = /at (http:\/\/127\.0\.0\.1:\d+\/\?t=[a-f0-9]+)/.exec(rendered.text)?.[1] ?? '';
     assert.ok(viewerUrl);
@@ -85,11 +88,11 @@ describe('MCP server over stdio', () => {
     assert.equal(body.scene.status, 'stale');
     assert.deepEqual(body.scene.changes, [{ path: 'src/auth/sessions.js', change: 'modified' }]);
     assert.deepEqual(
-      body.scene.blocks.map((b) => b.type),
-      ['markdown', 'theme', 'markdown', 'arch', 'markdown', 'trace', 'flow', 'quiz', 'markdown'],
+      body.scene.blocks.filter((b) => b.type !== 'markdown').map((b) => b.type),
+      ['theme', 'trace', 'concept', 'concept', 'trace', 'concept', 'arch', 'flow', 'quiz'],
     );
     // Key code arrives with the real lines, read from the project when the scene is shown.
-    const password = body.scene.blocks[3]?.codes?.find((c) => c.node === 'password');
+    const password = body.scene.blocks.find((b) => b.type === 'arch')?.codes?.find((c) => c.node === 'password');
     assert.match(password?.lines?.join('\n') ?? '', /timingSafeEqual\(key, Buffer\.from\(expected, 'hex'\)\)/);
     assert.equal((await fetch(new URL('/api/scene', url), { headers: { 'x-token': 'nope' } })).status, 403);
     assert.equal((await fetch(new URL('/api/scene', url))).status, 403);
@@ -167,7 +170,7 @@ describe('MCP server over stdio', () => {
     const saved = new SceneCache(project).save('old login', old, ['src/ui/login-form.js', 'src/api/auth-routes.js', 'src/auth/auth-service.js', 'src/auth/password.js', 'src/auth/sessions.js', 'src/db/users.js']);
     assert.ok(saved.ok);
     const shown = await call('show_scene', { topic: 'old login' });
-    assert.match(shown.text, /It breaks a rule the server checks/);
+    assert.match(shown.text, /It breaks 2 rules the server checks/);
     assert.match(shown.text, /^Warning: No <brief>: this scene was made before every scene opened with one\. Rebuild it under the same topic/m);
   });
 
@@ -180,14 +183,15 @@ describe('MCP server over stdio', () => {
     assert.match(rendered.text, /^Warning: No <code>/m);
     assert.match(rendered.text, /^Warning: No component takes up the misconception of the brief/m);
     assert.match(rendered.text, /^Warning: No <quiz> with options/m);
-    assert.match(rendered.text, /breaks 5 rules of the explicador skill: fix every warning and call render_scene again/);
+    assert.match(rendered.text, /^Warning: These components declare no part of the arc: <arch> "The login"/m);
+    assert.match(rendered.text, /breaks 12 rules of the explicador skill: fix every warning and call render_scene again/);
     const cachePath = join(project, '.explicador/scenes/sloppy.json');
     const saved = JSON.parse(readFileSync(cachePath, 'utf8')) as { warnings?: string[] };
-    assert.equal(saved.warnings?.length, 5, 'the cache keeps them, where an eval can read them');
+    assert.equal(saved.warnings?.length, 12, 'the cache keeps them, where an eval can read them');
 
     const shown = await call('show_scene', { topic: 'sloppy' });
     assert.match(shown.text, /is fresh/);
-    assert.match(shown.text, /It breaks 5 rules the server checks\. Fix each warning below/);
+    assert.match(shown.text, /It breaks 12 rules the server checks\. Fix each warning below/);
     assert.match(shown.text, /^Warning: These boxes have no desc/m);
     assert.doesNotMatch(shown.text, /Answer from this EXL/);
 

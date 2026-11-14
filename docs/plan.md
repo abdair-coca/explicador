@@ -190,3 +190,20 @@ The brief says what the scene is for; the arc says what each slide does for it. 
 - Rule tests: each warning above, firing and not firing; defaults for `<concept>` and `<quiz>`; acronyms spelled out, named by a concept, known by the audience, and not.
 - The example scenes and the guide's templates declare their arc and render with no warnings.
 - `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase
+
+- **`arc` is checked like `id`**: one sentence in `docs/EXL.md` and `SKILL.md` documents it for every component; the catalog test treats it as shared, not per tag.
+- **Terms before use** counts every component, not chapter cards: a card announces its section ("Read an embedding") and its first component defines the term.
+- **Acronyms are checked in order**: spelled out (`ACR (words)` or `words (ACR)`, Markdown emphasis allowed) in the same block or before it, prose included, or named by an earlier `<concept>`. A hyphen joins two acronyms ("TF-IDF") but not a code ("BOOK-1843"); well-formed roman numerals ("XV") are dates. "LCI" is not a roman numeral.
+- **The acronym and title rules run on every scene**, so the bench's old scenes are measured too; the arc and terms rules need a brief.
+- **The examples were rebuilt, not only annotated**: each opens with its case before any card (Ada's login, Ada's records, Ada's visit, the review the model gets wrong, the customer's question), the intro maps no longer show the result, the lesson gained a "Stop word" card and spells out TP, FP, FN and TF-IDF, and the shop scenes gained cards for their terms and a `<compare>` that sets the misconception against the code.
+- **The lesson guidance in `SKILL.md`** said "headline numbers (the result first)"; it now asks for the size of the problem first and the result once the example has led to it.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `arc` on every component (`componentTags` in `parser/common.ts`, read in `parse.ts`, `arcParts` in `types.ts`); `arcWarnings`, `termWarnings`, `acronymWarnings` and `titleWarnings` in `rules.ts`; "The arc" in `presenting.md` (recipe steps 3–4, a table of parts, the checklist) and `docs/EXL.md`; `SKILL.md`, `AGENTS.md`, `README.md`; the five examples and the three templates follow every rule; the baseline has a column for the new rules.
+2. **How it was tested**: `server/test/arc.test.ts` (17 tests: every part, an unknown part, arc refused on a chapter, the theme and the brief, the defaults, each arc warning firing and not, terms defined, missing and late, chapter cards, acronyms spelled out before, after, by a concept, known to the audience, roman numerals and codes, label titles); the stdio and browser tests updated to the rebuilt login. typecheck, lint, build, `npm test` (server 258, viewer 162, evals 50) and `npm run e2e` (61 in Chromium) pass.
+3. **Bench**: with the rules of F23–F24 the eight old bench scenes get 1–2 warnings each (mean 1.0 over the ten): "No <brief>", plus ATP used before it is spelled out in `fotosintesis` and a label title in `imprenta`. No eval was run.
+4. **Limits**: the arc is declared by the author, so the server checks its order, not whether a slide does what it declares; "the scene answers the question" is an `answer` slide after the example, not a reading of it.
+5. **Pending**: decoration and counters are the viewer's (F29); F25 adds `<structure>`, the form that draws a tree or an organization chart as itself.

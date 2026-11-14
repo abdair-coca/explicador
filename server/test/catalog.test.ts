@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { catalog, formatErrors, parseExl, topLevelTags } from '../src/parser/index.ts';
+import { catalog, componentTags, formatErrors, parseExl, topLevelTags } from '../src/parser/index.ts';
 import { instructions, sceneTags } from '../src/tools.ts';
 
 const read = (path: string): string => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
@@ -12,8 +12,9 @@ const skill = read('skills/explicador/SKILL.md');
 const guide = read('skills/explicador/presenting.md');
 
 const tags = Object.keys(catalog);
-/** Top-level tags whose `id` is optional: documented once for every block, not tag by tag. */
-const blockId = (tag: string, attr: string): boolean => attr === 'id' && topLevelTags.includes(tag) && catalog[tag]?.attrs.id === 'optional';
+/** Top-level tags whose `id` is optional, and every component's `arc`: documented once for every block, not tag by tag. */
+const blockId = (tag: string, attr: string): boolean =>
+  (attr === 'id' && topLevelTags.includes(tag) && catalog[tag]?.attrs.id === 'optional') || (attr === 'arc' && componentTags.includes(tag));
 const components = topLevelTags.filter((tag) => tag !== 'chapter' && tag !== 'theme' && tag !== 'brief');
 const mentions = (text: string, tag: string): boolean => new RegExp(`<${tag}(?=[\\s>/])`).test(text);
 
@@ -53,7 +54,7 @@ describe('the EXL reference (docs/EXL.md)', () => {
     for (const tag of tags) {
       const row = rows.get(tag);
       assert.ok(row, `docs/EXL.md has no row for <${tag}>`);
-      const spec = catalog[tag]?.attrs ?? {};
+      const spec = Object.fromEntries(Object.entries(catalog[tag]?.attrs ?? {}).filter(([attr]) => !(attr === 'arc' && componentTags.includes(tag))));
       assert.deepEqual([...row.attrs].sort(), Object.keys(spec).sort(), `attributes of <${tag}>`);
       const required = Object.entries(spec).filter(([, need]) => need === 'required').map(([name]) => name);
       assert.deepEqual([...row.required].sort(), required.sort(), `required attributes of <${tag}>`);
@@ -102,6 +103,13 @@ describe('the skill (SKILL.md)', () => {
     for (const tag of topLevelTags) assert.equal(catalog[tag]?.attrs.id, tag === 'theme' || tag === 'brief' ? undefined : 'optional', `<${tag}> id`);
     assert.match(skill, /Every top-level tag except `<theme>` and `<brief>` takes an optional `id`/);
     assert.match(reference, /Every top-level tag except `<theme>` and `<brief>` takes an optional `id`/);
+  });
+
+  it('says once that every component takes an optional arc', () => {
+    for (const tag of topLevelTags) assert.equal(catalog[tag]?.attrs.arc, componentTags.includes(tag) ? 'optional' : undefined, `<${tag}> arc`);
+    assert.deepEqual(topLevelTags.filter((tag) => !componentTags.includes(tag)).sort(), ['brief', 'chapter', 'theme']);
+    assert.match(skill, /Every component \(every top-level tag except `<brief>`, `<theme>` and `<chapter>`\) takes an optional `arc`/);
+    assert.match(reference, /Every component \(every top-level tag except `<brief>`, `<theme>` and `<chapter>`\) takes an optional `arc`/);
   });
 });
 

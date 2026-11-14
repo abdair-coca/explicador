@@ -5,7 +5,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { isNotebookPath } from './files.ts';
 import { resolveInside } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
-import type { Block, ChapterBlock, Scene } from './scene.ts';
+import type { ArcPart, Block, ChapterBlock, Scene } from './scene.ts';
 import { slideWarnings } from './slides.ts';
 
 /** A subtitle is read while its part plays: about 20 words, never more than this. */
@@ -27,6 +27,10 @@ export function sceneWarnings(root: string, scene: Scene, refs: readonly string[
   const unfocused = boxesWithoutRange(root, blocks);
   return [
     ...briefWarnings(scene),
+    ...arcWarnings(scene),
+    ...termWarnings(scene),
+    ...acronymWarnings(scene),
+    ...titleWarnings(blocks),
     ...(unfocused.length > 0
       ? [`These boxes point at a whole file, so the code window cannot focus their code: ${listed(unfocused)}. Give each a line range (path:start-end; for a notebook, cell numbers).`]
       : []),
@@ -77,11 +81,14 @@ export function keyWords(text: string): string[] {
   return [...new Set(words.filter((word) => word.length >= 4 && !FRAMING.has(word)).map((word) => word.slice(0, STEM)))];
 }
 
+/** Keys whose values are not text a reader sees as prose: ids, refs, kinds, code and the arc itself. */
+const UNSHOWN = new Set(['ref', 'id', 'type', 'kind', 'arc', 'code', 'op', 'role', 'theme', 'stage', 'group', 'parent', 'node', 'from', 'to', 'cluster']);
+
 /** Every text a block shows or narrates, in one string: titles, labels, narration, options, whys, notes. */
 function blockText(block: Block): string {
   const parts: string[] = [];
   const walk = (value: unknown, key: string): void => {
-    if (key === 'ref' || key === 'id' || key === 'type') return;
+    if (UNSHOWN.has(key)) return;
     if (typeof value === 'string') parts.push(value);
     else if (Array.isArray(value)) value.forEach((item) => walk(item, ''));
     else if (value && typeof value === 'object') for (const [name, item] of Object.entries(value)) walk(item, name);
@@ -130,6 +137,182 @@ export function briefWarnings(scene: Scene): string[] {
     );
   }
   return warnings;
+}
+
+// The arc ------------------------------------------------------------------------------------------------------------
+
+/** Whether a block is a slide of its own: everything but prose, the theme and chapter cards. */
+const isComponent = (block: Block): boolean => block.type !== 'markdown' && block.type !== 'theme' && block.type !== 'chapter';
+
+/** A component's part of the arc: the one it declares, or its tag's default (a concept is an idea, a quiz a check or, as a flashcard, a recap). */
+export function arcOf(block: Block): ArcPart | undefined {
+  if ('arc' in block && block.arc) return block.arc;
+  if (block.type === 'concept') return 'idea';
+  if (block.type === 'quiz') return block.options.length > 0 ? 'check' : 'recap';
+  return undefined;
+}
+
+/** The concrete data of the brief's example: its numbers, its quoted values and its names. */
+export function exampleData(example: string): string[] {
+  const data = new Set<string>(example.match(/\d+(?:[.,]\d+)?/g) ?? []);
+  for (const match of example.matchAll(/"([^"]+)"|“([^”]+)”|«([^»]+)»|‘([^’]+)’|`([^`]+)`/g)) {
+    const quoted = match.slice(1).find(Boolean);
+    if (quoted) data.add(quoted);
+  }
+  const words = example.split(/\s+/).filter(Boolean);
+  words.forEach((word, i) => {
+    if (i > 0 && !/[.!?:]$/.test(words[i - 1] ?? '') && /^[("“«¿¡]?\p{Lu}\p{L}/u.test(word)) data.add(word.replace(/^[("“«¿¡]+|[^\p{L}\p{N}]+$/gu, ''));
+  });
+  return [...data].filter((item) => plain(item));
+}
+
+/**
+ * The order the principles ask for (F24): every component says what it does for the brief's question, the concrete
+ * example comes before the idea and the answer, the misconception and the answer each get a slide, and the scene ends
+ * on a check or a recap.
+ */
+export function arcWarnings(scene: Scene): string[] {
+  const { brief } = scene;
+  const components = scene.blocks.filter(isComponent);
+  if (!brief || components.length === 0) return [];
+  const arcs = components.map(arcOf);
+  const at = (part: ArcPart): number => arcs.indexOf(part);
+  const warnings: string[] = [];
+  const undeclared = components.filter((_, i) => arcs[i] === undefined).map(named);
+  if (undeclared.length > 0) {
+    warnings.push(
+      `These components declare no part of the arc: ${listed(undeclared)}. Give each arc="…": question, example, idea, contrast, apply, answer, check or recap, ` +
+        'what it does for the brief\'s question (presenting.md, "The arc").',
+    );
+  }
+  const example = at('example');
+  if (example < 0) {
+    warnings.push(`No arc="example": no slide shows the brief's example ("${brief.example}"). Show the concrete case, with its real data, before any rule or result.`);
+  } else {
+    for (const part of ['idea', 'answer'] as const) {
+      const early = arcs.findIndex((arc, i) => arc === part && i < example);
+      const block = components[early];
+      if (block) {
+        warnings.push(
+          `${named(block)} (arc="${part}") comes before the first example, ${named(components[example] ?? block)}: concrete first. ` +
+            `Show the example, then the ${part === 'idea' ? 'rule or term it motivates' : 'answer it leads to'}.`,
+        );
+      }
+    }
+    const data = exampleData(brief.example);
+    const shown = components.some((block, i) => arcs[i] === 'example' && data.some((item) => plain(blockText(block)).includes(plain(item))));
+    if (data.length > 0 && !shown) {
+      warnings.push(`No slide with arc="example" shows the brief's example ("${brief.example}"): put its real data (${listed(data)}) on the slide that introduces it.`);
+    }
+  }
+  if (at('contrast') < 0) {
+    warnings.push(
+      `No arc="contrast": no slide sets the misconception ("${brief.misconception}") against what really happens. ` +
+        'Give that slide arc="contrast": a <compare> of the belief and the fact, or the step, quiz or concept that disproves it.',
+    );
+  }
+  if (at('answer') < 0) {
+    warnings.push(`No arc="answer": no slide answers the brief's question ("${brief.question}"). Give the slide whose title states the answer arc="answer", after the example.`);
+  }
+  const last = components.at(-1);
+  if (last && arcs.at(-1) !== 'check' && arcs.at(-1) !== 'recap') {
+    warnings.push(`The scene ends on ${named(last)}, which is no check or recap: end with the <quiz> that asks the brief's check ("${brief.check}"), or a review.`);
+  }
+  return warnings;
+}
+
+// Terms and acronyms ---------------------------------------------------------------------------------------------------
+
+/** Lowercase words without accents, separated by single spaces: "TF-IDF" reads "tf idf". */
+const spaced = (text: string): string =>
+  ` ${text.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()} `;
+
+/** Whether a text uses a term, as a whole word or words, also in the plural ("salt" in "salts"). */
+export function uses(text: string, term: string): boolean {
+  const wanted = spaced(term).trim();
+  if (!wanted) return false;
+  const escaped = wanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(` ${escaped}(s|es)? `).test(spaced(text));
+}
+
+/**
+ * Every term of the brief has a <concept> card, and no component shows it before that card. A chapter card announces
+ * its section's topic, so it may name the term its first component defines.
+ */
+export function termWarnings(scene: Scene): string[] {
+  const { brief, blocks } = scene;
+  if (!brief) return [];
+  const shown = blocks.filter(isComponent);
+  const undefinedTerms: string[] = [];
+  const early: string[] = [];
+  for (const term of brief.terms) {
+    const card = shown.findIndex((block) => block.type === 'concept' && (uses(block.term, term) || uses(term, block.term)));
+    if (card < 0) {
+      undefinedTerms.push(`"${term}"`);
+      continue;
+    }
+    const first = shown.findIndex((block) => uses(blockText(block), term));
+    const block = shown[first];
+    if (block && first < card) early.push(`"${term}" (in ${named(block)})`);
+  }
+  const warnings: string[] = [];
+  if (undefinedTerms.length > 0) {
+    warnings.push(
+      `These terms of the brief have no <concept> card: ${listed(undefinedTerms)}. Define each the first time it appears (<concept term="…"> with <define>, an <analogy> and an <example>), ` +
+        'or take it out of <terms> if the reader never meets it.',
+    );
+  }
+  if (early.length > 0) warnings.push(`These terms appear before their <concept> card: ${listed(early)}. Move the card before the first slide that uses the term, or say it in plain words there.`);
+  return warnings;
+}
+
+/**
+ * Two to six capital letters, two of them joined by a hyphen at most ("TF-IDF"); not a code such as "BOOK-1843", and
+ * not a roman numeral, which is a date.
+ */
+const ACRONYM = /(?<![\p{L}\p{N}-])\p{Lu}{2,6}(?:-\p{Lu}{2,6})?(?![\p{L}\p{N}]|-[\p{L}\p{N}])/gu;
+
+/** A well-formed roman numeral ("XV", "XIX"); "LCI" is not one. */
+const ROMAN = /^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
+
+/**
+ * Acronyms a component shows before the scene spells them out, before a concept names them, and that the audience does
+ * not know. The prose counts as spelling out, in its place: the page reads in order.
+ */
+export function acronymWarnings(scene: Scene): string[] {
+  const { brief, blocks } = scene;
+  const knownToReader = [brief?.audience ?? '', ...(brief?.terms ?? [])].join('\n');
+  let before = '';
+  const spelled = (acronym: string, text: string): boolean =>
+    // Markdown emphasis may wrap either side: "**TF-IDF** (term frequency…)". An acronym holds only letters and "-".
+    new RegExp(`(?<![\\p{L}])${acronym}[*_]*\\s*\\(\\s*[*_]*\\p{L}|\\(\\s*[*_]*${acronym}[*_]*\\s*\\)`, 'u').test(text);
+  const defined = new Set<string>();
+  const unknown = new Map<string, string>();
+  for (const block of blocks) {
+    const text = block.type === 'markdown' ? block.text : blockText(block);
+    before += `\n${text}`;
+    if (block.type === 'concept') for (const match of block.term.matchAll(ACRONYM)) defined.add(match[0]);
+    if (!isComponent(block) && block.type !== 'chapter') continue;
+    for (const match of text.matchAll(ACRONYM)) {
+      const acronym = match[0];
+      if (ROMAN.test(acronym) || unknown.has(acronym) || defined.has(acronym)) continue;
+      if (spelled(acronym, before) || uses(knownToReader, acronym)) defined.add(acronym);
+      else unknown.set(acronym, named(block));
+    }
+  }
+  if (unknown.size === 0) return [];
+  const found = [...unknown].map(([acronym, where]) => `${acronym} (in ${where})`);
+  return [
+    `These acronyms appear before anything spells them out: ${listed(found)}. Write the words the first time, with the acronym after them in parentheses, give it a <concept> before, ` +
+      'or, if the reader already knows it, say so in the brief\'s <audience>.',
+  ];
+}
+
+/** A component's title is the slide's claim or question: one or two words are a label ("Weights", "Overview"). */
+export function titleWarnings(blocks: Block[]): string[] {
+  const labels = blocks.filter((block) => isComponent(block) && 'title' in block && block.title && words(block.title) <= 2).map(named);
+  if (labels.length === 0) return [];
+  return [`These titles are labels, not the slide's point: ${listed(labels)}. Write each as the claim the slide shows, in 4 to 12 words ("Only *bad* pulls towards negative", not "Weights").`];
 }
 
 // Numbers ------------------------------------------------------------------------------------------------------------

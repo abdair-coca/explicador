@@ -645,7 +645,20 @@ export interface CosineBlock {
 /** Blocks of lessons that hold no clickable items. */
 export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock;
 
-export type Block = MarkdownBlock | SceneBlock | LessonBlock;
+/**
+ * What a component does in the scene's narrative (F24): poses the `question`, shows the brief's `example`, draws the
+ * `idea` from it, sets the misconception in `contrast`, will `apply` it, gives the `answer`, asks a `check`, or sums up
+ * in a `recap`.
+ */
+export const arcParts = ['question', 'example', 'idea', 'contrast', 'apply', 'answer', 'check', 'recap'] as const;
+export type ArcPart = (typeof arcParts)[number];
+
+/** A component's declared part of the arc; absent when the scene left it out. */
+export interface WithArc {
+  arc?: ArcPart;
+}
+
+export type Block = MarkdownBlock | ((SceneBlock | Exclude<LessonBlock, ChapterBlock | ThemeBlock>) & WithArc) | ChapterBlock | ThemeBlock;
 
 /**
  * The form an idea takes, which picks the scene's picture: parts and how they relate (`structure`), steps or states

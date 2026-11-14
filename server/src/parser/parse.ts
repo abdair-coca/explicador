@@ -8,6 +8,7 @@ import {
   checkMath,
   checkText,
   childElements,
+  componentTags,
   limits,
   narrationOf,
   parseRef,
@@ -24,6 +25,8 @@ import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildM
 import { buildBrief } from './brief.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
+  arcParts,
+  type ArcPart,
   cardinalities,
   fieldKeys,
   linkKinds,
@@ -53,7 +56,7 @@ import {
   type SceneNode,
 } from './types.ts';
 
-export { catalog, limits, parseRefString, topLevelTags } from './common.ts';
+export { catalog, componentTags, limits, parseRefString, topLevelTags } from './common.ts';
 
 // A tag at the start of a line (up to 3 spaces, as Markdown allows). Autolinks such as <https://…> are not tags.
 const LINE_TAG = /^( {0,3})<(\/?)([A-Za-z][\w-]*)(?![\w:@.-])/;
@@ -145,7 +148,8 @@ export function parseExl(source: string): ParseResult {
         if (briefs === 1) brief = built;
       } else {
         const block = buildBlock(element, blocks.length + 1, report);
-        if (block) blocks.push(block);
+        const arc = readArc(element, report);
+        if (block) blocks.push(arc && block.type !== 'markdown' && block.type !== 'chapter' && block.type !== 'theme' ? { ...block, arc } : block);
       }
       markdownStart = end;
       pos = end;
@@ -379,6 +383,15 @@ function buildNode(element: Element, report: Report): SceneNode | undefined {
   const kind = parseKind(a.kind, element, report);
   const ref = a.ref === undefined ? undefined : parseRef(a.ref, element, report);
   return { id: a.id, label, ...desc, ...about, kind, ...(ref ? { ref } : {}) };
+}
+
+/** The component's part of the arc; a tag that is no component has no `arc` in its spec, so readAttrs refuses it there. */
+function readArc(element: Element, report: Report): ArcPart | undefined {
+  const value = element.attrs.get('arc');
+  if (!value || !componentTags.includes(element.name)) return undefined;
+  if ((arcParts as readonly string[]).includes(value.value)) return value.value as ArcPart;
+  report(value.offset, `Unknown arc "${value.value}"; use ${arcParts.join(', ')}`);
+  return undefined;
 }
 
 /** One <theme> at most, and before every other tag: it dresses the whole scene. */
