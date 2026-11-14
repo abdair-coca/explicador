@@ -33,6 +33,7 @@ export const examples: Example[] = [
   { name: 'search-tree', project: 'trees' },
   { name: 'cache-storm', project: 'cache' },
   { name: 'lease', project: 'lease' },
+  { name: 'rainbow', project: 'rainbow' },
 ];
 
 /**
@@ -164,13 +165,13 @@ export interface Walk {
  * state, as with reduced motion, since entrances may start beside the slide.
  */
 export async function walkPresent(page: Page, options: { fit?: boolean; visit?: (position: string) => Promise<void> } = {}): Promise<Walk> {
-  await page.getByRole('button', { name: 'Present' }).click();
-  const dialog = page.getByRole('dialog', { name: /^Presenting / });
+  await page.getByRole('button', { name: /^(Present|Presentar)$/ }).click();
+  const dialog = page.getByRole('dialog', { name: /^(Presenting|Presentando) / });
   await expect(dialog).toBeVisible();
   // The footer's buttons: a slide may hold its own "Back" (a zoomed group, a step control).
   const footer = dialog.locator('footer');
-  const next = footer.getByRole('button', { name: 'Next', exact: true });
-  const back = footer.getByRole('button', { name: 'Back', exact: true });
+  const next = footer.getByRole('button', { name: /^(Next|Siguiente)$/ });
+  const back = footer.getByRole('button', { name: /^(Back|Atrás)$/ });
   const stage = dialog.locator('main.presenter-stage');
   const counter = dialog.locator('header [aria-live="polite"]');
   const total = Number((await counter.textContent())?.split('/')[1]?.trim());

@@ -3,6 +3,7 @@
 import ELK, { type ElkExtendedEdge, type ElkNode } from 'elkjs/lib/elk.bundled.js';
 import type { LinkKind } from '../../../server/src/scene.ts';
 import type { ViewNode } from './levels';
+import { t } from '../i18n';
 
 export interface Point {
   x: number;
@@ -114,7 +115,7 @@ export function wrapText(text: string, font: string, max: number, maxLines: numb
 
 /** The small uppercase line next to the kind chip. */
 export function caption(node: ViewNode): string {
-  return (node.role === 'group' ? `${node.kind} · group` : node.kind).toUpperCase();
+  return (node.role === 'group' ? `${t(node.kind)} · ${t('group')}` : t(node.kind)).toUpperCase();
 }
 
 export function boxHeight(labelLines: number, descLines: number, group: boolean): number {

@@ -126,6 +126,11 @@ body {
 .kind-function { --kind: #16a34a; }
 .kind-store { --kind: #d97706; }
 .kind-external { --kind: #ff6b35; }
+.kind-person { --kind: #a855f7; }
+.kind-object { --kind: #0f766e; }
+.kind-place { --kind: #16a34a; }
+.kind-signal { --kind: #ff6b35; }
+.kind-step { --kind: #3b82f6; }
 /* Journey stages and lesson chapters. */
 .kind-file { --kind: #ff6b35; }
 .kind-table { --kind: #d97706; }
@@ -475,6 +480,30 @@ body {
 .op-pill { font-family: var(--font-mono); font-variant-ligatures: none; font-size: 0.72rem; font-weight: 700; color: var(--foreground); background: var(--subtle); border-radius: 8px; padding: 0.1rem 0.45rem; overflow-wrap: anywhere; }
 
 /* Trace: what one operation removed (struck, red), added (yellow) or changed (letters marked). */
+/* The trace as a strip of steps (F31): past steps small, joined by arrows, the current one larger. */
+.trace-strip { display: grid; grid-template-columns: var(--strip, minmax(0, 1fr)); gap: 1rem 2.6rem; align-items: start; list-style: none; margin: 0; padding: 0; }
+.trace-strip > li { position: relative; min-width: 0; }
+.trace-strip > li + li::before { content: '→'; position: absolute; left: -1.95rem; top: 0.9rem; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--muted-foreground); }
+.trace-strip.with-past .trace-card.current { border: 2px solid var(--primary); border-radius: 18px; padding: 1rem 1.1rem; background: var(--card); box-shadow: 0 3px 0 var(--primary-dark); }
+.trace-card.past { display: flex; flex-direction: column; gap: 0.6rem; border: 2px solid var(--border-soft); border-radius: 16px; padding: 0.75rem; background: var(--card); }
+.trace-card.past .trace-label { font-size: 0.95rem; line-height: 1.25; }
+.trace-card.past .trace-text, .trace-large .trace-card.past .trace-text { font-size: 0.82rem; line-height: 1.55; padding: 0.45rem 0.7rem; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.trace-card.past .trace-chip, .trace-large .trace-card.past .trace-chip { font-size: 0.78rem; padding: 0.15rem 0.55rem; box-shadow: none; }
+.trace-card.past .trace-list { gap: 0.3rem; }
+.trace-card.past .trace-table th, .trace-card.past .trace-table td, .trace-large .trace-card.past .trace-table th, .trace-large .trace-card.past .trace-table td { font-size: 0.82rem; padding: 0.25rem 0.6rem; }
+.trace-card.past .trace-table { min-width: 0; width: 100%; }
+.trace-card.past .trace-cell { white-space: nowrap; overflow-wrap: normal; }
+.trace-card.past .trace-name, .trace-card.past .trace-bar-value, .trace-large .trace-card.past .trace-name, .trace-large .trace-card.past .trace-bar-value { font-size: 0.8rem; }
+.trace-card.past .trace-number, .trace-large .trace-card.past .trace-number { font-size: 2.2rem; }
+.trace-card.past .trace-cell, .trace-card.past .trace-bar { animation: none; }
+.trace-folded { align-self: center; font-weight: 900; font-size: 1.1rem; color: var(--muted-foreground); border: 2px dashed var(--border); border-radius: 999px; padding: 0.35rem 0.7rem; }
+@media (max-width: 720px) {
+  .trace-strip { grid-template-columns: minmax(0, 1fr); gap: 2.2rem; }
+  /* On a phone the strip keeps only the step just before the current one. */
+  .trace-strip > .trace-card.past:not(:nth-last-child(2)), .trace-strip > .trace-folded { display: none; }
+  .trace-strip > .trace-card.past:nth-last-child(2)::before { content: none; }
+  .trace-strip > li + li::before { content: '↓'; left: 50%; top: -1.9rem; transform: translateX(-50%); }
+}
 .trace-text { font-family: var(--font-mono); font-variant-ligatures: none; font-size: 0.95rem; line-height: 2.1; overflow-wrap: anywhere; }
 .trace-text del, .trace-text ins { text-decoration: none; }
 .tok-del { color: var(--miss); text-decoration: line-through !important; text-decoration-thickness: 2px !important; background: color-mix(in oklab, var(--miss) 9%, white); border-radius: 6px; padding: 0.05rem 0.2rem; animation: tok-out 700ms ease-out both; }
@@ -1019,3 +1048,27 @@ body {
 /* Predict, then see (F29): the question before a step. */
 .ask-card { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0 0 0.75rem; border: 2.5px dashed var(--foreground); border-radius: 14px; background: var(--primary-light); padding: 0.6rem 0.9rem; font-size: 1.1rem; font-weight: 800; line-height: 1.35; }
 .ask-tag { border-radius: 9999px; background: var(--foreground); color: var(--primary); padding: 0.1rem 0.6rem; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Figures (F31): shapes on a grid, each with one of a closed set of colors. */
+.figure { overflow: visible; }
+.fig-ink { --fig: var(--foreground); }
+.fig-red { --fig: #e5484d; }
+.fig-orange { --fig: #ff6b35; }
+.fig-yellow { --fig: #e0a800; }
+.fig-green { --fig: #16a34a; }
+.fig-blue { --fig: #3b82f6; }
+.fig-violet { --fig: #8b5cf6; }
+.fig-gray { --fig: #9ca3af; }
+.fig-shape { stroke: var(--fig); stroke-width: 0.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width var(--dur-base, 0.3s); }
+.fig-circle, .fig-box { fill: color-mix(in oklab, var(--fig) 14%, var(--card)); }
+.fig-zone { fill: color-mix(in oklab, var(--fig) 18%, transparent); stroke-width: 0.3; stroke-dasharray: 1 0.8; }
+.fig-arrow, .fig-angle { fill: none; stroke-width: 0.65; }
+.fig-arrow.dashed { stroke-dasharray: 1.6 1.2; }
+.fig-angle { stroke-width: 0.45; }
+.fig-shape.now { stroke-width: 0.85; }
+.fig-arrow.now { stroke-width: 0.95; }
+.fig-head { fill: var(--fig); }
+.fig-label { fill: var(--foreground); font-weight: 800; paint-order: stroke; stroke: var(--card); stroke-width: 0.7; stroke-linejoin: round; }
+.fig-label.free { fill: var(--fig); }
+.fig-label.free.fig-ink, .fig-label:not(.free) { fill: var(--foreground); }
+.fig-label.now { fill: var(--foreground); text-decoration: underline; text-decoration-color: var(--primary); text-decoration-thickness: 0.35px; }

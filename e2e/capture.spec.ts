@@ -20,6 +20,7 @@ const wanted: Record<string, Shot[]> = {
   login: [1, 2],
   'search-tree': [{ slide: 1, part: 4 }, { slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],
   lease: [{ slide: 1, part: 3 }, 5, { slide: 1, part: 3, phone: true }],
+  rainbow: [1, { slide: 3, part: 2 }, 3, { slide: 1, phone: true }, { slide: 3, phone: true }],
   'cache-storm': [{ slide: 4, part: 8 }, { slide: 4, part: 0 }, { slide: 4, part: 5 }, 4, { slide: 4, part: 5, phone: true }],
 };
 
@@ -41,8 +42,8 @@ for (const [name, shots] of Object.entries(wanted)) {
       await page.setViewportSize(sizes[phone ? 1 : 0].viewport);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(await serve(example));
-      await page.getByRole('button', { name: 'Present' }).click();
-      const dialog = page.getByRole('dialog', { name: /^Presenting / });
+      await page.getByRole('button', { name: /^(Present|Presentar)$/ }).click();
+      const dialog = page.getByRole('dialog', { name: /^(Presenting|Presentando) / });
       await expect(dialog).toBeVisible();
       const slideOf = async (): Promise<number> => Number(((await dialog.getAttribute('data-position')) ?? '0').split(':')[0]);
       const press = async (key: 'ArrowRight' | 'ArrowLeft'): Promise<void> => {

@@ -1,7 +1,8 @@
 // One real example followed through a series of operations, in whatever form it takes at each step: a sentence,
-// a list of items, `name = value` rows, bars or one number. The pieces that survive a step (a word, an item, a row's
-// name) glide into their new form, so the reader watches the same example change; what the step removed is struck
-// out in red and what it added comes in yellow.
+// a list of items, `name = value` rows, bars or one number. The steps already played stay in sight as a strip of small
+// cards (F31), so the slide shows the whole way the example has come. The pieces that survive a step (a word, an item,
+// a row's name) glide into their new form, so the reader watches the same example change; what the step removed is
+// struck out in red and what it added comes in yellow.
 import { Component, createRef, Fragment, useMemo, useRef, type ReactNode } from 'react';
 import type { TraceBlock, TraceItem, TraceValue } from '../../../server/src/scene.ts';
 import { Flip, gsap, reducedMotion, staggerOf, tokens } from '../animation/motion';
@@ -11,9 +12,10 @@ import { Badge } from '../components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useSpeaker } from './context';
 import { CountUp } from './CountUp';
-import { changeCounts, diffWords, words, type Token } from './diff';
+import { diffWords, words, type Token } from './diff';
+import { t } from '../i18n';
 import { useFirstVisible, useFollowCode } from './hooks';
-import { barsOf, keyed, pieceChanges, pieceNames, vectorOf } from './traceShape';
+import { barsOf, keyed, pieceChanges, pieceNames, stripOf, vectorOf } from './traceShape';
 
 /** Changes appear one after another, but never take longer than this to finish appearing. */
 const STAGGER_MS = 35;
@@ -211,8 +213,42 @@ function NumberBody({ value }: { value: TraceValue }) {
 }
 
 const UNITS = { text: 'words', list: 'items', table: 'rows', bars: 'bars', vector: 'dimensions' } as const;
+/** Kinds whose pieces a reader can count: a step that drops two items of a list says so. Text and numbers do not. */
+const COUNTED = new Set(['list', 'table', 'bars']);
+/** A value in its form, without marks: a past step of the strip. */
+function ValueBody({ value }: { value: TraceValue }) {
+  const kind = value.kind ?? 'text';
+  if (kind === 'list') return <ListBody items={value.items ?? []} />;
+  if (kind === 'table') return <TableBody items={value.items ?? []} />;
+  if (kind === 'bars') return <BarsBody items={value.items ?? []} />;
+  if (kind === 'number') return <p className="trace-number tabular-nums">{value.text}</p>;
+  if (kind === 'vector') return <VectorBody value={value} />;
+  return <p className="trace-text rounded-xl border-2 border-border bg-card px-3 py-2">{value.text}</p>;
+}
 
-/** The value at step `index`, in its form, with what its operation changed. */
+function StepBadge({ index }: { index: number }) {
+  return <Badge variant={index === 0 ? 'dark' : 'step'}>{index === 0 ? t('Input') : `${t('Step')} ${index}`}</Badge>;
+}
+
+/** A step already played, small, so the reader sees where the example has been. */
+function PastCard({ value, index }: { value: TraceValue; index: number }) {
+  return (
+    <li className="trace-card past" aria-label={`${index === 0 ? t('Input') : `${t('Step')} ${index}`}: ${value.label}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <StepBadge index={index} />
+        <span className="trace-label font-extrabold">{value.label}</span>
+      </div>
+      <div className="trace-body">
+        <ValueBody value={value} />
+      </div>
+    </li>
+  );
+}
+
+/**
+ * The example at step `index`, as a strip (F31): the steps already played stay in sight as small cards joined by
+ * arrows, and the current one, larger, shows its value in its form with what its operation changed.
+ */
 export function TraceView({ block, index }: { block: TraceBlock; index: number }) {
   const value = block.values[index];
   const previous = block.values[index - 1];
@@ -221,59 +257,80 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   const speaker = useSpeaker();
   if (!value) return null;
   const kind = value.kind ?? 'text';
-  // A number has no pieces: the step that makes it (a sum, a score) combines the pieces, it does not remove them. A
-  // vector's numbers are positions, not pieces of the words or items before it.
-  const vectorStep = kind === 'vector' || previous?.kind === 'vector';
-  const comparable = previous !== undefined && kind !== 'number' && previous.kind !== 'number' && (!vectorStep || kind === previous.kind);
-  const changes = tokens ? changeCounts(tokens) : comparable ? pieceChanges(previous, value) : undefined;
+  // Only pieces a reader can count get a tally: words of a sentence are no pieces to count, a number has none.
+  // Pieces are counted within one form: a list that becomes a table changed form, it did not lose items.
+  const counted = COUNTED.has(kind) && previous !== undefined && (previous.kind ?? 'text') === kind;
+  const changes = counted ? pieceChanges(previous, value) : undefined;
   const removed = changes?.removed ?? 0;
   const added = changes?.added ?? 0;
-  const changed = changes && 'changed' in changes ? changes.changed : 0;
   const sizeOf = (v: TraceValue): number => (v.kind === 'vector' ? vectorOf(v).size : pieceNames(v).length);
   const count = sizeOf(value);
   const before = previous && (previous.kind ?? 'text') === kind ? sizeOf(previous) : undefined;
+  const { folded, past } = stripOf(block.values.length, index);
   return (
-    <div className={cn('space-y-3', speaker && 'trace-large')}>
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={index === 0 ? 'dark' : 'step'}>{index === 0 ? 'Input' : `Step ${index}`}</Badge>
-        <span className="trace-label text-lg font-extrabold">{value.label}</span>
-        {value.code && <code className="op-pill text-[0.8rem]">{value.code}</code>}
-        {kind !== 'number' && (
-          <span className="ml-auto text-sm font-bold tabular-nums text-muted-foreground">
-            {before !== undefined && before !== count ? (
-              <>
-                {before.toLocaleString()} → <span className="text-foreground">{count.toLocaleString()}</span> {UNITS[kind]}
-              </>
-            ) : (
-              <>
-                {count.toLocaleString()} {UNITS[kind]}
-              </>
+    <ol
+      className={cn('trace-strip', speaker && 'trace-large', past.length > 0 && 'with-past')}
+      style={{ '--strip': `${folded > 0 ? 'max-content ' : ''}repeat(${past.length}, minmax(0, 1fr)) minmax(0, ${past.length > 0 ? 2 : 1}fr)` } as React.CSSProperties}
+      aria-label={t('Steps')}
+    >
+      {folded > 0 && (
+        <li className="trace-folded" aria-label={`${folded} ${t('earlier steps')}`}>
+          +{folded}
+        </li>
+      )}
+      {past.map((i) => {
+        const step = block.values[i];
+        return step ? <PastCard key={i} value={step} index={i} /> : null;
+      })}
+      <li key="current" className="trace-card current space-y-3" aria-current="step">
+        <div className="flex flex-wrap items-center gap-2">
+          <StepBadge index={index} />
+          <span className="trace-label text-lg font-extrabold">{value.label}</span>
+          {value.code && <code className="op-pill text-[0.8rem]">{value.code}</code>}
+          {kind !== 'number' && kind !== 'text' && (
+            <span className="ml-auto text-sm font-bold tabular-nums text-muted-foreground">
+              {before !== undefined && before !== count ? (
+                <>
+                  {before.toLocaleString()} → <span className="text-foreground">{count.toLocaleString()}</span> {t(UNITS[kind])}
+                </>
+              ) : (
+                <>
+                  {count.toLocaleString()} {t(UNITS[kind])}
+                </>
+              )}
+            </span>
+          )}
+        </div>
+        <FlipPieces step={index} className="trace-body">
+          {kind === 'text' && <TextBody key={index} value={value} tokens={tokens} />}
+          {kind === 'list' && <ListBody items={value.items ?? []} />}
+          {kind === 'table' && <TableBody items={value.items ?? []} />}
+          {kind === 'bars' && <BarsBody items={value.items ?? []} />}
+          {kind === 'number' && <NumberBody key={index} value={value} />}
+          {kind === 'vector' && <VectorBody value={value} />}
+        </FlipPieces>
+        {removed + added > 0 && (
+          <p className="flex flex-wrap gap-2 text-xs font-extrabold uppercase tracking-wide" aria-label={t('What this step changed')}>
+            {removed > 0 && (
+              <span className="rounded-full bg-miss/10 px-2.5 py-1 text-miss">
+                −{removed} {t('removed')}
+              </span>
             )}
-          </span>
+            {added > 0 && (
+              <span className="rounded-full bg-primary px-2.5 py-1 text-foreground">
+                +{added} {t('added')}
+              </span>
+            )}
+          </p>
         )}
-      </div>
-      <FlipPieces step={index} className="trace-body">
-        {kind === 'text' && <TextBody key={index} value={value} tokens={tokens} />}
-        {kind === 'list' && <ListBody items={value.items ?? []} />}
-        {kind === 'table' && <TableBody items={value.items ?? []} />}
-        {kind === 'bars' && <BarsBody items={value.items ?? []} />}
-        {kind === 'number' && <NumberBody key={index} value={value} />}
-        {kind === 'vector' && <VectorBody value={value} />}
-      </FlipPieces>
-      {removed + added + changed > 0 && (
-        <p className="flex flex-wrap gap-2 text-xs font-extrabold uppercase tracking-wide" aria-label="What this step changed">
-          {removed > 0 && <span className="rounded-full bg-miss/10 px-2.5 py-1 text-miss">−{removed} removed</span>}
-          {changed > 0 && <span className="rounded-full bg-primary-light px-2.5 py-1 text-foreground">{changed} changed</span>}
-          {added > 0 && <span className="rounded-full bg-primary px-2.5 py-1 text-foreground">+{added} added</span>}
-        </p>
-      )}
-      {value.note && !speaker && (
-        <p key={`note-${index}`} className="animate-fade-up max-w-3xl text-lg font-semibold leading-relaxed">
-          {value.note}
-        </p>
-      )}
-      {value.ref && !speaker && <code className="inline-block rounded-lg bg-subtle px-2 py-0.5 font-mono text-xs font-semibold">{formatRef(value.ref)}</code>}
-    </div>
+        {value.note && !speaker && (
+          <p key={`note-${index}`} className="animate-fade-up max-w-3xl text-lg font-semibold leading-relaxed">
+            {value.note}
+          </p>
+        )}
+        {value.ref && !speaker && <code className="inline-block rounded-lg bg-subtle px-2 py-0.5 font-mono text-xs font-semibold">{formatRef(value.ref)}</code>}
+      </li>
+    </ol>
   );
 }
 
@@ -291,7 +348,7 @@ export function TraceScene({ block }: { block: TraceBlock }) {
   return (
     <div ref={frame}>
       <SceneFrame kind="Trace" title={block.title} actions={<StepControls playback={playback} />}>
-        <ol className="flex flex-wrap gap-1.5 border-b border-border-soft px-5 py-3" aria-label="Steps">
+        <ol className="flex flex-wrap gap-1.5 border-b border-border-soft px-5 py-3" aria-label={t('Steps')}>
           {block.values.map((step, i) => (
             <li key={i}>
               <button

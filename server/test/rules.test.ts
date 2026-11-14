@@ -170,9 +170,11 @@ describe('quizWarnings', () => {
 describe('codeWarnings', () => {
   it('asks a code diagram for key code, and nothing of a lesson', () => {
     const arch = '<arch title="A">\n<node id="a" label="A" desc="Does" ref="a.js:1-2" />\n</arch>';
-    assert.match(codeWarnings(blocksOf(arch))[0] ?? '', /No <code>/);
-    assert.deepEqual(codeWarnings(blocksOf(arch.replace('</arch>', '<code node="a" ref="a.js:1-2">Why.</code>\n</arch>'))), []);
-    assert.deepEqual(codeWarnings(blocksOf('<stats>\n<stat value="1" label="one" />\n</stats>')), []);
+    assert.match(codeWarnings(blocksOf(arch), ['a.js'])[0] ?? '', /No <code>/);
+    assert.deepEqual(codeWarnings(blocksOf(arch.replace('</arch>', '<code node="a" ref="a.js:1-2">Why.</code>\n</arch>')), ['a.js']), []);
+    assert.deepEqual(codeWarnings(blocksOf('<stats>\n<stat value="1" label="one" />\n</stats>'), ['a.js']), []);
+    // A topic explained without files (F31): there are no lines to show.
+    assert.deepEqual(codeWarnings(blocksOf(arch), []), []);
   });
 });
 

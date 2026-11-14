@@ -1,6 +1,8 @@
 // SVG rendering of a laid-out scene in the Titi style. Highlighting and the moving token are driven by props.
 import { createContext, useContext, useId } from 'react';
 import type { LinkKind } from '../../../server/src/scene.ts';
+import { everydayKinds } from '../../../server/src/parser/types.ts';
+import { t } from '../i18n';
 import { staggerStep } from '../animation/reveal';
 import {
   BOX,
@@ -157,16 +159,29 @@ export function Diagram(props: DiagramProps) {
           )}
         </svg>
       </div>
-      {(kinds.has('return') || kinds.has('async')) && <EdgeLegend kinds={kinds} />}
+      {(kinds.has('return') || kinds.has('async')) && <EdgeLegend kinds={kinds} plain={isEveryday(layout.nodes.map((laid) => laid.node.kind))} />}
     </div>
   );
 }
 
 const linkKinds: LinkKind[] = ['call', 'return', 'async'];
 const legendText: Record<LinkKind, string> = { call: 'call', return: 'answer back', async: 'async (queue, event)' };
+/** The same line styles in plain words, for a diagram whose boxes are everyday things (F31). */
+const plainLegend: Record<LinkKind, string> = { call: 'goes to', return: 'answers back', async: 'tells later' };
+const EVERYDAY: ReadonlySet<string> = new Set(everydayKinds);
+
+/** Whether every box of a diagram is an everyday thing (a person, an object, a place, a signal, a step). */
+export function isEveryday(kinds: Iterable<string>): boolean {
+  let any = false;
+  for (const kind of kinds) {
+    if (!EVERYDAY.has(kind)) return false;
+    any = true;
+  }
+  return any;
+}
 
 /** What the line styles mean; shown only when a diagram mixes them. */
-function EdgeLegend({ kinds }: { kinds: ReadonlySet<LinkKind> }) {
+function EdgeLegend({ kinds, plain }: { kinds: ReadonlySet<LinkKind>; plain: boolean }) {
   return (
     <ul className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs font-bold text-muted-foreground" aria-label="Line styles">
       {linkKinds
@@ -177,7 +192,7 @@ function EdgeLegend({ kinds }: { kinds: ReadonlySet<LinkKind> }) {
               <path className="line" d="M2 5 H26" />
               <path d="M26 1 L33 5 L26 9 z" fill="var(--edge)" />
             </svg>
-            {legendText[kind]}
+            {t((plain ? plainLegend : legendText)[kind])}
           </li>
         ))}
     </ul>
@@ -224,7 +239,7 @@ function Node(props: {
     : undefined;
   const action = role === 'group' ? `Zoom into ${node.label}` : `Show the details of ${node.label}`;
   const activate = (element: Element): void => onClick?.(node.id, element);
-  const radius = node.shape === 'state' ? Math.min(laid.height / 2, 24) : node.kind === 'actor' && !node.shape ? 22 : 16;
+  const radius = node.shape === 'state' ? Math.min(laid.height / 2, 24) : (node.kind === 'actor' || node.kind === 'person') && !node.shape ? 22 : 16;
   return (
     <g
       transform={`translate(${laid.x} ${laid.y})`}
@@ -341,7 +356,7 @@ function BoxBody({ laid }: { laid: LaidNode }) {
       ))}
       {role === 'group' && (
         <text className="hint" x={BOX.padX} y={laid.height - BOX.padY}>
-          {node.members} inside · zoom in
+          {node.members} {t('inside · zoom in')}
         </text>
       )}
     </>

@@ -36,6 +36,7 @@ Goal: Explicador explains **any topic** well, technical or not: code, notebooks 
 | F28 | Sources beyond code | no |
 | F29 | Interactivity that teaches | no |
 | F30 | Measure the result | **yes** |
+| F31 | Pictures that explain any topic (after the Sonnet/Opus test) | **yes** |
 
 The status of each phase is also in `.dev/PLAN.md`.
 
@@ -433,3 +434,37 @@ Done, stopped for the user's review. The report is [`results-f30.md`](results-f3
 3. **Result**: with the scene, 5.0 of 5 in all ten topics (4.9 in F22; the lease scene's missing clause is now there); without it, 2.4 in both runs; gain +2.6 (+2.5). Every old scene breaks 1–2 of the new rules and every rebuilt one none.
 4. **Limit**: the model eval measures content and was already near its ceiling; the clarity this plan worked on needs the human protocol, not yet run. The scenes were rebuilt by the model that wrote the rules.
 5. **Pending, for the user**: run the human protocol; rewrite the questions of `imprenta`, `ley-aprobacion` and `login-tienda`; let the three models write the bench scenes with `npm run eval` (usage); decide on decoration (product decision 5: draw the theme only on the cover and chapter cards?), on the change to product decision 2 (the index outlines documents) and on `SKILL.md`'s frontmatter naming documents and data.
+
+## F31 — Pictures that explain any topic
+
+Requested by the user on 2026-11-14, after a test in which Sonnet explained a rainbow and Opus a smart traffic light in five slides each: the slides followed the rules but drew nothing that explains a topic that is not code. Four problems were found (a warning no scene without files can fix, a trace whose last slide shows only its last step, software labels on everyday boxes, the viewer's words in English under a Spanish scene) and one gap (nothing draws a physical thing).
+
+### Scope
+
+1. **The key-code warning** applies only when the scene points at files.
+2. **A trace as a strip of steps**: the steps already played stay in sight as small cards joined by arrows, the current one larger; change counts only within one form of list, table or bars.
+3. **Everyday box kinds** `person`, `object`, `place`, `signal`, `step`, with their icons; a diagram whose boxes are all everyday things gets its line legend and step badges in plain words.
+4. **The viewer speaks the scene's language** (Spanish or English), read from its text.
+5. **`<figure>`**: circles, boxes, arrows, angles, zones and labels on a grid, revealed by `<show>`; parser, viewer, Present, subtitles, rules, the eval's scene text, docs and skill, and an example.
+
+### Acceptance criteria
+
+- Parser tests for `<figure>` (shapes, parts, grid, every refusal, limits, forms, subtitles, no code asked without files); viewer tests for label placement, angles, the strip, the language; the rule test without files.
+- The example `rainbow` renders with no warnings and plays in every browser test.
+- The Sonnet and Opus scenes of the test, rendered again, show the strip and the viewer's words in Spanish.
+- typecheck, lint, build, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase (user, 2026-11-14, multiple choice)
+
+- **Strip of steps** rather than one step without badges. It keeps the last three past steps (earlier ones fold into "+n"); on a phone only the step just before the current one.
+- **Everyday kinds** added to the catalog rather than hiding the kind label; the skill tells the model to use them outside software.
+- **`<figure>` in this phase** (product decisions 5 and 8 change). Shapes are a closed list with closed colors, no free paths; the viewer places each label beside its shape, clear of the labels placed before it, and grows the labels on a small screen (never under 12 px).
+- **Language detected** from the scene's text (Spanish function words against English ones), not an attribute; aria labels follow the visible words, and the browser tests accept both.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `codeWarnings` takes the refs; `server/src/parser/figure.ts` and its types, catalog and limits; `viewer/src/lesson/{Figure.tsx,figureGeometry.ts}`, Present, subtitles and slides; the trace strip (`Trace.tsx`, `stripOf` in `traceShape.ts`, CSS); the everyday kinds (types, icons, colors, captions, `isEveryday` legend and badges); `viewer/src/i18n.ts` with the Spanish words of Present, the frames, concepts, quizzes, arguments, traces and diagrams; `examples/scenes/rainbow.exl.md` over `examples/rainbow`; docs (`EXL.md`, `SKILL.md`, `presenting.md` with a template, `AGENTS.md`, `README.md`); screenshots in `docs/images/f31/`.
+2. **How it was tested**: `server/test/figure.test.ts` (6), `viewer/test/figure.test.ts` (9), the code rule without files; typecheck, lint, build, `npm test` (server 290, viewer 187, evals 50) and `npm run e2e` (89 in Chromium) pass.
+3. **Seen in the browser**: the rainbow's figure draws the light entering the drop, bouncing and leaving at 42° part by part, labels clear of each other on a desktop and a phone; the Sonnet and Opus scenes of the test now keep the whole trace in sight and speak Spanish.
+4. **Limits**: the models' scenes of the test were written before the skill knew `<figure>` and the everyday kinds; only a new run shows whether the models use them (it costs usage: the user decides). Labels avoid each other, not the shapes; a crowded figure can still put a label on a line.
+5. **Pending, for the user**: review; decide whether to run Sonnet and Opus again on the two topics.

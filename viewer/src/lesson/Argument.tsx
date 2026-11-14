@@ -5,6 +5,7 @@ import type { ArgumentBlock } from '../../../server/src/scene.ts';
 import { InlineMarkdown } from '../components/Prose';
 import { SceneFrame } from '../components/scenes';
 import { cn } from '@/lib/utils';
+import { t } from '../i18n';
 
 export function ArgumentView({ block, shown }: { block: ArgumentBlock; shown?: number }) {
   const presenting = shown !== undefined;
@@ -35,18 +36,18 @@ export function ArgumentView({ block, shown }: { block: ArgumentBlock; shown?: n
         <InlineMarkdown text={block.claim} />
       </p>
       <div className="argument-sides">
-        <section aria-label="For">
-          <h3 className="argument-side-title support">For</h3>
+        <section aria-label={t('For')}>
+          <h3 className="argument-side-title support">{t('For')}</h3>
           <ol>{point('support')}</ol>
         </section>
-        <section aria-label="Against">
-          <h3 className="argument-side-title objection">Against</h3>
+        <section aria-label={t('Against')}>
+          <h3 className="argument-side-title objection">{t('Against')}</h3>
           <ol>{point('objection')}</ol>
         </section>
       </div>
       {block.verdict && (
         <p className="argument-verdict" {...reveal(verdictPart)}>
-          <span className="argument-verdict-tag">Verdict</span>
+          <span className="argument-verdict-tag">{t('Verdict')}</span>
           <InlineMarkdown text={block.verdict} />
         </p>
       )}

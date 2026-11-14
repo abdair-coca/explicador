@@ -63,6 +63,12 @@ export const kindIcon: Record<NodeKind | 'entity' | 'state' | StageKind | 'chapt
   function: ['m8 6-6 6 6 6', 'm16 6 6 6-6 6'],
   store: ['M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Z', 'M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6', 'M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'],
   external: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18', 'M12 3a14 14 0 0 0 0 18'],
+  // Everyday kinds (F31), for topics that are not software.
+  person: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4.5 21a7.5 7.5 0 0 1 15 0'],
+  object: ['M12 3 3 7.5v9L12 21l9-4.5v-9Z', 'M3 7.5 12 12l9-4.5', 'M12 12v9'],
+  place: ['M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z', 'M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
+  signal: ['M12 13a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z', 'M8.5 8a5 5 0 0 0 0 7', 'M15.5 8a5 5 0 0 1 0 7', 'M5.5 5a9 9 0 0 0 0 13', 'M18.5 5a9 9 0 0 1 0 13'],
+  step: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'm10 8 4 4-4 4'],
   entity: ['M3 5h18v14H3Z', 'M3 10h18', 'M9 10v9'],
   state: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
   // Journey stages: what the data is at that point.

@@ -1,6 +1,9 @@
 // EXL document model shared by the parser, the cache and the viewer.
 
-export const nodeKinds = ['actor', 'ui', 'service', 'module', 'function', 'store', 'external'] as const;
+/** Kinds of software, then (F31) everyday kinds for any other topic: a person, a thing, a place, a signal, a step. */
+export const softwareKinds = ['actor', 'ui', 'service', 'module', 'function', 'store', 'external'] as const;
+export const everydayKinds = ['person', 'object', 'place', 'signal', 'step'] as const;
+export const nodeKinds = [...softwareKinds, ...everydayKinds] as const;
 export type NodeKind = (typeof nodeKinds)[number];
 
 /** A pointer into the analyzed project: `path`, `path:line`, `path:start-end`, or a document's section, `path#Heading`. */
@@ -680,6 +683,52 @@ export interface SystemBlock {
   ref?: Ref;
 }
 
+/** Colors a figure may use (F31): a closed list, so a figure looks like the rest of the viewer. */
+export const figureColors = ['ink', 'red', 'orange', 'yellow', 'green', 'blue', 'violet', 'gray'] as const;
+export type FigureColor = (typeof figureColors)[number];
+export const arrowHeads = ['end', 'none', 'both'] as const;
+export type ArrowHead = (typeof arrowHeads)[number];
+/** A point on a figure's grid: across, then down. */
+export type Point = [number, number];
+
+interface ShapeBase {
+  id?: string;
+  label?: string;
+  color: FigureColor;
+  /** The part it appears in: 0 from the start, n with the figure's n-th <show>. */
+  appear: number;
+}
+
+/** One shape of a figure, on its grid (0 to `width` across, 0 to `height` down). */
+export type FigureShape =
+  | (ShapeBase & { kind: 'circle'; x: number; y: number; r: number })
+  | (ShapeBase & { kind: 'box'; x: number; y: number; w: number; h: number })
+  /** A line through its points, with a head at its end, both ends or none: a ray of light, a path, a push. */
+  | (ShapeBase & { kind: 'arrow'; points: Point[]; head: ArrowHead; dashed: boolean })
+  /** The angle at `at` between the directions to `from` and to `to`. */
+  | (ShapeBase & { kind: 'angle'; at: Point; from: Point; to: Point })
+  | (ShapeBase & { kind: 'zone'; points: Point[] })
+  | (Omit<ShapeBase, 'label'> & { kind: 'label'; x: number; y: number; text: string });
+
+/** Shapes that appear together in one part, with what the narration says about them. */
+export interface FigureShow {
+  /** Indexes into the figure's shapes. */
+  items: number[];
+  narration: string;
+}
+
+/** A drawing of a physical thing (F31): a raindrop and its rays, a crossing and its lights, revealed part by part. */
+export interface FigureBlock {
+  type: 'figure';
+  id: string;
+  title: string;
+  width: number;
+  height: number;
+  shapes: FigureShape[];
+  shows: FigureShow[];
+  ref?: Ref;
+}
+
 /** A note on a passage: the words it points at (`start`–`end` in the passage) and what it says about them. */
 export interface AnnotatedNote {
   quote: string;
@@ -803,7 +852,7 @@ export interface CosineBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock | SystemBlock | AnnotatedBlock | ArgumentBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock | SystemBlock | AnnotatedBlock | ArgumentBlock | FigureBlock;
 
 /**
  * What a component does in the scene's narrative (F24): poses the `question`, shows the brief's `example`, draws the

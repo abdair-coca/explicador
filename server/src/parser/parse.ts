@@ -25,6 +25,7 @@ import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildM
 import { buildBrief } from './brief.ts';
 import { buildStructure } from './structure.ts';
 import { buildSystem } from './system.ts';
+import { buildFigure } from './figure.ts';
 import { buildAnnotated, buildArgument } from './forms.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
@@ -198,6 +199,7 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   cosine: buildCosine,
   structure: buildStructure,
   system: buildSystem,
+  figure: buildFigure,
   annotated: buildAnnotated,
   argument: buildArgument,
 };
@@ -490,6 +492,7 @@ function collectRefs(blocks: Block[]): string[] {
         break;
       case 'annotated':
       case 'argument':
+      case 'figure':
         add(block.ref);
         break;
       case 'system':

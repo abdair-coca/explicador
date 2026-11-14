@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Ref, ScenePayload, Tour } from '../../server/src/scene.ts';
+import { sceneLanguage, setLanguage, t } from './i18n';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { Backdrop } from './theme/Backdrop';
@@ -35,6 +36,12 @@ type Transition = { direction: 'in'; fromKey: string; box: Box | undefined } | {
 
 export function App() {
   const { scene, questions, tour, connection } = useScene();
+  // The viewer speaks the scene's language (F31); set while rendering, so every component below reads it.
+  const lang = useMemo(() => (scene ? sceneLanguage(scene.blocks) : 'en'), [scene]);
+  setLanguage(lang);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const [notice, setNotice] = useState<Notice>();
   const [transition, setTransition] = useState<Transition>();
   const [presenting, setPresenting] = useState(false);
@@ -272,15 +279,15 @@ export function App() {
               <span className="min-w-0 break-all font-extrabold" aria-current="page">
                 {scene.topic}
               </span>
-              <Badge variant={scene.status === 'fresh' ? 'success' : 'stale'}>{scene.status === 'fresh' ? 'Up to date' : 'Stale'}</Badge>
+              <Badge variant={scene.status === 'fresh' ? 'success' : 'stale'}>{scene.status === 'fresh' ? t('Up to date') : t('Stale')}</Badge>
             </nav>
           )}
           {scene && (
             <span className="ml-auto flex items-center gap-2">
               {/* Icons only on phones, so the bar stays two lines tall. */}
-              <Button variant="primary" size="sm" onClick={() => setPresenting(true)} aria-label="Present">
+              <Button variant="primary" size="sm" onClick={() => setPresenting(true)} aria-label={t('Present')}>
                 <PresentIcon size={16} />
-                <span className="hidden sm:inline">Present</span>
+                <span className="hidden sm:inline">{t('Present')}</span>
               </Button>
               {!offline && (
                 <a
@@ -288,10 +295,10 @@ export function App() {
                   download={`${scene.key}.html`}
                   className={buttonVariants({ variant: 'secondary', size: 'sm' })}
                   title="Download this scene as one HTML file that works offline"
-                  aria-label="Export"
+                  aria-label={t('Export')}
                 >
                   <DownloadIcon size={16} />
-                  <span className="hidden sm:inline">Export</span>
+                  <span className="hidden sm:inline">{t('Export')}</span>
                 </a>
               )}
             </span>

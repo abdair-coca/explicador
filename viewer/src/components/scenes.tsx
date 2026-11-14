@@ -6,7 +6,8 @@ import { boxWithin, zoomIn, zoomOut, type Box } from '../animation/zoom';
 import { layoutGraph, type EdgeInput, type Layout } from '../layout/elk';
 import { archLevel, linkId, withDrills, type ViewNode } from '../layout/levels';
 import { tourFromArch, tourFromFlow } from '../code/tourFrom';
-import { Diagram } from './Diagram';
+import { Diagram, isEveryday } from './Diagram';
+import { t } from '../i18n';
 import { ArrowLeftIcon, ArrowRightIcon, CodeIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon, ZoomOutIcon } from './icons';
 import { askedIn, selectedIn, useSelection } from './selection';
 import { Badge } from './ui/badge';
@@ -58,7 +59,7 @@ export function SceneFrame(props: {
     <section className="rounded-2xl border border-border-soft bg-card shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-3.5">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <Badge>{props.kind}</Badge>
+          <Badge>{t(props.kind)}</Badge>
           <h2 className="flex min-w-0 flex-wrap items-baseline gap-1 text-lg font-extrabold tracking-tight">{props.title}</h2>
         </div>
         <div className="flex items-center gap-2">{props.actions}</div>
@@ -79,7 +80,7 @@ export function ReplayButton({ onClick }: { onClick: () => void }) {
   return (
     <Button variant="ghost" size="sm" onClick={onClick} aria-label="Replay animation">
       <ReplayIcon size={16} />
-      Replay
+      {t('Replay')}
     </Button>
   );
 }
@@ -105,7 +106,7 @@ export function StepControls({ playback }: { playback: Playback }) {
       </Button>
       <Button variant="primary" size="sm" onClick={playback.toggle} aria-label={playback.playing ? 'Pause' : 'Play'}>
         {playback.playing ? <PauseIcon size={16} /> : playback.atEnd ? <ReplayIcon size={16} /> : <PlayIcon size={16} />}
-        {playback.playing ? 'Pause' : playback.atEnd ? 'Replay' : 'Play'}
+        {t(playback.playing ? 'Pause' : playback.atEnd ? 'Replay' : 'Play')}
       </Button>
       <Button size="icon-sm" onClick={playback.next} disabled={playback.atEnd} aria-label="Next step">
         <NextIcon size={16} />
@@ -120,10 +121,12 @@ export interface StepLink {
   go: () => void;
 }
 
-const kindBadge: Partial<Record<LinkKind, React.ReactNode>> = {
-  return: <Badge variant="muted">Answer back</Badge>,
-  async: <Badge variant="info">Async</Badge>,
-};
+/** A step that answers back or tells later says so; in plain words when the boxes are everyday things (F31). */
+export function StepKindBadge({ kind, plain }: { kind: LinkKind | undefined; plain?: boolean }) {
+  if (kind === 'return') return <Badge variant="muted">{t(plain ? 'Answers back' : 'Answer back')}</Badge>;
+  if (kind === 'async') return <Badge variant="info">{t(plain ? 'Tells later' : 'Async')}</Badge>;
+  return null;
+}
 
 /** The current step: where it goes, its kind, its code ref, its narration, and the steps around it. */
 export function StepNarration(props: {
@@ -131,6 +134,8 @@ export function StepNarration(props: {
   total: number;
   route: string;
   kind?: LinkKind | undefined;
+  /** The boxes are everyday things: the kind badge says it in plain words. */
+  plain?: boolean | undefined;
   refText?: string | undefined;
   narration: string;
   before?: StepLink | undefined;
@@ -140,9 +145,9 @@ export function StepNarration(props: {
     <div className="border-t border-border-soft px-5 py-4" aria-live="polite">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Badge variant="step">
-          Step {props.index + 1} of {props.total}
+          {t('Step')} {props.index + 1} {t('of')} {props.total}
         </Badge>
-        {props.kind && kindBadge[props.kind]}
+        <StepKindBadge kind={props.kind} plain={props.plain} />
         <span className="text-sm font-bold text-muted-foreground">{props.route}</span>
         {props.refText && (
           <code className="rounded-lg bg-subtle px-2 py-0.5 font-mono text-xs font-semibold text-foreground">{props.refText}</code>
@@ -156,13 +161,13 @@ export function StepNarration(props: {
           {props.before && (
             <StepLinkButton onClick={props.before.go} label={`Step ${props.index}: ${props.before.route}`}>
               <ArrowLeftIcon size={14} />
-              <span className="text-muted-foreground">Comes from</span>
+              <span className="text-muted-foreground">{t('Comes from')}</span>
               {props.before.route}
             </StepLinkButton>
           )}
           {props.after && (
             <StepLinkButton onClick={props.after.go} label={`Step ${props.index + 2}: ${props.after.route}`}>
-              <span className="text-muted-foreground">Next</span>
+              <span className="text-muted-foreground">{t('Next')}</span>
               {props.after.route}
               <ArrowRightIcon size={14} />
             </StepLinkButton>
@@ -410,6 +415,7 @@ export function FlowScene({ block }: { block: FlowBlock }) {
           total={block.steps.length}
           route={stepRoute(block, playback.index)}
           kind={step.kind}
+          plain={isEveryday(block.nodes.map((node) => node.kind))}
           refText={step.ref ? formatRef(step.ref) : undefined}
           narration={step.narration}
           before={neighbour(playback, playback.index - 1, block.steps.length, (i) => stepRoute(block, i))}

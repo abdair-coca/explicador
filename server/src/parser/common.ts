@@ -96,6 +96,14 @@ export const catalog: Record<string, TagSpec> = {
   loop: { attrs: { through: 'required', label: 'required' } },
   push: { attrs: { factor: 'required', change: 'required', ask: 'optional' }, text: true },
   effect: { attrs: { from: 'required', to: 'required', ask: 'optional' }, text: true },
+  figure: { attrs: { id: 'optional', title: 'required', size: 'optional', ref: 'optional' }, children: ['circle', 'box', 'arrow', 'angle', 'zone', 'label', 'show'] },
+  circle: { attrs: { id: 'optional', x: 'required', y: 'required', r: 'required', label: 'optional', color: 'optional' } },
+  box: { attrs: { id: 'optional', x: 'required', y: 'required', w: 'required', h: 'required', label: 'optional', color: 'optional' } },
+  arrow: { attrs: { id: 'optional', points: 'required', label: 'optional', color: 'optional', head: 'optional', dashed: 'optional' } },
+  angle: { attrs: { id: 'optional', at: 'required', from: 'required', to: 'required', label: 'optional', color: 'optional' } },
+  zone: { attrs: { id: 'optional', points: 'required', label: 'optional', color: 'optional' } },
+  label: { attrs: { id: 'optional', x: 'required', y: 'required', color: 'optional' }, text: true },
+  show: { attrs: { items: 'required' }, text: true },
   annotated: { attrs: { id: 'optional', title: 'required', ref: 'optional' }, children: ['passage', 'note'] },
   passage: { attrs: {}, text: true },
   note: { attrs: { quote: 'required', label: 'optional' }, text: true },
@@ -116,7 +124,7 @@ export const catalog: Record<string, TagSpec> = {
 /** Top-level tags that are slides of their own: every one but the brief, the theme and the chapter cards. */
 export const componentTags: readonly string[] = [
   'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'calc', 'threshold',
-  'concept', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system', 'annotated', 'argument',
+  'concept', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system', 'annotated', 'argument', 'figure',
 ];
 // Every component declares its part of the narrative arc (F24).
 for (const tag of componentTags) {
@@ -127,7 +135,7 @@ for (const tag of componentTags) {
 /** Tags that open a block at the top level of a scene; every other tag lives inside one of them. */
 export const topLevelTags: readonly string[] = [
   'brief', 'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',
-  'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system', 'annotated', 'argument',
+  'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system', 'annotated', 'argument', 'figure',
 ];
 
 export const limits = {
@@ -209,6 +217,11 @@ export const limits = {
   annotatedNotes: 12,
   argumentPoints: 8,
   replyLength: 300,
+  figureShapes: 40,
+  figureShows: 12,
+  figureArrowPoints: 12,
+  figureZonePoints: 16,
+  figureLabelLength: 60,
   // The brief.
   briefFieldLength: 300,
   briefTerms: 12,

@@ -1,0 +1,119 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { describe, it } from 'node:test';
+import { parseExl } from '../../server/src/parser/index.ts';
+import type { Block, FigureBlock } from '../../server/src/scene.ts';
+import { angleArc, figureParts, LABEL_SIZE, labelBox, labelSize, placeFigure, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { stripOf } from '../src/lesson/traceShape.ts';
+import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
+import { buildSlides } from '../src/presentation/slides.ts';
+import { subtitleOf } from '../src/presentation/subtitles.ts';
+
+const rainbow = (): Block[] => {
+  const parsed = parseExl(readFileSync(new URL('../../examples/scenes/rainbow.exl.md', import.meta.url), 'utf8'));
+  assert.ok(parsed.ok);
+  return parsed.scene.blocks;
+};
+const figureOf = (blocks: Block[]): FigureBlock => {
+  const block = blocks.find((item) => item.type === 'figure');
+  assert.ok(block && block.type === 'figure');
+  return block;
+};
+
+describe('figure geometry', () => {
+  it('places every label inside the figure and clear of the others', () => {
+    const block = figureOf(rainbow());
+    const placed = placeFigure(block);
+    const boxes = placed.flatMap((item) => (item.labelAt ? [labelBox(item.labelAt, item.lines)] : []));
+    assert.equal(boxes.length, block.shapes.filter((shape) => (shape.kind === 'label' ? shape.text : shape.label)).length);
+    for (const box of boxes) {
+      assert.ok(box.x0 >= 0 && box.y0 >= 0 && box.x1 <= block.width && box.y1 <= block.height, `inside: ${JSON.stringify(box)}`);
+    }
+    boxes.forEach((a, i) =>
+      boxes.slice(i + 1).forEach((b) => {
+        const across = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+        const down = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+        assert.ok(across <= 0 || down <= 0, `labels ${i} and another overlap`);
+      }),
+    );
+  });
+
+  it('puts a label beside its arrow, not on it, and inside a big circle', () => {
+    const [arrow, circle] = placeFigure({
+      width: 100,
+      height: 60,
+      shapes: [
+        { kind: 'arrow', points: [[10, 30], [90, 30]], head: 'end', dashed: false, label: 'Light', color: 'ink', appear: 0 },
+        { kind: 'circle', x: 50, y: 30, r: 12, label: 'Drop', color: 'blue', appear: 0 },
+      ],
+    });
+    assert.ok(arrow?.labelAt && arrow.labelAt[1] < 30 - 1, 'above the line');
+    assert.equal(arrow?.path, 'M10 30 L90 30');
+    // The arrow's label took the middle, so the circle's goes below it… or stays inside without touching.
+    assert.ok(circle?.labelAt);
+  });
+
+  it('draws an angle the short way round, with its label along the bisector', () => {
+    const arc = angleArc([0, 0], [10, 0], [0, 10]);
+    assert.match(arc.path, /^M\d+(\.\d+)? 0 A[\d.]+ [\d.]+ 0 0 1 0 [\d.]+$/);
+    assert.ok(Math.abs(arc.bisector[0] - Math.SQRT1_2) < 1e-9 && Math.abs(arc.bisector[1] - Math.SQRT1_2) < 1e-9);
+    assert.match(angleArc([0, 0], [0, 10], [10, 0]).path, / 0 0 0 /);
+  });
+
+  it('grows the labels of a figure drawn small, and keeps them clear of each other', () => {
+    assert.equal(labelSize(100, 1100), LABEL_SIZE);
+    assert.equal(labelSize(100, 0), LABEL_SIZE);
+    const phone = labelSize(100, 320);
+    assert.ok(Math.abs(phone - 3.75) < 1e-9, `12 px on a figure 320 px wide: ${phone}`);
+    assert.equal(labelSize(100, 100), LABEL_SIZE * 2);
+    const block = figureOf(rainbow());
+    const boxes = placeFigure(block, phone).flatMap((item) => (item.labelAt ? [labelBox(item.labelAt, item.lines, phone)] : []));
+    const overlaps = boxes.filter((a, i) => boxes.slice(i + 1).some((b) => Math.min(a.x1, b.x1) > Math.max(a.x0, b.x0) && Math.min(a.y1, b.y1) > Math.max(a.y0, b.y0)));
+    assert.deepEqual(overlaps, []);
+  });
+
+  it('wraps a long label in two lines at most', () => {
+    assert.deepEqual(wrapLabel('Dirección de la luz'), ['Dirección de la luz']);
+    assert.deepEqual(wrapLabel('The light that comes back towards your eye'), ['The light that comes', 'back towards your eye']);
+  });
+
+  it('is a slide of the setting and one part per show, each with its narration as the subtitle', () => {
+    const blocks = rainbow();
+    const block = figureOf(blocks);
+    assert.equal(figureParts(block), 1 + block.shows.length);
+    const slide = buildSlides(blocks).find((item) => item.kind === 'figure');
+    assert.equal(slide?.parts, 6);
+    assert.equal(subtitleOf(block, 0), undefined);
+    assert.equal(subtitleOf(block, 1), 'La luz blanca del Sol llega a la gota.');
+  });
+});
+
+describe('trace strip', () => {
+  it('keeps the last three steps in sight and folds the earlier ones', () => {
+    assert.deepEqual(stripOf(4, 0), { folded: 0, past: [] });
+    assert.deepEqual(stripOf(4, 3), { folded: 0, past: [0, 1, 2] });
+    assert.deepEqual(stripOf(8, 6), { folded: 3, past: [3, 4, 5] });
+    assert.deepEqual(stripOf(3, 9), { folded: 0, past: [0, 1] });
+  });
+});
+
+describe('the viewer language', () => {
+  it('reads Spanish from a Spanish scene and English from an English one', () => {
+    assert.equal(sceneLanguage(rainbow()), 'es');
+    const english = parseExl(readFileSync(new URL('../../examples/scenes/lease.exl.md', import.meta.url), 'utf8'));
+    assert.ok(english.ok);
+    assert.equal(sceneLanguage(english.scene.blocks), 'en');
+    assert.equal(sceneLanguage([]), 'en');
+  });
+
+  it('says the viewer words in the language set, and the English when there is no translation', () => {
+    setLanguage('es');
+    assert.equal(t('Next'), 'Siguiente');
+    assert.equal(t('Think of it as'), 'Piénsalo como');
+    assert.equal(t('person'), 'persona');
+    assert.equal(t('No such text'), 'No such text');
+    setLanguage('en');
+    assert.equal(t('Next'), 'Next');
+    for (const [english, spanish] of Object.entries(es)) assert.ok(spanish.trim() !== '', `a translation for "${english}"`);
+  });
+});

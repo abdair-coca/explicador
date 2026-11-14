@@ -5,9 +5,9 @@ Every scene is two things. The **page** explains in full, for someone reading al
 ## What Present shows
 
 - **The cover**: the `#` title at the top of the scene, alone and large. Then chapter cards and components, in order.
-- **One slide per component**, its pieces arriving one per click: flow steps (every `<step>`, with or without `to`), the states of a `<structure>`, the steps of a `<system>`, journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights, scatter classes.
+- **One slide per component**, its pieces arriving one per click: flow steps (every `<step>`, with or without `to`), the states of a `<structure>`, the steps of a `<system>`, the `<show>`s of a `<figure>`, journey stages, trace values (the steps already played stay in sight as a strip), concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights, scatter classes.
 - **On the slide**: titles, labels, values, boxes, arrows, bars, numbers, concept cards and quizzes.
-- **As the subtitle of each part**: the narration of flow and walk steps, structure changes, system steps, journey stages, timeline events and plot marks; the `note` of trace values, derivation lines and calc parts; the narration of matrix highlights; the narration of a `<space>`'s query, chosen cluster and compared items.
+- **As the subtitle of each part**: the narration of flow and walk steps, structure changes, system steps, figure shows, journey stages, timeline events and plot marks; the `note` of trace values, derivation lines and calc parts; the narration of matrix highlights; the narration of a `<space>`'s query, chosen cluster and compared items.
 - **Only on the page**: Markdown prose and callouts.
 - So what the audience must **see** goes into a component, what they must **hear** goes into narration (one short sentence per part: a subtitle is read in a few seconds), and the longer explanation goes into prose.
 - **A component** is every tag except `<chapter>`, `<quiz>` and `<theme>` (so `<stats>` is one). A quiz checks the slide before it; it never replaces one.
@@ -80,8 +80,8 @@ The brief's `form` picks the scene's main picture; `render_scene` warns when no 
 
 | Form (`<brief form>`) | The idea is… | Draw it with |
 |---|---|---|
-| `structure` | parts and how they relate or change | `<structure>`, `<arch>`, `<data>` |
-| `process` | something going through steps or states | `<flow>`, `<state>`, `<journey>`, `<trace>`, `<timeline>` |
+| `structure` | parts and how they relate or change | `<structure>`, `<arch>`, `<data>`, `<figure>` |
+| `process` | something going through steps or states | `<flow>`, `<state>`, `<journey>`, `<trace>`, `<timeline>`, `<figure>` |
 | `quantity` | amounts, scale and how they change | `<chart>`, `<calc>`, `<plot>`, `<stats>`, `<derive>`, `<matrix>`, `<threshold>`, `<scatter>`, `<space>`, `<cosine>` |
 | `system` | causes and feedback | `<system>` |
 | `annotated` | a document read part by part | `<annotated>` |
@@ -122,7 +122,8 @@ The fields are written in the user's language, like the rest of the scene.
 
 | The reader asks | Use | On the slide |
 |---|---|---|
-| How does one real example change along the whole process? | `<trace>` with `kind` per value | the same example changes form; surviving pieces glide to their new place |
+| How does one real example change along the whole process? | `<trace>` with `kind` per value | a strip of steps: each step stays in sight as a card, the current one larger; surviving pieces glide to their new place |
+| What does the thing look like, and what happens in it? (a raindrop and its rays, a crossing and its lights, a lever, a heart's chambers) | `<figure>` with `<show>`s | the drawing itself: the setting first, then each `<show>` draws its arrows and angles and grows its shapes |
 | What are the parts and how do they connect? | `<arch>` (`<group>` for many parts) | boxes appear, then the arrows |
 | What does this text say, part by part? (a lease, a law, a page of an interface) | `<annotated>` with a `<note>` per part | the passage, each quoted part turning yellow as its note rises beside it |
 | Should we, or is it true? What speaks for it and against it? | `<argument>` | the claim, then each reason and objection with its reply, then the verdict |
@@ -149,6 +150,8 @@ The fields are written in the user's language, like the rest of the scene.
 | How is the similarity worked out? | `<cosine>` | each pair is multiplied, summed, measured, divided, and lands on −1…1 |
 | Where are we in the whole process? | `<journey>` + `<chapter stage>` | each chapter opens with the map, its stop lit |
 | Did I understand? | `<quiz>` | options, then the answer |
+
+**When the topic is a physical thing, draw the thing.** A rainbow is a drop and its rays, a traffic light is a crossing with its lights and its sensors, a pulley is a wheel and its rope: the `<figure>` that draws it explains more than any box diagram. Boxes (`<arch>`, `<flow>`) are for parts that talk to each other; outside software, give each box an everyday `kind` (`person`, `object`, `place`, `signal`, `step`) so its label says what it is, never `ui` or `service`.
 
 A list of more than 3 bullets is almost always one of these: steps in order → `<flow>` or `<timeline>`; pros and cons → `<compare>`; parts → `<arch>`; quantities → `<chart>`; one thing being transformed → `<trace>`.
 
@@ -292,6 +295,32 @@ The function that turns 0.438 into 0.608 is the **sigmoid**.
 
 A whole lesson opens with this map and repeats the middle chapter once per section of the notebook, each with its `stage` and its `<quiz>`, and ends with the review: 5–8 flashcards. Every number in a lesson comes from a notebook output (the rules are in `SKILL.md`, "Lessons").
 
+## Template: a physical thing, drawn
+
+A `<figure>` places a few shapes on a grid 100 wide and 60 high (`size="W H"` changes it): `<circle x y r>`, `<box x y w h>` (from its top-left corner), `<arrow points="x y x y …">` (a ray, a path, a push; `head="none"` for a plain line, `dashed="yes"`), `<angle at from to>` (the angle at `at` between the directions to `from` and to `to`), `<zone points>` (a shaded area) and `<label x y>words</label>`. Each takes a short `label` (up to 60 characters; the viewer places it beside the shape, clear of other labels) and a `color` (`ink`, `red`, `orange`, `yellow`, `green`, `blue`, `violet`, `gray`). x grows to the right and y downwards. Shapes in no `<show>` are the setting, there from the start; each `<show items="ids">` adds its shapes in the next part, with a one-sentence narration that Present shows as the subtitle. Work the coordinates out so the picture is true: an angle drawn at 42° says 42°.
+
+```xml
+<figure title="La gota separa la luz y la devuelve a tu ojo" arc="answer">
+<circle id="gota" x="60" y="24" r="14" color="blue" />
+<label x="75" y="44" color="blue">Gota de lluvia</label>
+<circle id="sol" x="6" y="9" r="4" color="yellow" label="Sol" />
+<arrow id="luz" points="4 18 47.4 18" label="Luz blanca" />
+<arrow id="dentro" points="47.4 18 73.2 28.8" color="gray" label="Se separa" />
+<arrow id="rebote" points="73.2 28.8 52 35.5" color="gray" label="Rebota" />
+<arrow id="rojo" points="52 35.5 33 52.6" color="red" />
+<circle id="ojo" x="32" y="53.2" r="2" label="Tu ojo" />
+<arrow id="linea" points="32 53.2 70 53.2" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
+<angle id="angulo" at="32 53.2" from="70 53.2" to="52 35.5" color="red" label="42°" />
+<show items="sol luz">La luz blanca del Sol llega a la gota.</show>
+<show items="dentro">Al entrar, el agua desvía cada color un poco distinto.</show>
+<show items="rebote">El fondo de la gota la refleja hacia delante.</show>
+<show items="rojo">El rojo sale hacia abajo, hacia tu ojo.</show>
+<show items="ojo linea angulo">Tu ojo recibe el rojo de las gotas que están a 42° de la dirección de la luz.</show>
+</figure>
+```
+
+Keep a figure to what explains: 5–20 shapes, 2–6 `<show>`s, labels of one to four words. A scene about a physical thing usually has one figure as its `answer`, after the example and the concept it needs.
+
 ## LaTeX
 
 Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes alone: first the idea in words or a `<concept>`, then the formula, then a worked example or a `<derive>` with real numbers.
@@ -347,7 +376,7 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 - Each formula has words before it and an example or real numbers after it.
 - The page reads well alone: prose and narration around every component.
 - Every step, stage, event, mark and trace value has a one-sentence narration or note of about 20 words: Present shows it as the subtitle.
-- Every box has a `desc` that says what it does, and a code diagram has 1–4 `<code>` blocks.
+- Every box has a `desc` that says what it does, and a code diagram has 1–4 `<code>` blocks. Outside software, boxes take an everyday `kind` (`person`, `object`, `place`, `signal`, `step`), and a physical thing is drawn as a `<figure>`.
 - In a lesson, every chapter has a `goal` and a `<quiz>`, and the last chapter is a review of 5–8 flashcards.
 - For a whole process: a `<journey>` map in the intro and one chapter per stop with `stage`, the same example in each.
 - Every number comes from the code or its outputs.

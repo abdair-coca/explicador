@@ -42,7 +42,7 @@ export function sceneWarnings(root: string, scene: Scene, refs: readonly string[
     ...sectionWarnings(blocks),
     ...lessonWarnings(blocks),
     ...quizWarnings(blocks),
-    ...codeWarnings(blocks),
+    ...codeWarnings(blocks, refs),
     ...exampleWarnings(blocks),
   ];
 }
@@ -83,7 +83,7 @@ export function keyWords(text: string): string[] {
 }
 
 /** Keys whose values are not text a reader sees as prose: ids, refs, kinds, code and the arc itself. */
-const UNSHOWN = new Set(['ref', 'id', 'type', 'kind', 'arc', 'code', 'op', 'role', 'theme', 'stage', 'group', 'parent', 'node', 'from', 'to', 'cluster']);
+const UNSHOWN = new Set(['ref', 'id', 'type', 'kind', 'arc', 'code', 'op', 'role', 'theme', 'stage', 'group', 'parent', 'node', 'from', 'to', 'cluster', 'color', 'head']);
 
 /** Every text a block shows or narrates, in one string: titles, labels, narration, options, whys, notes. */
 function blockText(block: Block, skip: ReadonlySet<string> = UNSHOWN): string {
@@ -226,8 +226,8 @@ export function arcWarnings(scene: Scene): string[] {
 
 /** The components that draw each form of the brief (presenting.md, "Form → tags"). */
 export const formTags: Record<BriefForm, readonly Block['type'][]> = {
-  structure: ['structure', 'arch', 'data'],
-  process: ['flow', 'state', 'journey', 'trace', 'timeline'],
+  structure: ['structure', 'arch', 'data', 'figure'],
+  process: ['flow', 'state', 'journey', 'trace', 'timeline', 'figure'],
   quantity: ['chart', 'calc', 'plot', 'stats', 'derive', 'matrix', 'threshold', 'scatter', 'space', 'cosine'],
   system: ['system'],
   annotated: ['annotated'],
@@ -562,6 +562,7 @@ export function subtitleWarnings(blocks: Block[]): string[] {
     else if (block.type === 'system') block.steps.forEach((step, i) => check(`${at} step ${i + 1}`, step.narration));
     else if (block.type === 'annotated') block.notes.forEach((note, i) => check(`${at} note ${i + 1}`, note.narration));
     else if (block.type === 'argument') block.points.forEach((point) => check(`${at} point "${point.label}"`, point.narration));
+    else if (block.type === 'figure') block.shows.forEach((show, i) => check(`${at} show ${i + 1}`, show.narration));
     else if (block.type === 'plot') block.marks.forEach((mark) => check(`${at} mark "${mark.label}"`, mark.narration));
     else if (block.type === 'matrix') block.focuses.forEach((focus, i) => check(`${at} highlight ${i + 1}`, focus.narration));
     else if (block.type === 'trace') block.values.forEach((value) => check(`${at} value "${value.label}"`, value.note));
@@ -646,10 +647,13 @@ export function quizWarnings(blocks: Block[]): string[] {
 
 // Key code -----------------------------------------------------------------------------------------------------------
 
-/** A diagram of code shows the key lines of the boxes a reader opens. */
-export function codeWarnings(blocks: Block[]): string[] {
+/**
+ * A diagram of code shows the key lines of the boxes a reader opens. A scene that points at no file (a topic explained
+ * from what the model knows: a rainbow, a traffic light) has no lines to show, so it is not asked for any (F31).
+ */
+export function codeWarnings(blocks: Block[], refs: readonly string[]): string[] {
   const diagrams = blocks.filter((block) => block.type === 'arch' || block.type === 'flow' || block.type === 'data' || block.type === 'state');
-  if (diagrams.length === 0 || blocks.some((block) => 'codes' in block && (block.codes?.length ?? 0) > 0)) return [];
+  if (refs.length === 0 || diagrams.length === 0 || blocks.some((block) => 'codes' in block && (block.codes?.length ?? 0) > 0)) return [];
   return [
     'No <code>: give the 1–4 boxes a reader will open their key lines, <code node="id" ref="path:start-end">why these lines matter</code> inside their block; the detail panel shows them, copied from the file.',
   ];

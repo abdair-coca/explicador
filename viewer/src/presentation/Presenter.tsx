@@ -10,8 +10,8 @@ import { reducedMotion } from '../animation/motion';
 import { staggerIn } from '../animation/reveal';
 import { play, setSound, soundEnabled } from '../animation/sound';
 import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, ExpandIcon, MuteIcon, SoundIcon, SubtitlesIcon } from '../components/icons';
-import { DiagramFitContext } from '../components/Diagram';
-import { ArchScene, FlowDiagram } from '../components/scenes';
+import { DiagramFitContext, isEveryday } from '../components/Diagram';
+import { ArchScene, FlowDiagram, StepKindBadge } from '../components/scenes';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { DataScene, StateDiagram, StateScene } from '../components/views';
@@ -34,6 +34,7 @@ import { QuizView } from '../lesson/Quiz';
 import { ThresholdView } from '../lesson/Threshold';
 import { StructureView } from '../lesson/Structure';
 import { SystemView } from '../lesson/System';
+import { FigureView } from '../lesson/Figure';
 import { AnnotatedView } from '../lesson/Annotated';
 import { ArgumentView } from '../lesson/Argument';
 import { TimelineView } from '../lesson/Timeline';
@@ -50,6 +51,7 @@ import { SlideProse } from './SlideProse';
 import { InlineMarkdown } from '../components/Prose';
 import { buildSlides, keyAction, move, type Move, type Position, type Segment, type Slide } from './slides';
 import { rememberSubtitles, subtitleOf, subtitlesRemembered } from './subtitles';
+import { t } from '../i18n';
 
 /** A diagram never gets smaller than this to make a slide fit; past it, the slide scrolls. */
 const MIN_FIT = 180;
@@ -278,7 +280,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label={`Presenting ${scene.topic}`}
+      aria-label={`${t('Presenting')} ${scene.topic}`}
       data-tone={night ? 'night' : undefined}
       style={{ '--accent': theme.accent } as React.CSSProperties}
       data-idle={idle ? '' : undefined}
@@ -295,7 +297,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
         </span>
         <span className="flex-1 sm:hidden" aria-hidden="true" />
         <span className="ml-auto hidden whitespace-nowrap font-semibold text-muted-foreground lg:inline">
-          ← → to move · Shift+→ next slide · S subtitles · F full screen · M sound · Esc to leave
+          ← → {t('to move')} · Shift+→ {t('next slide')} · S {t('subtitles')} · F {t('full screen')} · M {t('sound')} · {t('Esc to leave')}
         </span>
         <span className="ml-auto hidden font-semibold text-muted-foreground sm:inline lg:hidden">← → · S · F · M · Esc</span>
         <Button variant="ghost" size="icon-sm" onClick={toggleSubtitles} aria-label="Subtitles" aria-pressed={subtitles} title={subtitles ? 'Subtitles on (S)' : 'Subtitles off (S)'}>
@@ -337,11 +339,11 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       <footer className="presenter-bar presenter-footer relative z-10 flex items-center gap-4 border-t border-border-soft bg-card px-6 py-3">
         <Button size="sm" onClick={() => go('prev')} disabled={at.slide === 0 && at.part === 0}>
           <ArrowLeftIcon size={16} />
-          Back
+          {t('Back')}
         </Button>
         <ProgressBar slides={slides} at={at} label={label} onJump={(first) => goTo({ slide: first, part: 0 })} />
         <Button variant="primary" size="sm" onClick={() => go('next')} disabled={atEnd}>
-          Next
+          {t('Next')}
           <ArrowRightIcon size={16} />
         </Button>
       </footer>
@@ -351,13 +353,12 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
 }
 
 /** A diagram played step by step under its title; the speaker tells each step. */
-function StepSlide(props: { title: string; step: number; of: number; kind?: LinkKind | undefined; children: React.ReactNode }) {
+function StepSlide(props: { title: string; step: number; of: number; kind?: LinkKind | undefined; plain?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-6">
       <h2 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight">
         {props.title}
-        {props.kind === 'return' && <Badge variant="muted">Answer back</Badge>}
-        {props.kind === 'async' && <Badge variant="info">Async</Badge>}
+        <StepKindBadge kind={props.kind} plain={props.plain} />
       </h2>
       <div className="rounded-2xl border border-border-soft bg-card p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">{props.children}</div>
     </div>
@@ -418,7 +419,7 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
     case 'flow': {
       const step = block.steps[part];
       return (
-        <StepSlide title={block.title} step={part} of={slide.parts} kind={step?.kind}>
+        <StepSlide title={block.title} step={part} of={slide.parts} kind={step?.kind} plain={isEveryday(block.nodes.map((node) => node.kind))}>
           <FlowDiagram block={block} index={part} />
         </StepSlide>
       );
@@ -450,7 +451,7 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
       return (
         <div className="space-y-6">
           <h2 className="slide-title w-fit text-2xl font-black tracking-tight">{block.title}</h2>
-          <div className="rounded-2xl border border-border-soft bg-card p-5 text-lg shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <div className="text-lg">
             <TraceView block={block} index={part} />
           </div>
         </div>
@@ -521,6 +522,15 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
           <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <div className="rounded-2xl border border-border-soft bg-card p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
             <SystemView block={block} shown={part} />
+          </div>
+        </div>
+      );
+    case 'figure':
+      return (
+        <div className="mx-auto w-full max-w-5xl space-y-5">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <div className="rounded-2xl border border-border-soft bg-card p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <FigureView block={block} shown={part} />
           </div>
         </div>
       );

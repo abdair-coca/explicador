@@ -115,6 +115,15 @@ function blockLines(block: Block): string[] {
         ...block.steps.map((step, i) => `${i + 1}. ${name(step.factor)} goes ${step.change}${step.reversed ? ' (pushed back)' : ''}: ${clean(step.narration)}`),
       ];
     }
+    case 'figure': {
+      const said = (shape: (typeof block.shapes)[number]): string | undefined => (shape.kind === 'label' ? shape.text : shape.label);
+      const at = (part: number): string[] => block.shapes.filter((shape) => shape.appear === part).flatMap((shape) => said(shape) ?? []);
+      return [
+        `## ${block.title}`,
+        ...(at(0).length > 0 ? [`Drawn: ${at(0).join('; ')}`] : []),
+        ...block.shows.map((show, i) => `${i + 1}. ${at(i + 1).length > 0 ? `${at(i + 1).join('; ')}: ` : ''}${clean(show.narration)}`),
+      ];
+    }
     case 'derive':
       return [`## ${block.title}`, ...block.lines.map((line, i) => `${i + 1}. ${line.tex}${line.note ? ` — ${clean(line.note)}` : ''}`)];
     case 'compare':

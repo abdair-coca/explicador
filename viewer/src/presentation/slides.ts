@@ -5,7 +5,8 @@
 // each line of a derivation. A scatter shows its axes, each class, its boundary and the points on the wrong side;
 // a comparison its two names, each row and the tally; a timeline each event. A vector space shows its items, the
 // query, the index's choice, each comparison and the ranking; a cosine its vectors, products, sum, lengths and result;
-// a structure each of its states; a system itself at rest, then each step of its push.
+// a structure each of its states; a system itself at rest, then each step of its push; a figure its setting, then
+// each of its <show>s.
 // Each → reveals the next part; with none left, → opens the next slide.
 // The slides back a speaker, who does the explaining: prose is not a slide, except the scene's `#` title as its cover,
 // unless the scene has nothing but prose (then each Markdown block is a slide, so Present is never empty).
@@ -18,6 +19,7 @@ import { scatterParts } from '../lesson/scatterGeometry.ts';
 import { spaceModel } from '../lesson/spaceGeometry.ts';
 import { structureParts, systemParts } from '../lesson/askParts.ts';
 import { cosineModel } from '../lesson/cosineMath.ts';
+import { figureParts } from '../lesson/figureGeometry.ts';
 import { proseSlide } from './prose.ts';
 
 export interface Slide {
@@ -86,6 +88,8 @@ function partsOf(block: Block): number {
       return 1 + block.notes.length;
     case 'argument':
       return 1 + block.points.length + (block.verdict ? 1 : 0);
+    case 'figure':
+      return figureParts(block);
     default:
       return 1;
   }

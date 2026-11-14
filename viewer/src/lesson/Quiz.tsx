@@ -12,6 +12,7 @@ import { Button } from '../components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLesson } from './context';
 import { record as nextState, type CheckState } from './progress';
+import { t } from '../i18n';
 
 /** The check's saved state, from the lesson or kept locally. */
 function useCheck(id: string): [CheckState | undefined, (state: CheckState) => void] {
@@ -85,27 +86,27 @@ function Choice({ block, saved, save, revealed, presenting }: CheckProps) {
       <div aria-live="polite" className="space-y-2">
         {why && (
           <p key={picked} className={cn('animate-fade-up rounded-xl px-4 py-3 text-base font-semibold', picked === right ? 'bg-hit/10' : 'bg-miss/10')}>
-            <span className={cn('mr-1.5 font-extrabold', picked === right ? 'text-success' : 'text-miss')}>{picked === right ? 'Right.' : 'Not this one.'}</span>
+            <span className={cn('mr-1.5 font-extrabold', picked === right ? 'text-success' : 'text-miss')}>{picked === right ? t('Right.') : t('Not this one.')}</span>
             <InlineMarkdown text={why} />
           </p>
         )}
         {revealed && !solved && (
           <p className="animate-fade-up rounded-xl bg-hit/10 px-4 py-3 text-base font-semibold">
-            <span className="mr-1.5 font-extrabold text-success">Answer: {letter(right)}.</span>
+            <span className="mr-1.5 font-extrabold text-success">{t('Answer')}: {letter(right)}.</span>
             {rightWhy && <InlineMarkdown text={rightWhy} />}
           </p>
         )}
         {!solved && !revealed && picked !== undefined && (
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm font-bold text-muted-foreground">Not quite. Try another option.</p>
+            <p className="text-sm font-bold text-muted-foreground">{t('Not quite. Try another option.')}</p>
             {!reveal && (
               <Button variant="ghost" size="sm" onClick={() => setReveal(true)}>
-                Show the answer
+                {t('Show the answer')}
               </Button>
             )}
           </div>
         )}
-        {solved && picked === right && !why && <p className="animate-fade-up text-base font-extrabold text-success">Right!</p>}
+        {solved && picked === right && !why && <p className="animate-fade-up text-base font-extrabold text-success">{t('Right!')}</p>}
       </div>
     </>
   );
@@ -121,31 +122,32 @@ function Flashcard({ saved, save, block, revealed }: CheckProps) {
             <Prose>{block.answer ?? ''}</Prose>
           </div>
           <div className="flex flex-wrap items-center gap-2.5" role="group" aria-label="Did you know it?">
-            <span className="text-sm font-extrabold">Did you know it?</span>
+            <span className="text-sm font-extrabold">{t('Did you know it?')}</span>
             <Button size="sm" variant={saved === 'known' ? 'primary' : 'secondary'} aria-pressed={saved === 'known'} onClick={() => save('known')}>
               <CheckIcon size={16} />
-              Yes
+              {t('Yes')}
             </Button>
             <Button size="sm" variant="secondary" aria-pressed={saved === 'review'} className={cn(saved === 'review' && 'border-foreground')} onClick={() => save('review')}>
-              Not yet
+              {t('Not yet')}
             </Button>
           </div>
         </div>
       ) : (
         <Button variant="primary" onClick={() => setOpen(true)}>
-          Show the answer
+          {t('Show the answer')}
         </Button>
       )}
     </>
   );
 }
 
-const badge: Record<CheckState, React.ReactNode> = {
-  right: <Badge variant="success">Done</Badge>,
-  tried: <Badge variant="muted">Try again</Badge>,
-  known: <Badge variant="success">Known</Badge>,
-  review: <Badge variant="stale">Review again</Badge>,
-};
+/** The badge of a check's state, in the viewer's language (read when drawn, not when the module loads). */
+const badge = (state: CheckState): React.ReactNode => ({
+  right: <Badge variant="success">{t('Done')}</Badge>,
+  tried: <Badge variant="muted">{t('Try again')}</Badge>,
+  known: <Badge variant="success">{t('Known')}</Badge>,
+  review: <Badge variant="stale">{t('Review again')}</Badge>,
+})[state];
 
 export function QuizView({ block, revealed = false, presenting = false }: { block: QuizBlock; revealed?: boolean; presenting?: boolean }) {
   const card = block.options.length === 0;
@@ -161,7 +163,7 @@ export function QuizView({ block, revealed = false, presenting = false }: { bloc
         <span id={questionId} className="flex-1 text-lg font-extrabold leading-snug">
           <InlineMarkdown text={block.question} />
         </span>
-        {saved ? badge[saved] : <Badge variant={card ? 'step' : 'dark'}>{card ? 'Review' : 'Check'}</Badge>}
+        {saved ? badge(saved) : <Badge variant={card ? 'step' : 'dark'}>{card ? t('Review') : t('Check')}</Badge>}
       </header>
       {card ? (
         <Flashcard block={block} saved={saved} save={save} revealed={revealed} presenting={presenting} />

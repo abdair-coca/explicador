@@ -514,6 +514,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F28. Sources beyond code. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F29. Interactivity that teaches. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F30. Measure the result (stop). Done 2026-11-14; report in `docs/results-f30.md`.
+- [x] F31. Pictures that explain any topic (stop), asked by the user after the Sonnet/Opus test. Done 2026-11-14; outcome in `docs/plan.md`.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -633,3 +634,4 @@ Open points:
 | F28 | done (2026-11-14) |
 | F29 | done (2026-11-14) |
 | F30 | done (2026-11-14), stopped for the user's review; see `docs/results-f30.md` |
+| F31 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |

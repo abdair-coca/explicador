@@ -11,6 +11,7 @@ import { InlineMarkdown, Prose } from '../components/Prose';
 import { Tex } from '../components/Tex';
 import { cn } from '@/lib/utils';
 import { conceptPieces, type ConceptPiece } from './conceptParts';
+import { t } from '../i18n';
 
 /** Moves the term from where it was drawn last to where it is now, whenever `hero` changes. */
 function useFlip(hero: boolean) {
@@ -70,7 +71,7 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
       <header className="concept-head">
         <span className="concept-chip">
           <SparkIcon size={14} />
-          Concept
+          {t('Concept')}
         </span>
         <h3 ref={term} className="concept-term">
           <span className="concept-term-text">{block.term}</span>
@@ -89,14 +90,14 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
                     <BulbIcon size={18} />
                   </span>
                   <p>
-                    <span className="concept-label">Think of it as</span>
+                    <span className="concept-label">{t('Think of it as')}</span>
                     <InlineMarkdown text={block.analogy} />
                   </p>
                 </aside>
               )}
               {block.formula && (
                 <div className="concept-math" {...part('formula', 'formula')}>
-                  <span className="concept-label">Formula</span>
+                  <span className="concept-label">{t('Formula')}</span>
                   <Formula tex={block.formula} />
                 </div>
               )}
@@ -104,7 +105,7 @@ export function ConceptView({ block, shown }: { block: ConceptBlock; shown?: num
           )}
           {block.example && (
             <div className="concept-example" {...part('example', 'rise')}>
-              <span className="concept-label">Example</span>
+              <span className="concept-label">{t('Example')}</span>
               <div className="prose-exl">
                 <Prose>{block.example}</Prose>
               </div>

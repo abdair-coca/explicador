@@ -9,6 +9,7 @@ import { themes, type Theme } from '../theme/themes';
 import { RollingNumber } from './effects';
 import type { StageMap } from '../lesson/stageMap';
 import { StageMapView } from '../lesson/StageMapView';
+import { t } from '../i18n';
 
 export function ChapterCard({ block, number, of, theme, map }: { block: ChapterBlock; number: number; of: number; theme: Theme; map?: StageMap | undefined }) {
   return (
@@ -18,7 +19,7 @@ export function ChapterCard({ block, number, of, theme, map }: { block: ChapterB
           <RollingNumber value={String(number).padStart(2, '0')} delay={280} />
         </span>
         <span className="chapter-count pb-[0.9em] text-sm font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
-          Chapter {number} of {of}
+          {t('Chapter')} {number} {t('of')} {of}
           {theme.name !== 'plain' && (
             <span className="ml-3 inline-flex items-center gap-1.5 text-primary">
               <ThemeGlyph theme={theme} size={16} />
