@@ -762,6 +762,26 @@ export function figureWarnings(blocks: Block[]): string[] {
         if (other) warnings.push(`In ${at}, ${nameOf(other, over)} covers the middle of ${nameOf(shape, i)} and hides its label "${shape.label}": move one of them.`);
       }
     });
+    // Where the shows take the shapes (F36): a move that parks a shape on a labelled one hides that label too.
+    const reported = new Set<string>();
+    block.states.forEach((state, k) => {
+      if (k === 0) return;
+      block.shapes.forEach((shape, i) => {
+        if (!(shape.kind === 'circle' || shape.kind === 'box' || shape.kind === 'icon') || !shape.label || shape.appear > k || state[i]?.hidden) return;
+        const [dx, dy] = state[i]?.offset ?? [0, 0];
+        const middle: [number, number] = shape.kind === 'box' ? [shape.x + shape.w / 2 + dx, shape.y + shape.h / 2 + dy] : [shape.x + dx, shape.y + dy];
+        block.shapes.forEach((other, j) => {
+          if (j === i || other.appear > k || state[j]?.hidden || reported.has(`${i} ${j}`)) return;
+          const [ox, oy] = state[j]?.offset ?? [0, 0];
+          if (ox === 0 && oy === 0 && dx === 0 && dy === 0) return;
+          if (!covers(other, [middle[0] - ox, middle[1] - oy])) return;
+          reported.add(`${i} ${j}`);
+          warnings.push(
+            `In ${at}, after show ${k} ${nameOf(other, j)} lies on the middle of ${nameOf(shape, i)} and hides its label "${shape.label}": hide one of them in that show (hide="…"), or stop the move beside it.`,
+          );
+        });
+      });
+    });
   }
   return warnings;
 }

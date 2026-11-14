@@ -95,7 +95,19 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
       return [[shape.x + shape.w / 2, shape.y + shape.h / 2], [shape.x + shape.w / 2, shape.y + shape.h + size * 1.1], [shape.x + shape.w / 2, shape.y - size * 0.9]];
     case 'zone': {
       const n = shape.points.length;
-      return [[shape.points.reduce((sum, p) => sum + p[0], 0) / n, shape.points.reduce((sum, p) => sum + p[1], 0) / n]];
+      const cx = shape.points.reduce((sum, p) => sum + p[0], 0) / n;
+      const cy = shape.points.reduce((sum, p) => sum + p[1], 0) / n;
+      // Its middle first; above, below or beside it when something lies there (F36: a car parked on "Salida").
+      const ys = shape.points.map((p) => p[1]);
+      const xs = shape.points.map((p) => p[0]);
+      const side = labelBox([0, 0], lines, size).x1 + 1;
+      return [
+        [cx, cy],
+        [cx, Math.min(...ys) - size * 0.9],
+        [cx, Math.max(...ys) + size * 1.1],
+        [Math.max(...xs) + side, cy],
+        [Math.min(...xs) - side, cy],
+      ];
     }
     case 'icon': {
       const r = shape.size / 2;

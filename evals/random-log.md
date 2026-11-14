@@ -25,3 +25,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | lupa | es | 5 | 1.00 | science nature | figure, concept, compare, derive, quiz | — (the eye sits off the rays: geometry the checks do not see) |
 | 2026-11-14 | maillard | es | 4 | 1.00 | food science | figure, concept, compare, quiz | the drawing kept to the lower half of its grid: a figure is now framed to what it draws in every state, so it shows larger |
 | 2026-11-14 | batteries | en | 5 | 1.00 | science hardware | figure, concept, compare, stats, quiz | — |
+| 2026-11-14 | bolsa | es | 6 | 1.00 | business society | trace, concept, compare, figure, timeline, quiz | — |
+| 2026-11-14 | rotonda | es | 6 | 1.00 | society science | figure, concept, compare, argument, timeline, quiz | Lucía's car parked on the "Salida" label (a zone's label had one place, its middle): zone labels may now sit above, below or beside it. Seen, not fixed: the roundabout's arrow turns clockwise while the cars go counter-clockwise |
+| 2026-11-14 | coffee-roasting | en | 7 | 1.00 | food science | trace, concept, timeline, figure, compare, chart, quiz | the green bean moved onto the roasted one and both labels clashed: a warning now covers shapes a `move` parks on a labelled one |

@@ -177,6 +177,10 @@ describe('<figure>', () => {
     assert.equal(warn(`${drop}\n<angle id="a" at="10 50" from="30 50" to="20 41" label="42°" />`), '');
     assert.match(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />`), /"car" covers the middle of "drop" and hides its label "Drop"/);
     assert.equal(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />\n<show items="car">Later.</show>`), '', 'it arrives later');
+    const beans = '<circle id="green" x="20" y="24" r="6" label="Green bean" />\n<circle id="brown" x="40" y="24" r="9" label="Roasted bean" />';
+    assert.match(warn(`${beans}\n<show move="green: 40 24">It swells.</show>`), /after show 1 "green" lies on the middle of "brown" and hides its label "Roasted bean"/);
+    assert.equal(warn(`${beans}\n<show move="green: 40 24" hide="brown">It swells.</show>`), '', 'the other one is gone');
+    assert.equal(warn(`${beans}\n<show move="green: 28 24">It moves beside it.</show>`), '');
   });
 
   it('draws pictograms, arcs and measures, with their places (F34)', () => {
