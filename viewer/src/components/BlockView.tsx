@@ -12,6 +12,7 @@ import { SpaceScene } from '../lesson/Space';
 import { CosineScene } from '../lesson/Cosine';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
+import { StructureScene } from '../lesson/Structure';
 import { TimelineScene } from '../lesson/Timeline';
 import { JourneyScene } from '../lesson/Journey';
 import { StatsView } from '../lesson/Stats';
@@ -68,6 +69,8 @@ export function BlockView({ block }: { block: Block }) {
       return <CompareScene block={block} />;
     case 'timeline':
       return <TimelineScene block={block} />;
+    case 'structure':
+      return <StructureScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
     // The theme dresses the page and the slides; it draws nothing in the flow.

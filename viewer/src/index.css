@@ -922,3 +922,32 @@ body {
 .space-legend li.dim { opacity: 0.35; }
 .presenter .space-legend.compact li { font-size: 1rem; }
 .cosine-dim { justify-self: center; font-size: 0.8rem; font-weight: 900; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* <structure> (F25): a tree drawn as itself; members glide between states (GSAP, in Structure.tsx). */
+.structure-wrap { display: grid; gap: 0.75rem; }
+.structure-step { justify-self: start; border-radius: 9999px; border: 2px solid var(--foreground); background: var(--primary); padding: 0.2rem 0.85rem; font-size: 0.9rem; font-weight: 900; }
+.structure-scroll { overflow-x: auto; padding: 0.5rem 0.25rem; }
+.structure { position: relative; width: 100%; }
+.structure { --level: clamp(3.25rem, 8vh, 5.5rem); --row: clamp(2.9rem, 6vh, 3.75rem); }
+.structure-down { min-width: calc(var(--slots) * 3.25rem); height: calc(var(--levels) * var(--level)); }
+.structure-right { min-width: calc(var(--levels) * 9.5rem); height: calc(var(--slots) * var(--row)); }
+.structure-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.structure-link { stroke: var(--foreground); stroke-width: 2.5; stroke-linecap: round; transition: stroke var(--dur-base) var(--ease-out); }
+.structure-link.marked { stroke: var(--primary-dark, #b88a00); stroke-width: 5; }
+.structure-member {
+  position: absolute; translate: -50% -50%; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+  /* Sized by its content, not by the room left of it: a box at the edge does not wrap "20" into "2/0". */
+  width: max-content; min-width: 2.9rem; max-width: min(11rem, max(2.9rem, calc(100% / var(--slots) - 0.75rem)));
+  padding: 0.45rem 0.75rem; border-radius: 14px; border: 2.5px solid var(--foreground);
+  background: var(--card); box-shadow: 0 3px 0 var(--foreground);
+  text-align: center; line-height: 1.2; overflow-wrap: break-word;
+  transition: background-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.structure-right .structure-member { max-width: min(14rem, calc(100% / var(--levels) - 1.5rem)); }
+.structure-label { font-weight: 900; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.structure-desc { font-size: 0.72rem; font-weight: 700; color: var(--muted-foreground); }
+.structure-member.root { border-width: 3px; }
+.structure-member.marked { background: var(--primary); }
+.structure-member.fresh { box-shadow: 0 0 0 5px var(--primary-light), 0 3px 0 var(--foreground); }
+.slide .structure-label, .presenter .structure-label { font-size: clamp(1rem, 1.6vw, 1.35rem); }

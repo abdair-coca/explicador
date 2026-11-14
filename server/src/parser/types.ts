@@ -558,6 +558,61 @@ export interface TimelineBlock {
   ref?: Ref;
 }
 
+export const structureDirections = ['down', 'right'] as const;
+export type StructureDirection = (typeof structureDirections)[number];
+export const structureSides = ['left', 'right'] as const;
+export type StructureSide = (typeof structureSides)[number];
+
+/** One part of a structure: a node of a tree, a person of an organization chart, a folder. */
+export interface StructureMember {
+  id: string;
+  label: string;
+  desc?: string;
+  ref?: Ref;
+}
+
+/** Where a member sits in one state: under `parent` (none: a root), on a `side` when a binary tree needs it. */
+export interface StructurePlace {
+  id: string;
+  parent?: string;
+  side?: StructureSide;
+}
+
+/** One step from a state to the next, as the scene wrote it. */
+export interface StructureChange {
+  label: string;
+  narration: string;
+  add: string[];
+  remove: string[];
+  move: StructurePlace[];
+  mark: string[];
+}
+
+/** A state of the structure as the viewer draws it: the members there, in order, and those the step points at. */
+export interface StructureState {
+  members: StructurePlace[];
+  mark: string[];
+  /** Members that appeared in this state, so the viewer grows them out of their parent. */
+  added: string[];
+  /** The change that led here; absent for the state the structure starts in. */
+  change?: number;
+}
+
+/**
+ * A structure that changes state by state (F25): a tree growing value by value, an organization moving a team. The
+ * parser plays the changes, so `states` holds every state in order, one per part of the slide.
+ */
+export interface StructureBlock {
+  type: 'structure';
+  id: string;
+  title: string;
+  direction: StructureDirection;
+  members: StructureMember[];
+  changes: StructureChange[];
+  states: StructureState[];
+  ref?: Ref;
+}
+
 /** A formula derived line by line; the viewer moves the symbols two lines share. */
 export interface DeriveBlock {
   type: 'derive';
@@ -643,7 +698,7 @@ export interface CosineBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock;
 
 /**
  * What a component does in the scene's narrative (F24): poses the `question`, shows the brief's `example`, draws the

@@ -4,7 +4,7 @@
 import type { Block, Scene } from '../server/src/scene.ts';
 
 /** Fields that point at something (ids, refs, kinds) and say nothing to a reader. */
-const SKIP = new Set(['type', 'id', 'ref', 'kind', 'lines', 'cells', 'missing', 'drills', 'codes', 'node', 'dims', 'theme', 'accent', 'stage', 'winner', 'chartType', 'role', 'key']);
+const SKIP = new Set(['type', 'id', 'ref', 'kind', 'lines', 'cells', 'missing', 'drills', 'codes', 'node', 'dims', 'theme', 'accent', 'stage', 'winner', 'chartType', 'role', 'key', 'arc']);
 
 const clean = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
@@ -80,6 +80,19 @@ function blockLines(block: Block): string[] {
         ...block.states.map(box),
         ...block.transitions.map((t) => `- ${label.get(t.from) ?? t.from} → ${label.get(t.to) ?? t.to}: ${t.event}`),
         ...block.walk.map((step, i) => `${i + 1}. ${step.event}: ${clean(step.narration)}`),
+      ];
+    }
+    case 'structure': {
+      const label = new Map(block.members.map((item) => [item.id, item.label]));
+      const name = (id: string): string => label.get(id) ?? id;
+      const shape = (block.states.at(-1)?.members ?? [])
+        .map((place) => (place.parent === undefined ? `${name(place.id)} (top)` : `${name(place.id)} under ${name(place.parent)}${place.side ? ` (${place.side})` : ''}`))
+        .join('; ');
+      return [
+        `## ${block.title}`,
+        ...block.changes.map((change, i) => `${i + 1}. ${change.label}: ${clean(change.narration)}`),
+        `${block.changes.length > 0 ? 'In the end' : 'Shape'}: ${shape}`,
+        ...block.members.filter((member) => member.desc).map(box),
       ];
     }
     case 'derive':

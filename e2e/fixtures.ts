@@ -30,6 +30,7 @@ export const examples: Example[] = [
   { name: 'session-states', project: 'shop' },
   { name: 'notebook-lesson', project: 'notebook' },
   { name: 'rag', project: 'rag' },
+  { name: 'search-tree', project: 'trees' },
 ];
 
 /**

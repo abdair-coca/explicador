@@ -245,3 +245,20 @@ A tree, an organization chart, a file system or the outline of a law is drawn as
 - The example renders with no warnings.
 - `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
 - **Stop**: deliver the screenshots and a summary; wait for the user.
+
+### Decisions taken in this phase
+
+- **Tag names**: `<member>` and `<change>`, because `<node>` (boxes of `<arch>`), `<part>` (`<calc>`), `<item>` (`<space>`), `<state>` and `<step>` already exist and a tag's attributes are the same wherever it appears.
+- **The parser keeps every state on the block** (`states`), so the rules, the eval's scene text and the viewer read the same structure and the viewer only lays it out.
+- **A change must change something** (`add`, `remove`, `move` or `mark`); a state that only talks is a subtitle with nothing to show.
+- **The picture**: boxes in HTML over an SVG of links, positioned in fractions of one frame shared by every state; GSAP animates from the old place to the new one, so a step taken back plays backwards. A new member grows out of its parent's old place; the links into the marked path and into the new member light up; the change's `label` is a chip above the tree. The level height follows the screen's height (`clamp(3.25rem, 8vh, 5.5rem)`), so five levels fit a phone's slide.
+- **Bridge**: `close()` now also drops open connections (`closeAllConnections`). A browser's idle keep-alive socket made the browser tests' teardown wait for 3 minutes in 2 of 3 full runs once the suite grew; with it, the suite runs in 1.9 minutes instead of 3.3.
+- **`e2e/capture.spec.ts`** takes a part and a phone per screenshot, so the report's pictures can be made again.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `<structure>` with `<member>` and `<change>` (`server/src/parser/structure.ts`, types, catalog, refs, the subtitle rule, the eval's scene text); `viewer/src/lesson/{Structure.tsx,structureLayout.ts}`, Present and its subtitles, CSS; `examples/trees/bst.py` and `examples/scenes/search-tree.exl.md` (the tree growing from 50, 30, 70, 20, 40, then the same values sorted growing into a line, with a brief and an arc and no warning); the docs; screenshots in `docs/images/f25/`.
+2. **How it was tested**: `server/test/structure.test.ts` (6 tests: the states, a start state, moves and removals, a structure without changes, every refusal, bad members, limits, long narrations) and `viewer/test/structure.test.ts` (5: a lone left child, centering and forests, one frame for every state, a tree turned right, Present's parts and subtitles); the new example in every browser test (draw on desktop and phone without sideways scroll, Present forward and back with and without motion, export offline). typecheck, lint, build, `npm test` (server 264, viewer 167, evals 50) and `npm run e2e` (68 in Chromium, twice) pass.
+3. **Seen in the browser**: the tree grows value by value on desktop and phone; mid-step, the new value grows out of its parent on its way to its place; the path compared lights up.
+4. **Limits**: a structure has up to 40 members and 20 changes; a tree wider than the slide scrolls inside its frame on a phone; the presenter's fit shrinks SVG diagrams, not this frame, which sizes its levels by the screen's height instead.
+5. **Pending**: the stop. The user reviews F23–F25; F26 (`<system>`) follows on the go-ahead.

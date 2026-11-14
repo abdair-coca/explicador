@@ -5,9 +5,9 @@ Every scene is two things. The **page** explains in full, for someone reading al
 ## What Present shows
 
 - **The cover**: the `#` title at the top of the scene, alone and large. Then chapter cards and components, in order.
-- **One slide per component**, its pieces arriving one per click: flow steps (every `<step>`, with or without `to`), journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights, scatter classes.
+- **One slide per component**, its pieces arriving one per click: flow steps (every `<step>`, with or without `to`), the states of a `<structure>`, journey stages, trace values, concept pieces, plot marks, derivation lines, comparison rows, timeline events, calc parts, matrix highlights, scatter classes.
 - **On the slide**: titles, labels, values, boxes, arrows, bars, numbers, concept cards and quizzes.
-- **As the subtitle of each part**: the narration of flow and walk steps, journey stages, timeline events and plot marks; the `note` of trace values, derivation lines and calc parts; the narration of matrix highlights; the narration of a `<space>`'s query, chosen cluster and compared items.
+- **As the subtitle of each part**: the narration of flow and walk steps, structure changes, journey stages, timeline events and plot marks; the `note` of trace values, derivation lines and calc parts; the narration of matrix highlights; the narration of a `<space>`'s query, chosen cluster and compared items.
 - **Only on the page**: Markdown prose and callouts.
 - So what the audience must **see** goes into a component, what they must **hear** goes into narration (one short sentence per part: a subtitle is read in a few seconds), and the longer explanation goes into prose.
 - **A component** is every tag except `<chapter>`, `<quiz>` and `<theme>` (so `<stats>` is one). A quiz checks the slide before it; it never replaces one.
@@ -109,6 +109,7 @@ The fields are written in the user's language, like the rest of the scene.
 |---|---|---|
 | How does one real example change along the whole process? | `<trace>` with `kind` per value | the same example changes form; surviving pieces glide to their new place |
 | What are the parts and how do they connect? | `<arch>` (`<group>` for many parts) | boxes appear, then the arrows |
+| How is it built, and how does it change, step by step? (a tree, an organization chart, a file tree) | `<structure>` with `<change>`s | the structure itself: each member glides to its new place, a new one grows out of its parent |
 | What happens, step by step? | `<flow>` | a token travels each arrow, step by step |
 | What is stored, and how does it relate? | `<data>` | tables and their links |
 | What states can it be in, and what moves it? | `<state>` with a `<walk>` | the walk lights each transition |

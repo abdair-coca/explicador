@@ -179,6 +179,7 @@ One short paragraph of context.
   - `<space title x? y? k? dims? ref?>` with 2–40 `<item id label x y cluster? score?>narration</item>`, at most one `<query label x y cluster?>narration</query>` and 0 or 2–8 `<cluster id label x y>narration</cluster>` (the index). Without a query it shows the index alone.
   - `<cosine title a b dims? score? ref?>` with 2–12 `<dim a="0.879" b="0.826" label? />`; the viewer multiplies, adds, measures and divides. With `dims` larger than the dims shown, `score` (the real cosine) is required.
   - `<derive title ref?>` with 2–8 `<line note="what changed">LaTeX without $</line>`.
+  - `<structure title direction? ref?>`: a tree, an organization chart or a file tree drawn as itself, changing state by state. 1–40 `<member id label parent? side? desc? ref? />` (`side="left|right"` for a binary tree; no `parent` = a root) and up to 20 `<change label add? remove? move? mark?>narration</change>` (`add`, `remove`, `mark`: ids separated by spaces; `move="a>b"` puts a under b). Members no change adds are there from the start; the viewer glides each member to its new place. `direction` = `down` (default) or `right`.
   - `<concept term id? ref?>` with `<define>one sentence</define>` (required), `<analogy>…</analogy>`, `<formula>LaTeX without $</formula>` and `<example>Markdown</example>` (each at most once).
 
 ## Vectors, embeddings and search

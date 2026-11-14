@@ -508,7 +508,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] **F22. Bench of 10 topics and a comprehension baseline.** Done 2026-11-13, stop for review. `evals/bench/` (10 topics with source, scene, audience and 5 questions each), `npm run eval:comprension` (Haiku with and without the scene, graded without judges), `docs/prueba-humana.md`, `docs/baseline-f22.md` with the table and screenshots. Haiku 2.4 of 5 without the scene, 4.9 with it; every scene has 0 rule warnings. The first questions were saturated (4.6 without the scene) and were rewritten; the model eval catches omissions but not clarity. Typecheck 0, lint 0, build OK, server 222/222, viewer 162/162, evals 50/50, e2e 61/61 in Chromium.
 - [x] F23. Mandatory pedagogical brief. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F24. Narrative arc and comprehension rules. Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F25. Form "structure with states": `<structure>` (stop).
+- [x] F25. Form "structure with states": `<structure>` (stop). Done 2026-11-14; outcome in `docs/plan.md`; stopped for the user's review of F23–F25.
 - [ ] F26. Form "causal system": `<system>`.
 - [ ] F27. Forms "annotated space" and "argument".
 - [ ] F28. Sources beyond code.
@@ -627,4 +627,5 @@ Open points:
 | F22 | done (2026-11-13), stopped for the user's review |
 | F23 | done (2026-11-14) |
 | F24 | done (2026-11-14) |
-| F25–F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F25 | done (2026-11-14), stopped for the user's review |
+| F26–F30 | planned (user, 2026-11-13); see `docs/plan.md` |

@@ -61,6 +61,10 @@ export function subtitleOf(block: Block | undefined, part: number): string | und
       return said(block.lines[part]?.note);
     case 'timeline':
       return said(block.events[part]?.narration);
+    case 'structure': {
+      const change = block.states[part]?.change;
+      return change === undefined ? undefined : said(block.changes[change]?.narration);
+    }
     case 'space': {
       const model = spaceModel(block);
       const step = model.parts[part];

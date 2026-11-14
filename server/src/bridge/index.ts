@@ -183,7 +183,10 @@ export class Bridge {
     for (const res of [...this.viewerStreams, ...this.monitorStreams]) res.end();
     this.viewerStreams.clear();
     this.monitorStreams.clear();
-    return new Promise((done) => this.server.close(() => done()));
+    const closed = new Promise<void>((done) => this.server.close(() => done()));
+    // A browser keeps idle connections open; without this, close would wait for the browser to drop them.
+    this.server.closeAllConnections();
+    return closed;
   }
 
   private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {

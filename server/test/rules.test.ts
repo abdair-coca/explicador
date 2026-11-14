@@ -188,7 +188,7 @@ describe('exampleWarnings', () => {
 
 describe('the scenes the skill shows', () => {
   it('break no rule: every example over its project', () => {
-    const projects = { login: 'shop', 'data-model': 'shop', 'session-states': 'shop', 'notebook-lesson': 'notebook', rag: 'rag' };
+    const projects = { login: 'shop', 'data-model': 'shop', 'session-states': 'shop', 'notebook-lesson': 'notebook', rag: 'rag', 'search-tree': 'trees' };
     for (const [name, project] of Object.entries(projects)) {
       const source = readFileSync(join(repo, 'examples/scenes', `${name}.exl.md`), 'utf8');
       assert.deepEqual(sceneWarnings(join(repo, 'examples', project), sceneOf(source), refsOf(source)), [], name);

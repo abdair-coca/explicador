@@ -23,6 +23,7 @@ import {
 } from './common.ts';
 import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildTheme, buildThreshold, buildTrace } from './lesson.ts';
 import { buildBrief } from './brief.ts';
+import { buildStructure } from './structure.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
   arcParts,
@@ -193,6 +194,7 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   timeline: buildTimeline,
   space: buildSpace,
   cosine: buildCosine,
+  structure: buildStructure,
 };
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
@@ -476,6 +478,10 @@ function collectRefs(blocks: Block[]): string[] {
       case 'timeline':
         add(block.ref);
         block.events.forEach((event) => add(event.ref));
+        break;
+      case 'structure':
+        add(block.ref);
+        block.members.forEach((member) => add(member.ref));
         break;
       case 'calc':
         add(block.ref);

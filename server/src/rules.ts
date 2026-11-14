@@ -532,6 +532,7 @@ export function subtitleWarnings(blocks: Block[]): string[] {
     else if (block.type === 'state') block.walk.forEach((step, i) => check(`${at} walk step ${i + 1}`, step.narration));
     else if (block.type === 'journey') block.stages.forEach((stage) => check(`${at} stage "${stage.label}"`, stage.narration));
     else if (block.type === 'timeline') block.events.forEach((event) => check(`${at} event "${event.label}"`, event.narration));
+    else if (block.type === 'structure') block.changes.forEach((change) => check(`${at} change "${change.label}"`, change.narration));
     else if (block.type === 'plot') block.marks.forEach((mark) => check(`${at} mark "${mark.label}"`, mark.narration));
     else if (block.type === 'matrix') block.focuses.forEach((focus, i) => check(`${at} highlight ${i + 1}`, focus.narration));
     else if (block.type === 'trace') block.values.forEach((value) => check(`${at} value "${value.label}"`, value.note));

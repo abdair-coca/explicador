@@ -32,6 +32,7 @@ import { LessonContext, SpeakerContext } from '../lesson/context';
 import { progressKey } from '../lesson/progress';
 import { QuizView } from '../lesson/Quiz';
 import { ThresholdView } from '../lesson/Threshold';
+import { StructureView } from '../lesson/Structure';
 import { TimelineView } from '../lesson/Timeline';
 import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
@@ -501,6 +502,15 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
         <div className="mx-auto w-full max-w-6xl space-y-8">
           <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <TimelineView block={block} shown={part} />
+        </div>
+      );
+    case 'structure':
+      return (
+        <div className="mx-auto w-full max-w-5xl space-y-5">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <div className="rounded-2xl border border-border-soft bg-card p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <StructureView block={block} shown={part} />
+          </div>
         </div>
       );
     case 'scatter':

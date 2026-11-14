@@ -53,7 +53,7 @@ describe('slideWarnings', () => {
   });
 
   it('finds nothing to fix in the example scenes', () => {
-    for (const name of ['login', 'data-model', 'session-states', 'notebook-lesson', 'rag']) {
+    for (const name of ['login', 'data-model', 'session-states', 'notebook-lesson', 'rag', 'search-tree']) {
       const source = readFileSync(new URL(`../../examples/scenes/${name}.exl.md`, import.meta.url), 'utf8');
       assert.deepEqual(warningsOf(source), [], name);
     }
