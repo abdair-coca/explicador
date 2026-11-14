@@ -111,6 +111,14 @@ describe('the skill (SKILL.md)', () => {
     assert.match(skill, /Every component \(every top-level tag except `<brief>`, `<theme>` and `<chapter>`\) takes an optional `arc`/);
     assert.match(reference, /Every component \(every top-level tag except `<brief>`, `<theme>` and `<chapter>`\) takes an optional `arc`/);
   });
+
+  it('asks the user how they want a new scene before reading code, and decides alone when nobody can answer (F37)', () => {
+    const step = skill.slice(skill.indexOf('**Then ask the user how they want the scene**'), skill.indexOf('\n4. '));
+    for (const ask of ['**Audience and level**', '**Length**', '**Focus and example**']) assert.ok(step.includes(ask), `step 3 does not ask ${ask}`);
+    assert.match(step, /AskUserQuestion/);
+    assert.match(step, /nobody can answer/);
+    assert.ok(skill.indexOf('**Then ask the user') < skill.indexOf('4. **Read only what you need**'), 'the questions come before reading code');
+  });
 });
 
 describe('the presenting guide (presenting.md)', () => {

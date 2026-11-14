@@ -73,7 +73,7 @@ export const instructions = [
   'Whenever the user asks to explain or understand code, a feature, a flow, an architecture, a notebook, a document or data of this project, or a topic they want explained as a scene, in any language, the answer is a scene, not a text-only reply:',
   '1. Load the explicador skill first (Skill tool, skill "explicador"): it holds the scene format and the rules every scene follows.',
   '2. Call show_scene with a short topic (the one the user names, if any). Fresh: answer from it without reading code.',
-  '3. Missing or stale: call ensure_index, read only the code you need, write the scene as EXL and call render_scene;',
+  '3. Missing or stale: call ensure_index; for a new scene asked in the chat, first ask the user how they want it, as the skill says (audience, length, focus); then read only the code you need, write the scene as EXL and call render_scene;',
   `EXL is Markdown plus the scene tags ${sceneTags}. Every scene opens with a <brief> right after its # title (the audience, the question, one example, the misconception, the check, the terms); render_scene refuses a scene without one.`,
   'render_scene refuses a scene with errors and, once it is saved, lists warnings: fix every error and every warning, and render again until it says "No warnings".',
   '4. Reply in the chat in a few sentences, in the user\'s language, with the viewer URL.',
@@ -116,7 +116,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       if (lookup.status === 'missing') {
         return text(
           `No cached scene for "${topic}" (key ${key}). Build it now: load the explicador skill if you have not (Skill tool, "explicador"; it holds the scene format), ` +
-            'call ensure_index, read only the code the explanation needs, write the scene and call render_scene. The user expects a scene in the viewer, not a text-only answer.',
+            'call ensure_index, ask the user how they want the scene when they asked for it in the chat (the skill\'s step 3), read only the code the explanation needs, write the scene and call render_scene. The user expects a scene in the viewer, not a text-only answer.',
         );
       }
       const changes = lookup.status === 'stale' ? lookup.changes : [];
