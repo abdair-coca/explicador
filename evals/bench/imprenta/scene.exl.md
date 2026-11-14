@@ -1,49 +1,66 @@
-# ¿Por qué la imprenta de Gutenberg se difundió tan rápido?
+# ¿Por qué la imprenta de Gutenberg llegó tan rápido a toda Europa?
 
-<theme name="text" />
+<brief form="timeline">
+<audience>Estudiantes de bachillerato que estudian el paso a la Edad Moderna</audience>
+<question>¿Por qué la imprenta de Gutenberg se difundió tan rápido por Europa y qué cambió al hacerlo?</question>
+<example>La Biblia de 42 líneas que Gutenberg imprimió en Maguncia hacia 1455, unos 180 ejemplares</example>
+<misconception>Creer que Gutenberg inventó la imprenta de la nada</misconception>
+<check>Predecir qué pieza del sistema de Gutenberg no se podía tomar de la impresión con madera</check>
+<terms>pergamino, tipos móviles, xilografía</terms>
+</brief>
 
-Antes de 1450 los libros se copiaban a mano. En pocas décadas, una máquina de Maguncia llenó Europa de libros. ¿Qué hizo posible ese salto?
+<theme name="plain" />
 
-<arch id="ingredientes" title="La imprenta combinó cuatro ingredientes que ya existían">
-  <node id="papel" label="Papel" desc="Más barato que el pergamino de piel" kind="module" ref="source.md:11-16" />
-  <node id="prensa" label="Prensa de tornillo" desc="Se usaba para prensar uvas y aceitunas" kind="module" ref="source.md:11-16" />
-  <node id="metal" label="Metalurgia" desc="Los orfebres sabían fundir y trabajar metales" kind="module" ref="source.md:11-16" />
-  <node id="demanda" label="Demanda de libros" desc="Universidades y comerciantes querían leer más" kind="actor" ref="source.md:11-16" />
-  <node id="imprenta" label="Imprenta de Gutenberg" desc="Tipos móviles metálicos, tinta grasa y prensa" kind="service" ref="source.md:18-26" />
-  <edge from="papel" to="imprenta" label="soporte barato" />
-  <edge from="prensa" to="imprenta" label="presión" />
-  <edge from="metal" to="imprenta" label="tipos de aleación" />
-  <edge from="demanda" to="imprenta" label="mercado" />
-  <code node="imprenta" ref="source.md:20-24">Tres ideas propias: tipos móviles metálicos, una aleación y una tinta a base de aceite.</code>
-</arch>
+Hacia 1455, en Maguncia, salen de un taller unos **180 ejemplares** de la misma Biblia, la Biblia de 42 líneas. Hasta entonces, cada copia de una Biblia costaba a un escriba un año de trabajo o más.
 
-<concept term="Tipos móviles">
-<define>Letras individuales de metal que se pueden reutilizar para componer páginas distintas.</define>
-<analogy>Como las piezas de un Scrabble: con las mismas letras se arman palabras diferentes.</analogy>
-<example>Una misma caja de tipos sirve para imprimir una página hoy y otra distinta mañana.</example>
-</concept>
-
-<compare id="antes-despues" title="Imprimir hizo barato lo que copiar hacía carísimo" a="Copiar a mano" b="Imprimir" ref="source.md:7-9">
-<pair label="Tiempo por libro" a="Un año o más para una Biblia" b="Cientos de copias de una composición" winner="b" />
-<pair label="Quién lo tenía" a="La Iglesia, universidades y nobles" b="Cualquiera con dinero para un libro más barato" winner="b" />
-<pair label="Soporte" a="Pergamino de piel" b="Papel" winner="b" />
+<compare id="biblia" title="Una Biblia a mano frente a la Biblia de Gutenberg" a="Copiada a mano, antes de 1450" b="Impresa por Gutenberg, hacia 1455" ref="source.md#Antes de la imprenta" arc="example">
+<pair label="Tiempo" a="un año o más para una sola copia" b="unos 180 ejemplares de una misma composición" winner="b" />
+<pair label="Dónde se hacía" a="monasterios y talleres de escribas" b="el taller de un orfebre de Maguncia" />
+<pair label="Quién podía tenerla" a="la Iglesia, las universidades y algunos nobles" b="más compradores, porque el precio del libro caía" winner="b" />
 </compare>
 
-<timeline id="difusion" title="En 50 años la imprenta pasó de un taller a toda Europa" ref="source.md:18-32">
-<event label="Gutenberg inventa el sistema" when="hacia 1450">En Maguncia, con un préstamo del prestamista Johann Fust.</event>
-<event label="Biblia de 42 líneas" when="hacia 1455">Se hacen unos 180 ejemplares.</event>
-<event label="Los folletos de Lutero" when="1517">Circulan por Alemania en semanas.</event>
-<event label="Imprentas por Europa" when="hacia 1500">Más de 250 ciudades tienen talleres.</event>
+Antes de la imprenta se escribía sobre un material caro, y los libros lo eran también.
+
+<concept term="Pergamino" ref="source.md#Antes de la imprenta">
+<define>Material para escribir hecho con piel de animal, mucho más caro que el papel.</define>
+<analogy>Escribir cada libro sobre cuero.</analogy>
+</concept>
+
+<concept term="Xilografía" ref="source.md#Error frecuente">
+<define>Imprimir con bloques de madera tallados, una página entera por bloque, con tinta de agua. Ya existía en Asia y en Europa.</define>
+<analogy>Un sello grande de madera: sirve para una sola página y no se puede recomponer.</analogy>
+</concept>
+
+<concept term="Tipos móviles" ref="source.md#La invención (hacia 1450, Maguncia)">
+<define>Piezas de metal, una por letra, que se combinan para componer una página y se reutilizan para la siguiente.</define>
+<analogy>Las fichas de un juego de letras: con las mismas piezas se forman palabras distintas.</analogy>
+<example>Gutenberg las fundía con una aleación de plomo, estaño y antimonio: se funde fácil y aguanta miles de páginas.</example>
+</concept>
+
+<argument id="de-la-nada" title="Gutenberg combinó lo que ya existía con tres ideas propias" ref="source.md#Los ingredientes que ya existían hacia 1450" arc="contrast">
+<claim>Gutenberg no inventó la imprenta de la nada</claim>
+<support label="El papel ya estaba">Había llegado a Europa siglos antes y era mucho más barato que el pergamino.</support>
+<support label="La prensa ya estaba">La prensa de tornillo se usaba para prensar uvas y aceitunas.</support>
+<support label="El metal ya se trabajaba">Los orfebres sabían fundir y trabajar metales, y Gutenberg era orfebre.</support>
+<support label="La demanda ya estaba">Universidades, comerciantes y una clase urbana que sabía leer querían más libros.</support>
+<objection label="Imprimir ya existía" reply="Sí, pero tipos metálicos, aleación, tinta grasa y prensa juntos hicieron viables libros largos y baratos.">La xilografía imprimía con bloques de madera en Asia y en Europa.</objection>
+<verdict>Su aporte fue el sistema: tipos móviles metálicos, una aleación, una tinta grasa a base de aceite y la prensa</verdict>
+</argument>
+
+La tinta de agua de la xilografía no se pegaba al metal, así que Gutenberg necesitó una tinta grasa, a base de aceite. Financió el proyecto con un préstamo del prestamista Johann Fust.
+
+<timeline id="difusion" title="En medio siglo, de un taller a más de 250 ciudades" arc="answer" ref="source.md#La difusión">
+<event label="La invención" when="hacia 1450">En Maguncia, Gutenberg combina tipos móviles metálicos, tinta grasa y prensa.</event>
+<event label="La Biblia de 42 líneas" when="hacia 1455">Unos 180 ejemplares de una misma composición.</event>
+<event label="Los impresores viajan">Abren talleres donde hay demanda: universidades, puertos y ferias comerciales.</event>
+<event label="Toda Europa imprime" when="hacia 1500">Imprentas en más de 250 ciudades y unos 20 millones de ejemplares impresos.</event>
+<event label="Los folletos de Lutero" when="1517">Circulan por toda Alemania en semanas, algo imposible copiando a mano.</event>
 </timeline>
 
-<stats title="Hacia 1500">
-<stat value="180" label="ejemplares de la Biblia de 42 líneas" />
-<stat value="250" label="ciudades europeas con imprentas" />
-<stat value="20 millones" label="ejemplares impresos, según los cálculos" />
-</stats>
+**Qué cambió.** El precio de un libro cayó mucho, porque una misma composición producía cientos de copias. La Reforma se extendió con los folletos de Lutero. La ciencia pudo publicar resultados iguales para todos, que otros podían comprobar. Imprimir en lenguas locales ayudó a fijar su ortografía. Y los escribas perdieron su oficio.
 
-<quiz question="¿Cuántos ejemplares tuvo la Biblia de 42 líneas?">
-<option correct="true" why="Se hicieron unos 180 ejemplares hacia 1455.">Unos 180</option>
-<option why="Hacia 1500 se habían impreso unos 20 millones de ejemplares de todos los libros, no de esta Biblia.">Unos 20 millones</option>
-<option why="Fueron pocos para un libro tan largo, pero más de uno.">Uno solo</option>
+<quiz id="tinta" question="Gutenberg tomó muchas piezas que ya existían. ¿Cuál no podía tomar de la impresión con bloques de madera?">
+<option correct="true" why="La tinta de agua de la xilografía no se pegaba al metal de los tipos: hizo falta una tinta grasa, a base de aceite.">La tinta</option>
+<option why="La prensa de tornillo ya existía, aunque se usaba para uvas y aceitunas.">La prensa</option>
+<option why="El papel llevaba siglos en Europa y era más barato que el pergamino.">El papel</option>
 </quiz>

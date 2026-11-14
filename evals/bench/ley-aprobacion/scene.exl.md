@@ -1,53 +1,78 @@
-# ¿Qué camino recorre un proyecto hasta ser ley?
+# ¿Qué camino recorre una propuesta hasta ser ley?
 
-<theme name="business" />
+<brief form="process">
+<audience>Adultos sin formación en derecho que quieren entender el camino de una ley</audience>
+<question>¿Qué camino recorre una propuesta hasta ser ley, y quién puede frenarla en cada paso?</question>
+<example>Un grupo de diputados propone la «ley de bibliotecas escolares»: una biblioteca en cada escuela</example>
+<misconception>Creer que la aprobación de una cámara basta para que haya ley</misconception>
+<check>Predecir qué pasa con la ley de bibliotecas si la cámara alta la modifica</check>
+<terms>quórum, mayoría simple, cámara de origen, cámara revisora, veto</terms>
+</brief>
 
-Una ley necesita pasar por dos cámaras y por el ejecutivo. Seguimos una ley de bibliotecas escolares que propone un grupo de diputados.
+<theme name="plain" />
 
-<flow id="camino" title="Un proyecto pasa por una comisión, dos cámaras y el ejecutivo">
-  <node id="diputados" label="Diputados" desc="Presentan el proyecto" kind="actor" ref="source.md:17" />
-  <node id="comision" label="Comisión" desc="Estudia el proyecto en detalle" kind="module" ref="source.md:18" />
-  <node id="baja" label="Cámara baja" desc="Vota primero, 100 diputados" kind="service" ref="source.md:19" />
-  <node id="alta" label="Cámara alta" desc="Revisa y vota, 40 senadores" kind="service" ref="source.md:20" />
-  <node id="ejecutivo" label="Ejecutivo" desc="Firma o veta la ley" kind="actor" ref="source.md:21" />
-  <node id="diario" label="Diario oficial" desc="Publica la ley" kind="store" ref="source.md:23" />
-  <step from="diputados" to="comision" label="proyecto" ref="source.md:17-18">El proyecto entra por la cámara baja y se envía a una comisión.</step>
-  <step from="comision" to="baja" label="informe" ref="source.md:18-19">La comisión devuelve su informe y el pleno de la cámara baja lo vota.</step>
-  <step from="baja" to="alta" label="aprobado" ref="source.md:20">Si lo aprueba, pasa a la cámara alta, que repite comisión, debate y votación.</step>
-  <step from="alta" to="ejecutivo" label="aprobado" ref="source.md:21">Con ambas cámaras a favor, el proyecto llega al presidente.</step>
-  <step from="ejecutivo" to="diario" label="sanción" ref="source.md:23">Si firma, la ley se publica en el diario oficial y entra en vigor.</step>
-  <code node="alta" ref="source.md:20">Si la cámara revisora cambia el texto, vuelve a la cámara de origen.</code>
-</flow>
+Un grupo de diputados quiere que cada escuela tenga una biblioteca. El sistema tiene dos cámaras y un presidente (una descripción general, sin referirse a ningún país): la cámara baja, con **100 diputados**, la cámara alta, con **40 senadores**, y el presidente, que firma o devuelve las leyes.
 
-<trace id="votos" title="Una votación necesita más de la mitad de los presentes" ref="source.md:19">
-<value label="Quién asiste a la sesión" note="Hay quórum: se necesitan 51 de 100 diputados.">80 diputados presentes</value>
-<value kind="number" label="Mayoría simple" note="Más de la mitad de 80 son 41 votos a favor.">41</value>
-<value label="Resultado de la votación" note="Con 58 votos a favor el proyecto pasa a la cámara alta.">58 a favor, 22 en contra</value>
-</trace>
-
-<chart id="mayorias" title="Insistir tras un veto exige más votos que aprobar" type="bars" unit=" votos" highlight="Dos tercios" ref="source.md:19-22">
-<row label="Mayoría simple" values="41" />
-<row label="Dos tercios" values="54" />
-</chart>
-
-<concept term="Veto">
-<define>Cuando el ejecutivo devuelve un proyecto aprobado a las cámaras con objeciones, en lugar de firmarlo.</define>
-<analogy>Como el freno de mano de un coche: detiene la ley, pero las cámaras pueden soltarlo.</analogy>
-<example>Tras un veto, las cámaras pueden insistir con dos tercios de los presentes: con 80 presentes, 54 votos.</example>
-</concept>
-
-<timeline id="etapas" title="El proyecto atraviesa siete etapas hasta entrar en vigor" ref="source.md:15-23">
-<event label="Iniciativa" when="1">Se presenta el proyecto en la cámara de origen.</event>
-<event label="Comisión" when="2">Un grupo pequeño estudia el texto y propone cambios.</event>
-<event label="Votación en la cámara de origen" when="3">El pleno aprueba por mayoría simple.</event>
-<event label="Cámara revisora" when="4">La otra cámara lo estudia y lo vota.</event>
-<event label="Sanción o veto" when="5">El ejecutivo firma o devuelve el proyecto.</event>
-<event label="Insistencia" when="6">Tras un veto, dos tercios de cada cámara pueden imponerlo.</event>
-<event label="Publicación" when="7">El diario oficial publica la ley y entra en vigor.</event>
+<timeline id="bibliotecas" title="La ley de bibliotecas escolares, de una idea al diario oficial" arc="example" ref="source.md#Las etapas">
+<event label="La propuesta">Los diputados presentan el proyecto en la cámara baja.</event>
+<event label="El estudio">Un grupo pequeño de diputados lo estudia en detalle, escucha a expertos y propone cambios.</event>
+<event label="El primer voto">Toda la cámara baja lo discute y lo vota.</event>
+<event label="La otra cámara">La cámara alta lo estudia, lo discute y lo vota a su vez.</event>
+<event label="La firma">El presidente lo firma, o lo devuelve con objeciones.</event>
+<event label="El diario oficial">La ley firmada se publica, y solo entonces entra en vigor.</event>
 </timeline>
 
-<quiz question="¿Qué etapa estudia el proyecto en detalle antes de que el pleno lo vote?">
-<option correct="true" why="La comisión es un grupo pequeño que estudia el texto y propone cambios.">La comisión</option>
-<option why="El ejecutivo recibe el proyecto después de las cámaras.">El ejecutivo</option>
-<option why="El diario oficial solo publica la ley ya sancionada.">El diario oficial</option>
+Cada paso tiene sus reglas, y cuatro palabras las resumen.
+
+<concept term="Quórum" ref="source.md#Las piezas">
+<define>El mínimo de miembros presentes para que una cámara pueda sesionar.</define>
+<analogy>Una reunión de vecinos que solo vale si viene la mitad del edificio más uno.</analogy>
+<example>Cámara baja: al menos 51 de 100. Cámara alta: al menos 21 de 40.</example>
+</concept>
+
+<concept term="Mayoría simple" ref="source.md#Las etapas">
+<define>Más de la mitad de los presentes votando a favor.</define>
+<analogy>Ganar una votación entre amigos por al menos un voto más que la mitad.</analogy>
+<example>Con 80 presentes, hacen falta al menos 41 votos a favor.</example>
+</concept>
+
+<concept term="Cámara de origen y cámara revisora" ref="source.md#Las etapas">
+<define>La cámara de origen es la que recibe primero el proyecto; la cámara revisora es la otra, que lo vuelve a estudiar y votar.</define>
+<analogy>Un texto que escribe una persona y corrige otra.</analogy>
+<example>La ley de bibliotecas empieza en la cámara baja (origen) y pasa a la cámara alta (revisora).</example>
+</concept>
+
+<concept term="Veto" ref="source.md#Las etapas">
+<define>Cuando el presidente devuelve un proyecto aprobado, con objeciones, en lugar de firmarlo (sancionarlo).</define>
+<analogy>Un árbitro que anula un gol: el equipo puede reclamar, pero necesita más fuerza.</analogy>
+<example>Tras un veto, las cámaras pueden insistir con dos tercios de los presentes en cada una.</example>
+</concept>
+
+<derive id="mayorias" title="Con 80 presentes, aprobar pide 41 votos e insistir 54" arc="apply" ref="source.md#Las etapas">
+<line note="Mayoría simple: más de la mitad de los presentes.">80 / 2 = 40 \Rightarrow 41</line>
+<line note="Insistir tras un veto: dos tercios de los presentes, redondeando hacia arriba.">80 \cdot 2/3 = 53{,}33 \Rightarrow 54</line>
+</derive>
+
+<journey id="camino" title="Siete etapas y dos cámaras hacen una ley" arc="answer">
+<stage id="iniciativa" label="Iniciativa" value="cámara de origen" kind="text">Un diputado, un senador o el presidente presenta el proyecto a una cámara.</stage>
+<stage id="comision" label="Comisión" value="un grupo pequeño" kind="table">Lo estudia en detalle, escucha a expertos y puede proponer cambios.</stage>
+<stage id="voto" label="Debate y voto" value="mayoría simple" kind="split">El pleno de la cámara de origen discute y vota.</stage>
+<stage id="revisora" label="Cámara revisora" value="otra votación" kind="split">Si la aprueba sin cambios, pasa al presidente; si la modifica, vuelve a la cámara de origen.</stage>
+<stage id="sancion" label="Sanción o veto" value="el presidente" kind="model">El presidente la firma o la devuelve con objeciones.</stage>
+<stage id="insistencia" label="Insistencia" value="dos tercios" kind="metric">Tras un veto, las cámaras pueden insistir con dos tercios de los presentes en cada una.</stage>
+<stage id="publicacion" label="Publicación" value="diario oficial" kind="file">La ley se publica en el diario oficial y entra en vigor.</stage>
+</journey>
+
+**Si el proyecto fracasa.** Si la cámara de origen lo rechaza, no puede volver a presentarse en el mismo año legislativo. Si la cámara revisora lo rechaza, vuelve a la cámara de origen, que puede insistir con dos tercios.
+
+<compare id="una-camara" title="Que una cámara apruebe no basta para que haya ley" a="Lo que se suele creer" b="Lo que hace falta" ref="source.md#Error frecuente" arc="contrast">
+<pair label="Cámaras" a="la aprobación de una cámara basta" b="las dos cámaras" winner="b" />
+<pair label="Presidente" a="no hace falta" b="su firma, o la insistencia de las cámaras tras un veto" winner="b" />
+<pair label="Entrada en vigor" a="al votar" b="al publicarse en el diario oficial" winner="b" />
+</compare>
+
+<quiz id="cambios" question="La cámara alta aprueba la ley de bibliotecas, pero con cambios. ¿Qué pasa después?">
+<option why="Con cambios no pasa al presidente: antes debe aceptarlos la cámara que la propuso.">Pasa directamente al presidente</option>
+<option correct="true" why="Si la cámara revisora la modifica, vuelve a la cámara de origen, que decide si acepta los cambios.">Vuelve a la cámara baja, que decide si acepta los cambios</option>
+<option why="Una modificación no es un rechazo: el proyecto sigue vivo.">Queda rechazada hasta el año siguiente</option>
 </quiz>

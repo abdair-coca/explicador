@@ -143,6 +143,7 @@ describe('acronymWarnings', () => {
   it('does not read roman numerals, code or one capital as acronyms', () => {
     const trace = '<trace title="The body is sent as text">\n<value label="In">a</value>\n<value label="Out" code="JSON.stringify(body)">b</value>\n</trace>';
     assert.deepEqual(acronymWarnings(sceneOf(stats('printed in the XV century'), trace, stats('A tree, I think'), stats('sku BOOK-1843'))), []);
+    assert.deepEqual(acronymWarnings(sceneOf('<concept term="Fermentation">\n<define>Sugar becomes gas.</define>\n<formula>C_6H_{12}O_6 \\rightarrow 2\\,CO_2</formula>\n</concept>')), [], 'a formula is symbols');
   });
 });
 

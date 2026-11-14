@@ -1,54 +1,69 @@
-# ¿Cómo se convierte una masa en pan?
+# ¿Por qué sube el pan, y qué le hace el horno?
+
+<brief form="process">
+<audience>Personas curiosas que quieren hacer su primer pan en casa</audience>
+<question>¿Por qué sube el pan, y qué le pasa a la masa dentro del horno?</question>
+<example>Una hogaza de 500 g de harina, 325 g de agua, 10 g de sal y 5 g de levadura seca</example>
+<misconception>Pensar que el pan sube en el horno porque la levadura se activa con el calor</misconception>
+<check>Predecir qué le pasa a una masa que fermenta toda la noche en la nevera</check>
+<terms>hidratación, gluten, fermentación, reacción de Maillard</terms>
+</brief>
 
 <theme name="plain" />
 
-Una hogaza de 500 g de harina, 325 g de agua, 10 g de sal y 5 g de levadura pasa por tres cambios químicos antes de ser pan: amasar, fermentar y hornear.
+Cuatro ingredientes y unas horas convierten una pasta pegajosa en una hogaza con corteza dorada. Sigamos una hogaza de **500 g de harina** desde el bol hasta que sale del horno.
 
-<flow id="proceso" title="El gluten atrapa el gas y el horno fija la forma">
-  <node id="masa" label="Harina y agua" desc="Se mezclan y forman gluten" kind="module" ref="source.md:16-18" />
-  <node id="levadura" label="Levadura" desc="Se alimenta de azúcares y suelta gas" kind="actor" ref="source.md:20-28" />
-  <node id="horno" label="Horno a 220 °C" desc="Fija la forma y dora la corteza" kind="service" ref="source.md:30-37" />
-  <step from="masa" label="amasar" ref="source.md:16-18">La gliadina y la glutenina forman el gluten, una red elástica que amasar ordena.</step>
-  <step from="masa" to="levadura" label="azúcares" ref="source.md:20-24">La levadura se come los azúcares de la masa y produce alcohol y dióxido de carbono.</step>
-  <step from="levadura" to="masa" label="CO2" ref="source.md:26-28">El gas queda atrapado en la red de gluten y la masa sube; el alcohol da aroma.</step>
-  <step from="masa" to="horno" label="masa fermentada" ref="source.md:30-37">La masa entra al horno, donde el calor expande las burbujas hasta que la levadura muere.</step>
-  <step from="horno" label="corteza" ref="source.md:37">La superficie se dora con la reacción de Maillard, que da color y aroma.</step>
-  <code node="horno" ref="source.md:33-37">Cuatro cambios en orden: salto de horno, almidón, proteínas y corteza.</code>
-</flow>
-
-<trace id="azucar" title="Un azúcar se convierte en alcohol y gas durante la fermentación" ref="source.md:22-24">
-<value label="La levadura recibe" note="La harina aporta los azúcares que la levadura necesita.">1 molécula de azúcar (C6H12O6)</value>
-<value kind="list" label="La levadura produce" code="C6H12O6 → 2 C2H5OH + 2 CO2" note="El alcohol da aroma; el gas es el que hace subir la masa.">2 etanol|2 CO2</value>
-<value label="La masa" note="El CO2 queda atrapado en la red de gluten, como el aire en un globo.">sube</value>
+<trace id="hogaza" title="Cuatro ingredientes se vuelven una hogaza que sube y se dora" arc="example" ref="source.md#Ejemplo ancla: una hogaza de 500 g de harina">
+<value kind="table" label="En el bol" note="La sal es el 2 % del peso de la harina, y el agua, 325 / 500 = 65 %.">harina=500 g|agua=325 g|sal=10 g|levadura=5 g</value>
+<value label="Después de amasar" note="Harina y agua forman una red elástica que se estira sin romperse.">una masa elástica que se estira sin romperse</value>
+<value label="Después de reposar" note="La levadura se come los azúcares de la harina y suelta gas, que hincha la masa.">una masa que ha subido, llena de burbujas</value>
+<value label="Después del horno a 220 °C" note="El gas se expande, la miga se fija y la superficie se dora.">una hogaza con miga fija y corteza dorada</value>
 </trace>
 
-<derive id="hidratacion" title="La hidratación de la masa es el agua dividida entre la harina" ref="source.md:10-14">
-<line note="La definición de hidratación.">\text{hidratación} = \frac{\text{agua}}{\text{harina}}</line>
-<line note="Ponemos los gramos de la receta.">\text{hidratación} = \frac{325}{500}</line>
-<line note="El resultado, como porcentaje.">\text{hidratación} = 65\,\%</line>
-</derive>
+Cada uno de esos pasos tiene un nombre y una química.
 
-<timeline id="horno" title="En el horno ocurren cuatro cambios en orden" ref="source.md:30-37">
-<event label="Salto de horno" when="1">El calor expande las burbujas y la masa crece un poco más.</event>
-<event label="El almidón se gelatiniza" when="2">Absorbe agua y se hincha: fija la miga.</event>
-<event label="Las proteínas coagulan" when="3">El gluten se endurece y la forma queda fija.</event>
-<event label="La corteza se dora" when="4">Por encima de 140 °C actúa la reacción de Maillard.</event>
+<concept term="Hidratación" ref="source.md#Ejemplo ancla: una hogaza de 500 g de harina">
+<define>El agua dividida entre la harina, en porcentaje.</define>
+<analogy>Cuánta leche le pones a los cereales: decide si quedan secos o empapados.</analogy>
+<example>325 g de agua para 500 g de harina: 325 / 500 = 65 %.</example>
+</concept>
+
+<concept term="Gluten" ref="source.md#Paso 1: amasar y formar el gluten">
+<define>La red elástica que forman dos proteínas del trigo, la gliadina y la glutenina, al mezclarse con agua. Amasar la estira y la ordena.</define>
+<analogy>Una malla de globos: atrapa el gas y deja que la masa se hinche sin romperse.</analogy>
+</concept>
+
+<concept term="Fermentación" ref="source.md#Paso 2: fermentar">
+<define>La levadura (*Saccharomyces cerevisiae*, hongos microscópicos) se come los azúcares de la harina y produce alcohol (etanol) y dióxido de carbono (CO2).</define>
+<analogy>Una fábrica diminuta que convierte azúcar en burbujas.</analogy>
+<formula>C_6H_{12}O_6 \rightarrow 2\,C_2H_5OH + 2\,CO_2</formula>
+<example>El CO2 queda atrapado en el gluten, como el aire en un globo, y la masa sube; el alcohol da aroma.</example>
+</concept>
+
+La levadura trabaja bien entre 25 y 35 °C. Por encima de unos 60 °C muere. El frío la vuelve lenta: la masa en la nevera fermenta despacio y desarrolla más sabor.
+
+<concept term="Reacción de Maillard" ref="source.md#Paso 3: hornear">
+<define>Por encima de 140 °C, los azúcares y los aminoácidos de la superficie reaccionan y producen color marrón y cientos de aromas.</define>
+<analogy>Lo que dora un filete en la sartén.</analogy>
+</concept>
+
+<timeline id="horno" title="En el horno a 220 °C pasan cuatro cosas, en orden" arc="answer" ref="source.md#Paso 3: hornear">
+<event label="Salto de horno">El calor expande las burbujas de gas y la masa crece un poco más, hasta que la levadura muere a unos 60 °C.</event>
+<event label="El almidón se gelatiniza">El almidón absorbe agua y se hincha: fija la miga.</event>
+<event label="Las proteínas coagulan">El gluten se endurece y la forma queda fija.</event>
+<event label="La corteza se dora" when="más de 140 °C">La reacción de Maillard da el color marrón y los aromas.</event>
 </timeline>
 
-<concept term="Gluten">
-<define>Una red elástica que forman dos proteínas del trigo cuando se mezclan con agua.</define>
-<analogy>Como un globo que se estira sin romperse y retiene el aire que le soplas.</analogy>
-<example>Una masa bien amasada se estira en una lámina fina sin romperse.</example>
-</concept>
+<compare id="activa" title="La levadura trabaja antes del horno; el calor solo expande su gas" a="Lo que se suele pensar" b="Lo que pasa" ref="source.md#Error frecuente" arc="contrast">
+<pair label="Cuándo trabaja la levadura" a="se activa con el calor del horno" b="durante la fermentación, antes de hornear" winner="b" />
+<pair label="Qué hace el calor del horno" a="despierta a la levadura" b="expande el gas que ya hay y mata a la levadura a unos 60 °C" winner="b" />
+<pair label="Por qué sube el pan" a="por el calor" b="por el CO2 atrapado en el gluten" winner="b" />
+</compare>
 
-<concept term="Reacción de Maillard">
-<define>La reacción de azúcares y aminoácidos a alta temperatura que produce color marrón y aromas.</define>
-<analogy>Como el tostado del pan en la tostadora: la superficie cambia de color y de olor.</analogy>
-<example>Por encima de unos 140 °C, la superficie de la hogaza se dora.</example>
-</concept>
+**Por qué el pan se pone duro.** Con el tiempo, el almidón de la miga expulsa agua y se endurece (se retrograda). Un pan duro puede ablandarse un momento calentándolo.
 
-<quiz question="Alguien disuelve la levadura en agua a 80 °C. ¿Qué pasa con la masa?">
-<option correct="true" why="Por encima de unos 60 °C la levadura muere y ya no produce gas.">No sube, porque la levadura muere</option>
-<option why="El calor del agua no activa la levadura: la mata.">Sube más rápido por el calor</option>
-<option why="La temperatura sí importa: la levadura trabaja entre 25 y 35 °C.">Sube igual</option>
+<quiz id="nevera" question="Dejas la masa de la hogaza toda la noche en la nevera en vez de dos horas en la cocina. ¿Qué pasa?">
+<option correct="true" why="El frío vuelve lenta a la levadura, que sigue fermentando despacio y da tiempo a que se desarrollen más aromas.">Fermenta despacio y el pan sabe más</option>
+<option why="El frío no la mata: la levadura muere por encima de unos 60 °C.">La levadura muere y la masa no sube</option>
+<option why="En la nevera la levadura trabaja más lenta, no más rápido.">Sube el doble de rápido</option>
 </quiz>

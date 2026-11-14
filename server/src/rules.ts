@@ -244,6 +244,8 @@ export function formWarnings(scene: Scene): string[] {
 
 /** What a block says in its own words: a passage quotes its source, so a term in it is the source's, not the scene's. */
 const OWN_WORDS = new Set([...UNSHOWN, 'passage']);
+/** Words, not symbols: a formula's capitals ("CO_2", "\\mathbf{W}") are no acronyms. */
+const WORDS_ONLY = new Set([...OWN_WORDS, 'formula', 'tex']);
 
 // Terms and acronyms ---------------------------------------------------------------------------------------------------
 
@@ -313,7 +315,7 @@ export function acronymWarnings(scene: Scene): string[] {
   const defined = new Set<string>();
   const unknown = new Map<string, string>();
   for (const block of blocks) {
-    const text = block.type === 'markdown' ? block.text : blockText(block, OWN_WORDS);
+    const text = block.type === 'markdown' ? block.text : blockText(block, WORDS_ONLY);
     before += `\n${text}`;
     if (block.type === 'concept') for (const match of block.term.matchAll(ACRONYM)) defined.add(match[0]);
     if (!isComponent(block) && block.type !== 'chapter') continue;

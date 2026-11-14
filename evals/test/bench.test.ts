@@ -71,8 +71,8 @@ describe('scene text', () => {
     const topic = topics.find((item) => item.id === 'interes-compuesto');
     assert.ok(topic);
     const { text } = loadScene(topic);
-    assert.match(text, /1\. D = C\\,\(1 \+ i\)\^\{n\} — La deuda final es el capital/);
-    assert.match(text, /Se queda en 1 000 € \(correct\)/);
+    assert.match(text, /1\. D = C \\cdot \(1 \+ i\)\^\{n\} — Deuda final igual a capital/);
+    assert.match(text, /1 404,93 €, 44,93 € más \(correct\)/);
   });
 
   it('is the same every time', () => {

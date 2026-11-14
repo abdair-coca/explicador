@@ -406,3 +406,20 @@ The reader learns more by predicting before seeing (the principle behind the bri
 1. **What changed**: `ask` in the parser (`<change>`, `<push>`, `<effect>`), `viewer/src/lesson/{askParts.ts,AskCard.tsx}`, the structure and system views, slides and subtitles; step badges removed from Present; examples, docs; screenshots in `docs/images/f29/`.
 2. **How it was tested**: 2 parser tests and 2 viewer tests; typecheck, lint, build, `npm test` (server 284, viewer 178, evals 50) and `npm run e2e` (82 in Chromium) pass.
 3. **Pending**: F30 (measure the result; stop). Its eval calls Haiku and needs the user's go-ahead.
+
+## F30 — Measure the result
+
+### Scope
+
+1. **Rebuild the bench's eight older scenes** under F23–F29 (a brief, an arc, the forms, terms and acronyms defined before use), written by the session's model from each topic's `source.md` only, without opening its questions; the F22 versions stay beside them as `scene-f22.exl.md`. `login-tienda` and `regresion-resenas` are the example scenes, already rebuilt in F23–F24.
+2. **Rules**: every bench scene renders with no warning under every rule.
+3. **Comprehension**: `npm run eval:comprension` on Haiku, with the user's go-ahead (about $0.014 per run of 20 calls at list price, estimated from the F22 run and the scenes' text, 13 % longer), compared with the F22 baseline.
+4. **Report** in `docs/results-f30.md`: the table before and after, what the numbers can and cannot say, screenshots of the trees scene, and what is left for people (the human protocol of `docs/prueba-humana.md`).
+5. **Stop**: deliver the report; wait for the user.
+
+### Rebuilt scenes
+
+- Each opens with its concrete case (the guided example of the trees, the oak leaf, the 1 000 € loan, October's funnel, the 42-line Bible, the school-library law, Pablo's lease, the 500 g loaf), defines its terms on cards before using them, sets its source's "frequent error" against the fact on a contrast slide, answers its question, and ends on a check of its own.
+- Forms used: `<structure>` (trees), `<annotated>` and `<argument>` (lease, printing press), `<journey>` and `<timeline>` (photosynthesis, law, bread), charts and `<derive>` (funnel, interest).
+- Refs point at the sources' sections (`source.md#Error frecuente`).
+- Found while rebuilding: the acronym rule read the capitals of chemical formulas ("CO" in `CO_2`); formulas and derivation lines are now left out of it.
