@@ -262,3 +262,39 @@ A tree, an organization chart, a file system or the outline of a law is drawn as
 3. **Seen in the browser**: the tree grows value by value on desktop and phone; mid-step, the new value grows out of its parent on its way to its place; the path compared lights up.
 4. **Limits**: a structure has up to 40 members and 20 changes; a tree wider than the slide scrolls inside its frame on a phone; the presenter's fit shrinks SVG diagrams, not this frame, which sizes its levels by the screen's height instead.
 5. **Pending**: the stop. The user reviews F23–F25; F26 (`<system>`) follows on the go-ahead.
+
+## F26 — Form "causal system": `<system>`
+
+Some ideas are not a structure or a sequence but a web of causes: more traffic means more cache misses, more load, slower answers, more retries, and so more traffic; inflation, an ecosystem, a queue under load. The scene draws the factors, the links between them with their sign, and the loops they close, then plays one push through the web: which factor moves, which way, and what it moves next.
+
+### Scope
+
+1. **`<system title ref? arc?>`** with `<factor>`s, `<link>`s, optional `<loop>` names and the steps of one push:
+   ```exl
+   <system title="Retries feed the load that causes them" arc="answer">
+   <factor id="traffic" label="Requests per second" />
+   <factor id="misses" label="Cache misses" />
+   <factor id="load" label="Database load" />
+   <link from="traffic" to="misses" sign="same" />
+   <link from="misses" to="load" sign="same" />
+   <link from="load" to="traffic" sign="same" label="retries" />
+   <loop through="traffic misses load" label="Retry storm" />
+   <push factor="traffic" change="up">A sale sends five times the usual requests.</push>
+   <effect from="traffic" to="misses">More requests ask for keys the cache does not hold yet.</effect>
+   </system>
+   ```
+   - `<factor id label desc? ref?/>`: a quantity that can go up or down. 2–12 factors.
+   - `<link from to sign label?/>`: `sign="same"` (more of `from` brings more of `to`) or `"opposite"` (more brings less). Up to 30 links; no link from a factor to itself.
+   - **Loops are found by the parser**: every cycle of links is a loop, `reinforcing` when it has an even number of `opposite` links and `balancing` when odd. `<loop through label/>` names one; its factors must be a cycle of the system. Up to 8 loops are drawn.
+   - `<push factor change="up|down">narration</push>` starts a change; `<effect from to>narration</effect>` follows a link from a factor that already moved, and the parser works out which way the target moves (`same` keeps the direction, `opposite` flips it). An effect that follows no link, or starts at a factor nothing moved yet, is an error. Up to 20 steps; the block carries the state after each.
+2. **Viewer**: the factors on a ring, links as curved arrows with their sign (+ or −) at the middle, each loop's badge (R or B, and its name) inside it. Each step is a part: its link draws, the factor it reaches lights up with an arrow up or down, and a factor pushed back the other way shows it. In Present the narration is the subtitle; on the page the steps play with step controls. Present shrinks the picture to fit like other diagrams.
+3. **Server and rules**: catalog, `componentTags`, refs, subtitles, scene text, slides.
+4. **Docs and skill**: `docs/EXL.md`, `SKILL.md`, `presenting.md` ("What causes what, and what feeds back?"), `AGENTS.md`, `README.md`.
+5. **An example** over a small project, `examples/cache` (cache-aside reads and a client that retries at once): `examples/scenes/cache-storm.exl.md` follows the brief and the arc.
+
+### Acceptance criteria
+
+- Parser tests: factors, links, loops found and their kind, a named loop and one that is not a cycle, pushes and effects with their directions (also a push back), every refusal, limits.
+- Viewer tests: the ring, link geometry (two opposite links bend apart), loop badges inside the frame, parts and subtitles.
+- Browser tests: the new example draws, walks Present forward and back, has no overlapping boxes and no sideways scroll.
+- The example renders with no warnings; `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
