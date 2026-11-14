@@ -103,7 +103,7 @@ export const catalog: Record<string, TagSpec> = {
   angle: { attrs: { id: 'optional', at: 'required', from: 'required', to: 'required', label: 'optional', color: 'optional' } },
   zone: { attrs: { id: 'optional', points: 'required', label: 'optional', color: 'optional' } },
   label: { attrs: { id: 'optional', x: 'required', y: 'required', color: 'optional' }, text: true },
-  show: { attrs: { items: 'required' }, text: true },
+  show: { attrs: { items: 'optional', move: 'optional', set: 'optional', hide: 'optional', pulse: 'optional', flow: 'optional', ask: 'optional' }, text: true },
   annotated: { attrs: { id: 'optional', title: 'required', ref: 'optional' }, children: ['passage', 'note'] },
   passage: { attrs: {}, text: true },
   note: { attrs: { quote: 'required', label: 'optional' }, text: true },

@@ -20,6 +20,7 @@ const wanted: Record<string, Shot[]> = {
   login: [1, 2],
   'search-tree': [{ slide: 1, part: 4 }, { slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],
   lease: [{ slide: 1, part: 3 }, 5, { slide: 1, part: 3, phone: true }],
+  crossing: [{ slide: 2, part: 0 }, { slide: 2, part: 1 }, { slide: 2, part: 2 }, { slide: 2, part: 3 }, { slide: 2, part: 4 }, { slide: 2, part: 5 }, 2, { slide: 2, phone: true }],
   rainbow: [1, { slide: 3, part: 2 }, 3, { slide: 1, phone: true }, { slide: 3, phone: true }],
   'cache-storm': [{ slide: 4, part: 8 }, { slide: 4, part: 0 }, { slide: 4, part: 5 }, 4, { slide: 4, part: 5, phone: true }],
 };

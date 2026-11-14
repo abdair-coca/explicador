@@ -121,7 +121,18 @@ function blockLines(block: Block): string[] {
       return [
         `## ${block.title}`,
         ...(at(0).length > 0 ? [`Drawn: ${at(0).join('; ')}`] : []),
-        ...block.shows.map((show, i) => `${i + 1}. ${at(i + 1).length > 0 ? `${at(i + 1).join('; ')}: ` : ''}${clean(show.narration)}`),
+        ...block.shows.map((show, i) => {
+          const name = (index: number): string => block.shapes[index]?.id ?? String(index);
+          const changes = [
+            ...show.moves.map((move) => `${name(move.shape)} moves`),
+            ...show.sets.map((set) => `${name(set.shape)} turns ${set.color}`),
+            ...show.hides.map((index) => `${name(index)} disappears`),
+            ...show.pulses.map((index) => `${name(index)} pulses`),
+            ...show.flows.map((index) => `something travels along ${name(index)}`),
+          ];
+          const drawn = [...at(i + 1), ...changes];
+          return `${i + 1}. ${drawn.length > 0 ? `${drawn.join('; ')}: ` : ''}${clean(show.narration)}`;
+        }),
       ];
     }
     case 'derive':

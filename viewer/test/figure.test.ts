@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { parseExl } from '../../server/src/parser/index.ts';
 import type { Block, FigureBlock } from '../../server/src/scene.ts';
-import { angleArc, figureParts, LABEL_SIZE, labelBox, labelSize, placeFigure, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { angleArc, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
 import { stripOf } from '../src/lesson/traceShape.ts';
 import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
@@ -85,6 +85,40 @@ describe('figure geometry', () => {
     assert.equal(slide?.parts, 6);
     assert.equal(subtitleOf(block, 0), undefined);
     assert.equal(subtitleOf(block, 1), 'La luz blanca del Sol llega a la gota.');
+  });
+});
+
+describe('figure changes (F32)', () => {
+  const crossing = (): Block[] => {
+    const parsed = parseExl(readFileSync(new URL('../../examples/scenes/crossing.exl.md', import.meta.url), 'utf8'));
+    assert.ok(parsed.ok);
+    return parsed.scene.blocks;
+  };
+
+  it('asks before a show that asks, and gives no subtitle while it asks', () => {
+    const blocks = crossing();
+    const block = figureOf(blocks);
+    const parts = figurePartsOf(block);
+    assert.deepEqual(
+      parts.map((part) => [part.shown, part.ask ?? '']),
+      [[0, ''], [1, ''], [2, ''], [2, 'Nadie viene por la avenida. ¿Qué hace el controlador?'], [3, ''], [4, ''], [5, '']],
+    );
+    assert.equal(buildSlides(blocks).find((slide) => slide.kind === 'figure')?.parts, 7);
+    assert.equal(subtitleOf(block, 3), undefined);
+    assert.equal(subtitleOf(block, 4), 'Nadie espera en la avenida: el controlador le pasa el amarillo.');
+  });
+
+  it('lights the shapes a show draws, moves, recolors, pulses or sends a dot along', () => {
+    const block = figureOf(crossing());
+    const id = (name: string): number => block.shapes.findIndex((shape) => shape.id === name);
+    assert.deepEqual([...touchedBy(block.shows[1])].sort(), [id('espira'), id('aviso')].sort());
+    assert.deepEqual([...touchedBy(block.shows[3])].sort(), [id('orden'), id('avenida'), id('lateral')].sort());
+    assert.deepEqual(touchedBy(undefined).size, 0);
+    // The car ends past the crossing, the side light green, the avenue's red.
+    const last = block.states.at(-1);
+    assert.deepEqual(last?.[id('coche')]?.offset, [0, -48]);
+    assert.equal(last?.[id('lateral')]?.color, 'green');
+    assert.equal(last?.[id('avenida')]?.color, 'red');
   });
 });
 

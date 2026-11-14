@@ -1065,10 +1065,15 @@ body {
 .fig-arrow, .fig-angle { fill: none; stroke-width: 0.65; }
 .fig-arrow.dashed { stroke-dasharray: 1.6 1.2; }
 .fig-angle { stroke-width: 0.45; }
-.fig-shape.now { stroke-width: 0.85; }
-.fig-arrow.now { stroke-width: 0.95; }
+.fig-shape { transition: stroke 0.5s, fill 0.5s, stroke-width 0.3s; }
+.fig-item { transition: opacity 0.5s; }
+.fig-item.gone { opacity: 0; pointer-events: none; }
+.fig-item.now .fig-shape { stroke-width: 0.85; }
+.fig-item.now .fig-arrow { stroke-width: 0.95; }
+.fig-item.now .fig-label:not(.free) { text-decoration: underline; text-decoration-color: var(--primary); text-decoration-thickness: 0.35px; }
+.fig-head { transition: fill 0.5s; }
+.fig-dot { fill: var(--fig); stroke: var(--card); stroke-width: 0.35; opacity: 0; }
 .fig-head { fill: var(--fig); }
 .fig-label { fill: var(--foreground); font-weight: 800; paint-order: stroke; stroke: var(--card); stroke-width: 0.7; stroke-linejoin: round; }
 .fig-label.free { fill: var(--fig); }
 .fig-label.free.fig-ink, .fig-label:not(.free) { fill: var(--foreground); }
-.fig-label.now { fill: var(--foreground); text-decoration: underline; text-decoration-color: var(--primary); text-decoration-thickness: 0.35px; }

@@ -3,8 +3,9 @@
 // labels. Shapes without a <show> are there from the start; each <show> names shapes that appear together in a later
 // part, with its narration. No free paths and no styles: what a figure can say is what its shapes and labels say.
 import type { Element } from './reader.ts';
-import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, readAttrs, readEnum, readRef, type Report } from './common.ts';
-import { arrowHeads, figureColors, type ArrowHead, type FigureBlock, type FigureColor, type FigureShape, type FigureShow, type Point } from './types.ts';
+import { anchorOf } from './figureAnchor.ts';
+import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, type Report } from './common.ts';
+import { arrowHeads, figureColors, type ArrowHead, type FigureBlock, type FigureColor, type FigureMove, type FigureSet, type FigureShape, type FigureShow, type FigureState, type Point } from './types.ts';
 
 export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'label'] as const;
 const spec = (name: string) => catalog[name] ?? { attrs: {} };
@@ -110,35 +111,121 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
   }
 
   const shows: FigureShow[] = [];
-  for (const child of children.filter((c) => c.name === 'show')) {
-    const s = readAttrs(child, spec('show'), report);
-    const narration = narrationOf(child, report);
-    checkMath(narration, child.offset, report);
-    if (s.items === undefined) continue;
+  const showTags = children.filter((c) => c.name === 'show');
+  const named = (name: string, attr: string, child: Element): number | undefined => {
+    const index = ids.get(name);
+    if (index === undefined) report(offsetOf(child, attr), `"${attr}" names unknown shape "${name}"; give the shape an id`);
+    return index;
+  };
+  // First what each show draws, so a change can tell whether its shape is on screen yet.
+  const drawn = showTags.map((child, i) => {
     const items: number[] = [];
-    for (const name of s.items.split(/\s+/).filter(Boolean)) {
-      const index = ids.get(name);
-      if (index === undefined) {
-        report(offsetOf(child, 'items'), `"items" names unknown shape "${name}"; give the shape an id`);
-        continue;
-      }
-      const shape = shapes[index];
-      if (shape && shape.appear > 0) {
+    for (const name of (child.attrs.get('items')?.value ?? '').split(/\s+/).filter(Boolean)) {
+      const index = named(name, 'items', child);
+      const shape = index === undefined ? undefined : shapes[index];
+      if (index === undefined || !shape) continue;
+      if (shape.appear > 0) {
         report(offsetOf(child, 'items'), `Shape "${name}" already appears in an earlier <show>`);
         continue;
       }
-      if (shape) shape.appear = shows.length + 1;
+      shape.appear = i + 1;
       items.push(index);
     }
-    if (items.length === 0) continue;
-    shows.push({ items, narration });
-  }
+    return items;
+  });
+  // Then every shape's state as the shows play (F32): where it has moved, its color, whether it is hidden.
+  let state: FigureState[] = shapes.map((shape) => ({ offset: [0, 0], color: shape.color, hidden: false }));
+  const states: FigureState[][] = [state];
+  showTags.forEach((child, i) => {
+    const s = readAttrs(child, spec('show'), report);
+    const narration = narrationOf(child, report);
+    checkMath(narration, child.offset, report);
+    const part = i + 1;
+    const items = drawn[i] ?? [];
+    // A change applies to a shape on screen: drawn by this show or an earlier one, and not hidden.
+    const onScreen = (name: string, attr: string): number | undefined => {
+      const index = named(name, attr, child);
+      const shape = index === undefined ? undefined : shapes[index];
+      if (index === undefined || !shape) return undefined;
+      if (shape.appear > part) {
+        report(offsetOf(child, attr), `"${attr}" changes "${name}" before it is drawn: show it first`);
+        return undefined;
+      }
+      if (state[index]?.hidden) {
+        report(offsetOf(child, attr), `"${attr}" changes "${name}", which an earlier <show> hid`);
+        return undefined;
+      }
+      return index;
+    };
+    const next = state.map((item): FigureState => ({ ...item, offset: [item.offset[0], item.offset[1]] }));
+    const moves: FigureMove[] = [];
+    for (const [name, rest] of pairs(s.move, 'move', child, report)) {
+      const index = onScreen(name, 'move');
+      const shape = index === undefined ? undefined : shapes[index];
+      const path = points(rest, 'move', child, 1, limits.figureArrowPoints);
+      if (index === undefined || !shape || !path) continue;
+      const [ax, ay] = anchorOf(shape);
+      const last = path[path.length - 1] ?? [ax, ay];
+      moves.push({ shape: index, path });
+      const item = next[index];
+      if (item) item.offset = [last[0] - ax, last[1] - ay];
+    }
+    const sets: FigureSet[] = [];
+    for (const [name, rest] of pairs(s.set, 'set', child, report)) {
+      const index = onScreen(name, 'set');
+      if (index === undefined) continue;
+      const color = readEnum<FigureColor>(rest, figureColors, 'ink', 'set', child, report);
+      sets.push({ shape: index, color });
+      const item = next[index];
+      if (item) item.color = color;
+    }
+    const list = (value: string | undefined, attr: string): number[] =>
+      (value ?? '').split(/\s+/).filter(Boolean).flatMap((name) => {
+        const index = onScreen(name, attr);
+        return index === undefined ? [] : [index];
+      });
+    const hides = list(s.hide, 'hide');
+    for (const index of hides) {
+      const item = next[index];
+      if (item) item.hidden = true;
+    }
+    const pulses = list(s.pulse, 'pulse');
+    const flows = list(s.flow, 'flow').filter((index) => {
+      if (shapes[index]?.kind === 'arrow') return true;
+      report(offsetOf(child, 'flow'), `"flow" sends a dot along an <arrow>; "${shapes[index]?.id ?? ''}" is a <${shapes[index]?.kind ?? ''}>`);
+      return false;
+    });
+    if (items.length + moves.length + sets.length + hides.length + pulses.length + flows.length === 0) {
+      report(child.offset, 'A <show> needs something to show: items to draw, or a move, set, hide, pulse or flow');
+    }
+    const ask = optionalText(s.ask, 'ask', limits.questionLength, child, report);
+    shows.push({ items, moves, sets, hides, pulses, flows, narration, ...(ask ? { ask } : {}) });
+    state = next;
+    states.push(state);
+  });
 
   if (shapes.length === 0) report(element.offset, '<figure> needs at least one shape: <circle>, <box>, <arrow>, <angle>, <zone> or <label>');
   if (shapes.length > limits.figureShapes) report(element.offset, `<figure> has more than ${limits.figureShapes} shapes`);
   if (shows.length > limits.figureShows) report(element.offset, `<figure> has more than ${limits.figureShows} <show>s`);
   if (shapes.length > 0 && shapes.every((shape) => shape.appear > 0)) report(element.offset, 'Every shape waits for a <show>: leave the setting (what is there from the start) out of the <show>s');
-  return { type: 'figure', id, title, width, height, shapes, shows, ...readRef(a.ref, element, report) };
+  return { type: 'figure', id, title, width, height, shapes, shows, states, ...readRef(a.ref, element, report) };
+}
+
+/** `"car: 20 50 80 50; bus: 10 10"` → [["car", "20 50 80 50"], ["bus", "10 10"]]. */
+function pairs(value: string | undefined, attr: string, element: Element, report: Report): [string, string][] {
+  if (value === undefined) return [];
+  return value
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part): [string, string][] => {
+      const at = part.indexOf(':');
+      if (at < 1) {
+        report(element.attrs.get(attr)?.offset ?? element.offset, `"${attr}" is "id: …" pairs separated by ";", like "${attr === 'move' ? 'car: 20 50 80 50' : 'light: green'}"`);
+        return [];
+      }
+      return [[part.slice(0, at).trim(), part.slice(at + 1).trim()]];
+    });
 }
 
 /** `size="W H"`: the figure's grid, 100 × 60 unless it says otherwise; each side 20–200. */

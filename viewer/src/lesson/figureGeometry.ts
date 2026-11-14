@@ -158,7 +158,23 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
   return placed;
 }
 
-/** Parts of a figure's slide: the setting, then one per <show>. */
+/** A part of a figure's slide: how many shows have played and, for a question, what it asks before the next one (F32). */
+export interface FigurePart {
+  shown: number;
+  ask?: string;
+}
+
+/** The parts of a figure's slide: the setting, then one per <show>, with a question part before a show that asks. */
+export function figurePartsOf(block: Pick<FigureBlock, 'shows'>): FigurePart[] {
+  return [{ shown: 0 }, ...block.shows.flatMap((show, i): FigurePart[] => (show.ask ? [{ shown: i, ask: show.ask }, { shown: i + 1 }] : [{ shown: i + 1 }]))];
+}
+
 export function figureParts(block: Pick<FigureBlock, 'shows'>): number {
-  return 1 + block.shows.length;
+  return figurePartsOf(block).length;
+}
+
+/** The shapes a show touches: those it draws, moves, recolors, pulses or sends a dot along. */
+export function touchedBy(show: FigureBlock['shows'][number] | undefined): Set<number> {
+  if (!show) return new Set();
+  return new Set([...show.items, ...show.moves.map((move) => move.shape), ...show.sets.map((set) => set.shape), ...show.pulses, ...show.flows]);
 }

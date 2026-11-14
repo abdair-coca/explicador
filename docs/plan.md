@@ -37,6 +37,10 @@ Goal: Explicador explains **any topic** well, technical or not: code, notebooks 
 | F29 | Interactivity that teaches | no |
 | F30 | Measure the result | **yes** |
 | F31 | Pictures that explain any topic (after the Sonnet/Opus test) | **yes** |
+| F32 | `<figure>`: movement and states | **yes** |
+| F33 | `<figure>`: anchors instead of numbers, and geometry checks | **yes** |
+| F34 | `<figure>`: pictograms, arcs and measures | **yes** |
+| F35 | `<figure>`: clearer reading (labels, leaders, cues, details) | **yes** |
 
 The status of each phase is also in `.dev/PLAN.md`.
 
@@ -468,3 +472,32 @@ Requested by the user on 2026-11-14, after a test in which Sonnet explained a ra
 3. **Seen in the browser**: the rainbow's figure draws the light entering the drop, bouncing and leaving at 42° part by part, labels clear of each other on a desktop and a phone; the Sonnet and Opus scenes of the test now keep the whole trace in sight and speak Spanish.
 4. **Limits**: the models' scenes of the test were written before the skill knew `<figure>` and the everyday kinds; only a new run shows whether the models use them (it costs usage: the user decides). Labels avoid each other, not the shapes; a crowded figure can still put a label on a line.
 5. **Pending, for the user**: review; decide whether to run Sonnet and Opus again on the two topics.
+
+## F32–F35 — `<figure>` as the main component (user, 2026-11-14)
+
+The user wants `<figure>` to become the main component to explain a topic, with drawings that really help the explanation, compared with real explanatory figures. The comparison is [`figures-research.md`](figures-research.md): real figures of the two test topics draw what changes as it changes (a light turning green, a call travelling), true geometry (normals, the antisolar line), recognizable objects, the bow as an arc, several drops each sending one color, and labels next to their parts. The user chose four phases, in this order; each ends with a stop (`AGENTS.md`).
+
+### F32 — Movement and states
+
+**Scope.** A `<show>` may also change shapes already drawn: `move="car: x y x y …"` (the shape travels along the points to the last one; several moves separated by `;`), `set="light: green"` (its color changes), `hide="ids"` (it fades away), `pulse="ids"` (it pulses once, a sensor firing) and `flow="arrow ids"` (a dot travels along an arrow, a call or a ray on its way). `items` becomes optional; a show must do something. `ask` (F29) asks the reader to predict a show before it plays. The parser works out every shape's state after each show and refuses moves out of the grid, changes to shapes not drawn yet or hidden, and unknown ids. An example over a smart crossing (`examples/scenes/crossing.exl.md`), in Spanish, plays a car calling the green.
+
+**Criteria.** Parser tests for each change and refusal; viewer tests for the state at each part and for `ask`; the example renders with no warnings and plays forward and back in the browser tests; typecheck, lint, build, `npm test`, `npm run e2e`.
+
+**Outcome (2026-11-14).**
+1. **What changed**: `<show>` takes `move`, `set`, `hide`, `pulse`, `flow` and `ask`, and `items` is optional (`server/src/parser/figure.ts`, `figureAnchor.ts`, types, catalog); the block keeps every shape's state after each show. The viewer draws each shape in a group translated by its offset, plays a move along its points, transitions colors and fading, pulses a shape, runs a dot along a flowing arrow, and puts a question part before a show that asks; the shapes a part touches are thicker (`Figure.tsx`, `figurePartsOf` and `touchedBy` in `figureGeometry.ts`, subtitles, CSS). `examples/scenes/crossing.exl.md` over `examples/crossing`: Lucía's car stops on the loop, the loop pulses and its call travels to the controller, the reader predicts, the avenue turns yellow then red, Lucía's light green, and the car crosses. Docs, skill (with the crossing as a template), `AGENTS.md`, the eval's scene text; screenshots in `docs/images/f32/`; the study in `docs/figures-research.md`.
+2. **How it was tested**: 2 more parser tests (changes and states, every refusal) and 2 more viewer tests (question parts, touched shapes, final states); typecheck, lint, build, `npm test` (server 292, viewer 189, evals 50) and `npm run e2e` (96 in Chromium, the crossing walked forward and back with every animation) pass.
+3. **Seen in the browser**: each part of the crossing shows the change itself; going back restores the state.
+4. **Limits**: a moving shape's label moves with it but may cover a label it passes (F35); a move follows straight segments between its points.
+5. **Pending**: F33 (anchors and geometry checks), F34 (pictograms, arcs, measures), F35 (clearer reading).
+
+### F33 — Anchors instead of numbers, and geometry checks
+
+**Scope.** Any point may name a shape instead of numbers: `drop.left`, `drop.top`, `drop.center`, `drop@200` (the point of a circle's edge at 200°, 0° to the right and counting clockwise on screen), `box.bottom`, an arrow's `start` and `end`. `<normal at="drop@200">` draws the normal of a circle at that point. Warnings when shapes cover each other's labels, when an arrow that should touch a shape stops short of it, and when an angle's label says a value its drawing does not show (more than 3° off).
+
+### F34 — Pictograms, arcs and measures
+
+**Scope.** `<icon kind x y size label?>` from a closed set of line pictograms drawn in the viewer's style (Sun, eye, person, car, raindrop, house, tree, traffic signal head, battery, magnet, cloud, factory, phone, server, coin, heart, leaf, bulb, clock, lock), with `color`; `<arc>` (a part of a circle: a rainbow, an orbit, a swing); `<measure from to>label</measure>` (a dimension line with its value).
+
+### F35 — Clearer reading
+
+**Scope.** Labels avoid lines and shapes as well as each other, and get a straight leader ending in a dot when they must sit away; the shapes a part adds or changes are lit and the rest dimmed; on the page, a shape with `desc` opens its description when clicked; the rainbow and crossing examples rebuilt with every convention of the comparison, with screenshots beside it in `figures-research.md`.

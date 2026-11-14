@@ -710,11 +710,40 @@ export type FigureShape =
   | (ShapeBase & { kind: 'zone'; points: Point[] })
   | (Omit<ShapeBase, 'label'> & { kind: 'label'; x: number; y: number; text: string });
 
-/** Shapes that appear together in one part, with what the narration says about them. */
+/** A shape travelling along points (F32): its anchor (a circle's center, a box's corner…) goes through each, ending on the last. */
+export interface FigureMove {
+  shape: number;
+  path: Point[];
+}
+
+/** A shape taking another color (F32): a light turning green. */
+export interface FigureSet {
+  shape: number;
+  color: FigureColor;
+}
+
+/** Where a shape is, its color and whether it is hidden, after some shows (F32). */
+export interface FigureState {
+  /** How far its anchor has moved from where the shape is declared. */
+  offset: Point;
+  color: FigureColor;
+  hidden: boolean;
+}
+
+/**
+ * One part of a figure: the shapes it draws, and (F32) the shapes already drawn it moves, recolors, hides or pulses, and
+ * the arrows a dot travels along, with what the narration says. Shape references are indexes into the figure's shapes.
+ */
 export interface FigureShow {
-  /** Indexes into the figure's shapes. */
   items: number[];
+  moves: FigureMove[];
+  sets: FigureSet[];
+  hides: number[];
+  pulses: number[];
+  flows: number[];
   narration: string;
+  /** A question the reader answers before the show plays (F29). */
+  ask?: string;
 }
 
 /** A drawing of a physical thing (F31): a raindrop and its rays, a crossing and its lights, revealed part by part. */
@@ -726,6 +755,8 @@ export interface FigureBlock {
   height: number;
   shapes: FigureShape[];
   shows: FigureShow[];
+  /** Every shape's state at the start (0) and after each show. */
+  states: FigureState[][];
   ref?: Ref;
 }
 

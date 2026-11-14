@@ -123,7 +123,7 @@ The fields are written in the user's language, like the rest of the scene.
 | The reader asks | Use | On the slide |
 |---|---|---|
 | How does one real example change along the whole process? | `<trace>` with `kind` per value | a strip of steps: each step stays in sight as a card, the current one larger; surviving pieces glide to their new place |
-| What does the thing look like, and what happens in it? (a raindrop and its rays, a crossing and its lights, a lever, a heart's chambers) | `<figure>` with `<show>`s | the drawing itself: the setting first, then each `<show>` draws its arrows and angles and grows its shapes |
+| What does the thing look like, and what happens in it? (a raindrop and its rays, a crossing and its lights, a lever, a heart's chambers) | `<figure>` with `<show>`s | the drawing itself: the setting first, then each `<show>` draws its arrows and angles, grows its shapes, moves them, recolors them, pulses them or sends a dot along an arrow |
 | What are the parts and how do they connect? | `<arch>` (`<group>` for many parts) | boxes appear, then the arrows |
 | What does this text say, part by part? (a lease, a law, a page of an interface) | `<annotated>` with a `<note>` per part | the passage, each quoted part turning yellow as its note rises beside it |
 | Should we, or is it true? What speaks for it and against it? | `<argument>` | the claim, then each reason and objection with its reply, then the verdict |
@@ -316,6 +316,26 @@ A `<figure>` places a few shapes on a grid 100 wide and 60 high (`size="W H"` ch
 <show items="rebote">El fondo de la gota la refleja hacia delante.</show>
 <show items="rojo">El rojo sale hacia abajo, hacia tu ojo.</show>
 <show items="ojo linea angulo">Tu ojo recibe el rojo de las gotas que están a 42° de la dirección de la luz.</show>
+</figure>
+```
+
+A show also changes what is already drawn, as it changes in reality: `move="car: 47 30 47 2"` (the shape travels through the points), `set="light: green"`, `hide="ids"`, `pulse="ids"` (a sensor firing) and `flow="arrow"` (a dot travels along the arrow: a call, a ray, a current); `ask` makes the reader predict the show first. A traffic light changing is one shape whose color is `set`, not a new circle; a car crossing is one shape that moves:
+
+```xml
+<figure title="La espira avisa al controlador y este le da el verde" arc="answer">
+<zone points="0 24 100 24 100 36 0 36" color="gray" label="Avenida" />
+<zone points="44 36 56 36 56 60 44 60" color="gray" />
+<box id="espira" x="45" y="43" w="10" h="5" color="orange" label="Espira" />
+<box id="coche" x="47" y="50" w="6" h="8" color="blue" label="Lucía" />
+<circle id="lateral" x="61" y="39" r="2.5" color="red" label="Su semáforo" />
+<circle id="avenida" x="38" y="20" r="2.5" color="green" label="Semáforo de la avenida" />
+<box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
+<arrow id="aviso" points="55 46 76 47" color="orange" dashed="yes" />
+<show move="coche: 47 41">Lucía para en la calle lateral, justo encima de la espira.</show>
+<show items="aviso" pulse="espira" flow="aviso">La espira nota el metal del coche y avisa al controlador.</show>
+<show set="avenida: yellow" ask="Nadie viene por la avenida. ¿Qué hace el controlador?">Nadie espera en la avenida: el controlador le pasa el amarillo.</show>
+<show set="avenida: red; lateral: green">Avenida en rojo y verde para Lucía: 5 segundos en vez de 60.</show>
+<show move="coche: 47 30 47 2">Lucía cruza; el controlador vuelve a mirar la espira.</show>
 </figure>
 ```
 

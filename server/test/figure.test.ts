@@ -88,6 +88,40 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure('<circle id="a" x="5" y="5" r="2" />\n<circle id="a" x="9" y="5" r="2" />')), /Duplicate shape id "a"/);
   });
 
+  it('moves, recolors, hides and pulses shapes on screen, and sends a dot along an arrow (F32)', () => {
+    const block = blockOf(
+      figure(
+        `${shapes}\n${shows}\n<show move="drop: 70 30 80 30; note: 60 40" set="sun: orange" pulse="red" flow="light" ask="Where does the drop go?">The drop drifts.</show>\n<show hide="sun">The Sun sets.</show>`,
+      ),
+    );
+    const third = block.shows[2];
+    assert.deepEqual(third?.moves, [
+      { shape: 0, path: [[70, 30], [80, 30]] },
+      { shape: 7, path: [[60, 40]] },
+    ]);
+    assert.deepEqual(third?.sets, [{ shape: 1, color: 'orange' }]);
+    assert.deepEqual([third?.pulses, third?.flows, third?.ask], [[3], [2], 'Where does the drop go?']);
+    assert.equal(block.states.length, 5);
+    assert.deepEqual(block.states[2]?.[0], { offset: [0, 0], color: 'blue', hidden: false });
+    assert.deepEqual(block.states[3]?.[0], { offset: [20, 6], color: 'blue', hidden: false });
+    assert.deepEqual(block.states[3]?.[7], { offset: [-20, -5], color: 'ink', hidden: false });
+    assert.equal(block.states[3]?.[1]?.color, 'orange');
+    assert.equal(block.states[4]?.[1]?.hidden, true);
+    // The state carries on: the drop is still where it went.
+    assert.deepEqual(block.states[4]?.[0]?.offset, [20, 6]);
+  });
+
+  it('refuses changes to shapes not drawn yet, hidden, unknown, or out of the grid, and a show that does nothing', () => {
+    assert.match(errorsOf(figure(`${shapes}\n<show set="red: green">Too early.</show>\n<show items="red">Now.</show>`)), /"set" changes "red" before it is drawn: show it first/);
+    assert.match(errorsOf(figure(`${shapes}\n<show hide="drop">Gone.</show>\n<show move="drop: 10 10">Moves.</show>`)), /"move" changes "drop", which an earlier <show> hid/);
+    assert.match(errorsOf(figure(`${shapes}\n<show pulse="moon">Moon.</show>`)), /"pulse" names unknown shape "moon"/);
+    assert.match(errorsOf(figure(`${shapes}\n<show move="drop: 120 10">Away.</show>`)), /"move" 120 10 is outside the figure/);
+    assert.match(errorsOf(figure(`${shapes}\n<show move="drop 10 10">Bad.</show>`)), /"move" is "id: …" pairs separated by ";"/);
+    assert.match(errorsOf(figure(`${shapes}\n<show set="drop: pink">Pink.</show>`)), /Unknown set "pink"/);
+    assert.match(errorsOf(figure(`${shapes}\n<show flow="drop">Dot.</show>`)), /"flow" sends a dot along an <arrow>; "drop" is a <circle>/);
+    assert.match(errorsOf(figure(`${shapes}\n<show>Nothing.</show>`)), /A <show> needs something to show/);
+  });
+
   it('keeps to its limits', () => {
     const many = Array.from({ length: 41 }, (_, i) => `<circle x="${(i % 10) * 9 + 5}" y="${Math.floor(i / 10) * 10 + 5}" r="1" />`).join('\n');
     assert.match(errorsOf(figure(many)), /more than 40 shapes/);
