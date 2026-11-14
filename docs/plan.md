@@ -504,6 +504,12 @@ The user wants `<figure>` to become the main component to explain a topic, with 
 
 **Scope.** `<icon kind x y size label?>` from a closed set of line pictograms drawn in the viewer's style (Sun, eye, person, car, raindrop, house, tree, traffic signal head, battery, magnet, cloud, factory, phone, server, coin, heart, leaf, bulb, clock, lock), with `color`; `<arc>` (a part of a circle: a rainbow, an orbit, a swing); `<measure from to>label</measure>` (a dimension line with its value).
 
+**Outcome (2026-11-14).**
+1. **What changed**: `<icon kind x y size?>` with 20 line pictograms in the viewer's style (`viewer/src/lesson/figureIcons.ts`), a `signal` lighting the lamp of its color so `set` changes the light; `<arc x y r from to head?>` with `@degrees`, start, middle and end places, along which a `flow` may run; `<measure from to offset?>length</measure>` with end ticks. Places, moves, colors, warnings (an icon counts as its box) and label placement for the three. The crossing uses a car and two signal heads that change light; the rainbow uses the Sun and the eye, and a second figure draws the bow as six arcs around the shadow of your head, red outside, with drops on it and its 42° measured. Docs, skill (both templates refreshed), `AGENTS.md`; screenshots in `docs/images/f34/`.
+2. **How it was tested**: 2 more parser tests (the three shapes and their places; refusals) and 2 viewer tests (art for every pictogram and the lit lamp; arc and measure paths); typecheck, lint, build, `npm test` (server 297, viewer 192, evals 50) and `npm run e2e` (96 in Chromium) pass.
+3. **Limits**: the pictograms are side views (a car seen from above is still the side-view car); a label can still sit on a line ("Su semáforo" on the loop's call), which F35 fixes.
+4. **Pending**: F35 (clearer reading).
+
 ### F35 — Clearer reading
 
 **Scope.** Labels avoid lines and shapes as well as each other, and get a straight leader ending in a dot when they must sit away; the shapes a part adds or changes are lit and the rest dimmed; on the page, a shape with `desc` opens its description when clicked; the rainbow and crossing examples rebuilt with every convention of the comparison, with screenshots beside it in `figures-research.md`.

@@ -22,17 +22,17 @@ A las 23:00 el cruce está vacío. Las cifras son las del ejemplo, no las de un 
 <zone points="0 24 100 24 100 36 0 36" color="gray" label="Avenida" />
 <zone points="44 36 56 36 56 60 44 60" color="gray" />
 <box id="espira" x="45" y="43" w="10" h="5" color="orange" label="Espira" />
-<box id="coche" x="47" y="50" w="6" h="8" color="blue" label="Lucía" />
-<circle id="lateral" x="61" y="39" r="2.5" color="red" label="Su semáforo" />
-<circle id="avenida" x="38" y="20" r="2.5" color="green" label="Semáforo de la avenida" />
+<icon id="coche" kind="car" x="50" y="54" size="8" color="blue" label="Lucía" />
+<icon id="lateral" kind="signal" x="63" y="40" size="7" color="red" label="Su semáforo" />
+<icon id="avenida" kind="signal" x="36" y="17" size="7" color="green" label="Semáforo de la avenida" />
 <box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
 <arrow id="aviso" points="espira.right controlador.left" color="orange" dashed="yes" />
-<arrow id="orden" points="controlador.top-left lateral@34" color="gray" dashed="yes" />
-<show move="coche: 47 41">Lucía para en la calle lateral, justo encima de la espira.</show>
+<arrow id="orden" points="controlador.top-left lateral.right" color="gray" dashed="yes" />
+<show move="coche: 50 45.5">Lucía para en la calle lateral, justo encima de la espira.</show>
 <show items="aviso" pulse="espira" flow="aviso">La espira nota el metal del coche y avisa al controlador.</show>
 <show set="avenida: yellow" ask="Nadie viene por la avenida. ¿Qué hace el controlador?">Nadie espera en la avenida: el controlador le pasa el amarillo.</show>
 <show items="orden" flow="orden" set="avenida: red; lateral: green">Avenida en rojo y verde para Lucía: 5 segundos en vez de 60.</show>
-<show move="coche: 47 30 47 2">Lucía cruza; el controlador vuelve a mirar la espira.</show>
+<show move="coche: 50 30 50 4">Lucía cruza; el controlador vuelve a mirar la espira.</show>
 </figure>
 
 Ese mirar y decidir tiene nombre.

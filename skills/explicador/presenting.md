@@ -303,16 +303,16 @@ A `<figure>` places a few shapes on a grid 100 wide and 60 high (`size="W H"` ch
 <figure title="La gota separa la luz y la devuelve a tu ojo" arc="answer">
 <circle id="gota" x="60" y="24" r="14" color="blue" />
 <label x="84" y="8" color="blue">Gota de lluvia</label>
-<circle id="sol" x="6" y="12" r="4" color="yellow" label="Sol" />
-<circle id="ojo" x="43.6" y="55.1" r="2" label="Tu ojo" />
+<icon id="sol" kind="sun" x="6" y="12" size="8" color="orange" label="Sol" />
+<icon id="ojo" kind="eye" x="43.6" y="55.1" size="5" label="Tu ojo" />
 <arrow id="luz" points="sol.right gota@239.5" label="Luz blanca" />
 <normal id="normal" at="gota@239.5" label="Normal" />
 <arrow id="dentro" points="gota@239.5 gota@338.8" color="gray" label="Se desvía" />
 <arrow id="rebote" points="gota@338.8 gota@78.1" color="gray" label="Rebota" />
 <normal id="normal2" at="gota@78.1" />
-<arrow id="rojo" points="gota@78.1 ojo@318" color="red" />
+<arrow id="rojo" points="gota@78.1 ojo.top-right" color="red" />
 <arrow id="violeta" points="gota@80.5 53.2 45.6" color="violet" />
-<arrow id="linea" points="ojo.center 95 55.1" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
+<arrow id="linea" points="ojo.right 95 55.1" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
 <angle id="angulo" at="ojo.center" from="95 55.1" to="gota@78.1" color="red" label="42°" />
 <show items="sol luz">La luz blanca del Sol llega a la gota.</show>
 <show items="normal dentro">Al entrar, el agua la desvía respecto a la normal, cada color un poco distinto.</show>
@@ -329,18 +329,21 @@ A show also changes what is already drawn, as it changes in reality: `move="car:
 <zone points="0 24 100 24 100 36 0 36" color="gray" label="Avenida" />
 <zone points="44 36 56 36 56 60 44 60" color="gray" />
 <box id="espira" x="45" y="43" w="10" h="5" color="orange" label="Espira" />
-<box id="coche" x="47" y="50" w="6" h="8" color="blue" label="Lucía" />
-<circle id="lateral" x="61" y="39" r="2.5" color="red" label="Su semáforo" />
-<circle id="avenida" x="38" y="20" r="2.5" color="green" label="Semáforo de la avenida" />
+<icon id="coche" kind="car" x="50" y="54" size="8" color="blue" label="Lucía" />
+<icon id="lateral" kind="signal" x="63" y="40" size="7" color="red" label="Su semáforo" />
+<icon id="avenida" kind="signal" x="36" y="17" size="7" color="green" label="Semáforo de la avenida" />
 <box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
 <arrow id="aviso" points="espira.right controlador.left" color="orange" dashed="yes" />
-<show move="coche: 47 41">Lucía para en la calle lateral, justo encima de la espira.</show>
+<arrow id="orden" points="controlador.top-left lateral.right" color="gray" dashed="yes" />
+<show move="coche: 50 45.5">Lucía para en la calle lateral, justo encima de la espira.</show>
 <show items="aviso" pulse="espira" flow="aviso">La espira nota el metal del coche y avisa al controlador.</show>
 <show set="avenida: yellow" ask="Nadie viene por la avenida. ¿Qué hace el controlador?">Nadie espera en la avenida: el controlador le pasa el amarillo.</show>
-<show set="avenida: red; lateral: green">Avenida en rojo y verde para Lucía: 5 segundos en vez de 60.</show>
-<show move="coche: 47 30 47 2">Lucía cruza; el controlador vuelve a mirar la espira.</show>
+<show items="orden" flow="orden" set="avenida: red; lateral: green">Avenida en rojo y verde para Lucía: 5 segundos en vez de 60.</show>
+<show move="coche: 50 30 50 4">Lucía cruza; el controlador vuelve a mirar la espira.</show>
 </figure>
 ```
+
+Draw recognizable things with an `<icon>` (F34) rather than a circle that stands for them: `sun`, `eye`, `person`, `car`, `drop`, `house`, `tree`, `signal` (it lights the lamp of its color), `battery`, `magnet`, `cloud`, `factory`, `phone`, `server`, `coin`, `heart`, `leaf`, `bulb`, `clock`, `lock`. Draw what is round as it is with an `<arc>` (a rainbow's bow is six arcs around the shadow of your head, red outside), and a length with a `<measure>` (`<measure from="a.right" to="b.left">80 m</measure>`).
 
 Keep a figure to what explains: 5–20 shapes, 2–6 `<show>`s, labels of one to four words. A scene about a physical thing usually has one figure as its `answer`, after the example and the concept it needs.
 

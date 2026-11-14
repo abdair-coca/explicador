@@ -10,10 +10,14 @@ export function anchorOf(shape: FigureShape): Point {
       return [shape.x, shape.y];
     case 'arrow':
     case 'zone':
+    case 'measure':
       return shape.points[0] ?? [0, 0];
     case 'angle':
     case 'normal':
       return shape.at;
+    case 'icon':
+    case 'arc':
+      return [shape.x, shape.y];
   }
 }
 
@@ -26,6 +30,9 @@ export const anchorSides: Record<FigureShape['kind'], readonly string[]> = {
   zone: ['center'],
   label: ['center'],
   angle: ['center'],
+  icon: ['center', 'left', 'right', 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+  arc: ['center', 'start', 'middle', 'end'],
+  measure: ['start', 'middle', 'end'],
 };
 
 /** `drop.left`, `drop@200`, `ray.end`: the shape's id, then a side or an angle in degrees. */
@@ -50,7 +57,7 @@ const half = (points: readonly Point[]): Point => {
  */
 export function pointOn(shape: FigureShape, side: string | undefined, degrees?: number): Point | undefined {
   if (degrees !== undefined) {
-    if (shape.kind !== 'circle') return undefined;
+    if (shape.kind !== 'circle' && shape.kind !== 'arc') return undefined;
     const a = (degrees * Math.PI) / 180;
     return [shape.x + shape.r * Math.cos(a), shape.y + shape.r * Math.sin(a)];
   }
@@ -86,12 +93,31 @@ export function pointOn(shape: FigureShape, side: string | undefined, degrees?: 
       return [shape.x, shape.y];
     case 'angle':
       return shape.at;
+    case 'icon': {
+      const h = shape.size / 2;
+      return pointOn({ kind: 'box', x: shape.x - h, y: shape.y - h, w: shape.size, h: shape.size, color: shape.color, appear: 0 }, side);
+    }
+    case 'arc': {
+      if (side === 'center') return [shape.x, shape.y];
+      const span = arcSpan(shape.from, shape.to);
+      const degrees = side === 'start' ? shape.from : side === 'end' ? shape.from + span : shape.from + span / 2;
+      return pointOn(shape, undefined, degrees);
+    }
+    case 'measure':
+      return side === 'start' ? shape.points[0] : side === 'end' ? shape.points[1] : half(shape.points);
   }
+}
+
+/** How many degrees an arc turns, clockwise on screen, from `from` to `to` (a full turn when they are equal). */
+export function arcSpan(from: number, to: number): number {
+  const span = (((to - from) % 360) + 360) % 360;
+  return span === 0 ? 360 : span;
 }
 
 /** The outward direction of a surface at a named point: a circle's radius, a box side's perpendicular (F33). */
 export function surfaceNormal(shape: FigureShape, side: string | undefined, degrees?: number): Point | undefined {
-  if (shape.kind === 'circle') {
+  if (shape.kind === 'circle' || shape.kind === 'arc') {
+    if (shape.kind === 'arc' && degrees === undefined) return undefined;
     const p = pointOn(shape, side, degrees);
     if (!p || side === 'center') return undefined;
     const l = Math.hypot(p[0] - shape.x, p[1] - shape.y);

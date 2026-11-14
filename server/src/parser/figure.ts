@@ -5,9 +5,9 @@
 import type { Element } from './reader.ts';
 import { ANCHOR, anchorOf, anchorSides, pointOn, surfaceNormal } from './figureAnchor.ts';
 import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, type Report } from './common.ts';
-import { arrowHeads, figureColors, type ArrowHead, type FigureBlock, type FigureColor, type FigureMove, type FigureSet, type FigureShape, type FigureShow, type FigureState, type Point } from './types.ts';
+import { arrowHeads, figureColors, figureIcons, type ArrowHead, type FigureIcon, type FigureBlock, type FigureColor, type FigureMove, type FigureSet, type FigureShape, type FigureShow, type FigureState, type Point } from './types.ts';
 
-export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'normal', 'label'] as const;
+export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'normal', 'icon', 'arc', 'measure', 'label'] as const;
 const spec = (name: string) => catalog[name] ?? { attrs: {} };
 const NUMBER = /^-?\d+(?:\.\d+)?$/;
 const offsetOf = (element: Element, attr: string): number => element.attrs.get(attr)?.offset ?? element.offset;
@@ -89,7 +89,7 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
 
   for (const child of children.filter((c) => (shapeTags as readonly string[]).includes(c.name))) {
     const s = readAttrs(child, spec(child.name), report);
-    if (child.name !== 'label' && !child.selfClosing) report(child.offset, `<${child.name}> must be self-closing: <${child.name} … />`);
+    if (child.name !== 'label' && child.name !== 'measure' && !child.selfClosing) report(child.offset, `<${child.name}> must be self-closing: <${child.name} … />`);
     const color = readEnum<FigureColor>(s.color, figureColors, 'ink', 'color', child, report);
     const label = s.label === undefined ? undefined : checkText(s.label, 'label', limits.figureLabelLength, child, report);
     const common = { ...(label ? { label } : {}), color, appear: 0 };
@@ -134,6 +134,32 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
         const end = (k: number): Point => [x + (direction[0] * length * k) / 2, y + (direction[1] * length * k) / 2];
         shape = { kind: 'normal', at: found.at, points: [end(-1), end(1)], ...common, color: s.color === undefined ? 'gray' : color };
       }
+    } else if (child.name === 'icon') {
+      const icon = s.kind === undefined ? undefined : readEnum<FigureIcon>(s.kind, figureIcons, 'sun', 'kind', child, report);
+      const x = number(s.x, 'x', child);
+      const y = number(s.y, 'y', child);
+      const size = s.size === undefined ? 8 : number(s.size, 'size', child, 2);
+      if (icon && x !== undefined && y !== undefined && size !== undefined && inside([x, y], 'x', child)) shape = { kind: 'icon', icon, x, y, size, ...common };
+    } else if (child.name === 'arc') {
+      const x = number(s.x, 'x', child);
+      const y = number(s.y, 'y', child);
+      const r = number(s.r, 'r', child, 0.5);
+      const from = number(s.from, 'from', child);
+      const to = number(s.to, 'to', child);
+      const head = readEnum<ArrowHead>(s.head, arrowHeads, 'none', 'head', child, report);
+      if (x !== undefined && y !== undefined && r !== undefined && from !== undefined && to !== undefined) shape = { kind: 'arc', x, y, r, from, to, head, ...common };
+    } else if (child.name === 'measure') {
+      const ends = [point(s.from, 'from', child), point(s.to, 'to', child)];
+      const text = narrationOf(child, report);
+      if (text.length > limits.figureLabelLength) report(child.offset, `A <measure> says its length in up to ${limits.figureLabelLength} characters`);
+      const offset = s.offset === undefined ? 0 : number(s.offset, 'offset', child);
+      const [a, b] = ends;
+      if (a && b && (a[0] !== b[0] || a[1] !== b[1]) && offset !== undefined && text) {
+        // Moved aside by `offset`, perpendicular to the line (to its left as it runs from `from` to `to`).
+        const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const n: Point = [((b[1] - a[1]) / l) * offset, (-(b[0] - a[0]) / l) * offset];
+        shape = { kind: 'measure', points: [[a[0] + n[0], a[1] + n[1]], [b[0] + n[0], b[1] + n[1]]], ...common, label: text };
+      } else if (a && b && a[0] === b[0] && a[1] === b[1]) report(child.offset, '<measure> needs "from" and "to" apart');
     } else if (child.name === 'label') {
       const x = number(s.x, 'x', child);
       const y = number(s.y, 'y', child);
@@ -236,8 +262,8 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     }
     const pulses = list(s.pulse, 'pulse');
     const flows = list(s.flow, 'flow').filter((index) => {
-      if (shapes[index]?.kind === 'arrow') return true;
-      report(offsetOf(child, 'flow'), `"flow" sends a dot along an <arrow>; "${shapes[index]?.id ?? ''}" is a <${shapes[index]?.kind ?? ''}>`);
+      if (shapes[index]?.kind === 'arrow' || shapes[index]?.kind === 'arc') return true;
+      report(offsetOf(child, 'flow'), `"flow" sends a dot along an <arrow> or an <arc>; "${shapes[index]?.id ?? ''}" is a <${shapes[index]?.kind ?? ''}>`);
       return false;
     });
     if (items.length + moves.length + sets.length + hides.length + pulses.length + flows.length === 0) {
@@ -249,7 +275,7 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     states.push(state);
   });
 
-  if (shapes.length === 0) report(element.offset, '<figure> needs at least one shape: <circle>, <box>, <arrow>, <angle>, <zone>, <normal> or <label>');
+  if (shapes.length === 0) report(element.offset, '<figure> needs at least one shape: <circle>, <box>, <arrow>, <angle>, <zone>, <normal>, <icon>, <arc>, <measure> or <label>');
   if (shapes.length > limits.figureShapes) report(element.offset, `<figure> has more than ${limits.figureShapes} shapes`);
   if (shows.length > limits.figureShows) report(element.offset, `<figure> has more than ${limits.figureShows} <show>s`);
   if (shapes.length > 0 && shapes.every((shape) => shape.appear > 0)) report(element.offset, 'Every shape waits for a <show>: leave the setting (what is there from the start) out of the <show>s');

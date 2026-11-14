@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { parseExl } from '../../server/src/parser/index.ts';
 import type { Block, FigureBlock } from '../../server/src/scene.ts';
-import { angleArc, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { iconPaths, litLamp } from '../src/lesson/figureIcons.ts';
+import { figureIcons } from '../../server/src/parser/types.ts';
+import { angleArc, arcPath, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
 import { stripOf } from '../src/lesson/traceShape.ts';
 import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
@@ -61,6 +63,19 @@ describe('figure geometry', () => {
     });
     assert.equal(normal?.path, 'M50 24 L50 36');
     assert.ok(normal?.labelAt && Math.abs(normal.labelAt[0] - 50) > 3, 'beside the line, not on it');
+  });
+
+  it('has line art for every pictogram, and lights a signal by its color (F34)', () => {
+    for (const icon of figureIcons) assert.ok((iconPaths[icon] ?? []).length > 0, icon);
+    assert.deepEqual([litLamp('red'), litLamp('orange'), litLamp('yellow'), litLamp('green'), litLamp('blue')], [0, 1, 1, 2, undefined]);
+  });
+
+  it('draws arcs clockwise, a full circle in two halves, and measures with a tick at each end', () => {
+    const arc = { kind: 'arc' as const, x: 50, y: 50, r: 10, from: 180, to: 360, head: 'none' as const, color: 'red' as const, appear: 0 };
+    assert.equal(arcPath(arc), 'M40 50 A10 10 0 0 1 60 50');
+    assert.equal(arcPath({ ...arc, from: 0, to: 270 }), 'M60 50 A10 10 0 1 1 50 40');
+    assert.equal(arcPath({ ...arc, from: 0, to: 0 }), 'M60 50 A10 10 0 1 1 40 50 A10 10 0 1 1 60 50');
+    assert.equal(measurePath([[10, 10], [30, 10]]), 'M10 10 L30 10 M10 11.2 L10 8.8 M30 11.2 L30 8.8');
   });
 
   it('draws an angle the short way round, with its label along the bisector', () => {
@@ -126,7 +141,7 @@ describe('figure changes (F32)', () => {
     assert.deepEqual(touchedBy(undefined).size, 0);
     // The car ends past the crossing, the side light green, the avenue's red.
     const last = block.states.at(-1);
-    assert.deepEqual(last?.[id('coche')]?.offset, [0, -48]);
+    assert.deepEqual(last?.[id('coche')]?.offset, [0, -50]);
     assert.equal(last?.[id('lateral')]?.color, 'green');
     assert.equal(last?.[id('avenida')]?.color, 'red');
   });

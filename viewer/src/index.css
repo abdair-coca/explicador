@@ -1066,6 +1066,16 @@ body {
 .fig-arrow.dashed { stroke-dasharray: 1.6 1.2; }
 .fig-angle { stroke-width: 0.45; }
 .fig-normal { fill: none; stroke-width: 0.35; stroke-dasharray: 0.9 0.8; }
+.fig-arc { fill: none; stroke-width: 0.8; }
+.fig-measure { fill: none; stroke-width: 0.3; }
+.fig-icon { fill: none; stroke-width: 1.7; }
+.fig-icon .fig-icon-back { fill: var(--card); stroke: none; }
+.fig-icon path { fill: none; }
+.fig-icon.signal path { stroke: var(--foreground); }
+.fig-icon .fig-lamp { fill: none; stroke: color-mix(in oklab, var(--fig) 35%, var(--card)); stroke-width: 1.2; }
+.fig-icon .fig-lamp.lit { fill: var(--fig); stroke: var(--fig); }
+.fig-item.now .fig-icon { stroke-width: 2.2; }
+.fig-item.now .fig-arc { stroke-width: 1.1; }
 .fig-shape { transition: stroke 0.5s, fill 0.5s, stroke-width 0.3s; }
 .fig-item { transition: opacity 0.5s; }
 .fig-item.gone { opacity: 0; pointer-events: none; }

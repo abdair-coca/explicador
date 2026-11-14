@@ -682,7 +682,8 @@ type Shape = FigureBlock['shapes'][number];
 const nameOf = (shape: Shape, i: number): string => (shape.id ? `"${shape.id}"` : `shape ${i + 1}`);
 
 /** Distance from a point to the edge of a circle or a box. */
-function edgeDistance(shape: Shape, [x, y]: [number, number]): number | undefined {
+function edgeDistance(input: Shape, [x, y]: [number, number]): number | undefined {
+  const shape = asBox(input);
   if (shape.kind === 'circle') return Math.abs(Math.hypot(x - shape.x, y - shape.y) - shape.r);
   if (shape.kind !== 'box') return undefined;
   const dx = Math.max(shape.x - x, 0, x - (shape.x + shape.w));
@@ -691,8 +692,14 @@ function edgeDistance(shape: Shape, [x, y]: [number, number]): number | undefine
   return Math.min(x - shape.x, shape.x + shape.w - x, y - shape.y, shape.y + shape.h - y);
 }
 
-const covers = (shape: Shape, [x, y]: [number, number]): boolean =>
-  shape.kind === 'circle' ? Math.hypot(x - shape.x, y - shape.y) < shape.r : shape.kind === 'box' ? x > shape.x && x < shape.x + shape.w && y > shape.y && y < shape.y + shape.h : false;
+/** A pictogram counts as the box it is drawn in. */
+const asBox = (shape: Shape): Shape =>
+  shape.kind === 'icon' ? { kind: 'box', x: shape.x - shape.size / 2, y: shape.y - shape.size / 2, w: shape.size, h: shape.size, color: shape.color, appear: shape.appear, ...(shape.id ? { id: shape.id } : {}) } : shape;
+
+const covers = (input: Shape, [x, y]: [number, number]): boolean => {
+  const shape = asBox(input);
+  return shape.kind === 'circle' ? Math.hypot(x - shape.x, y - shape.y) < shape.r : shape.kind === 'box' ? x > shape.x && x < shape.x + shape.w && y > shape.y && y < shape.y + shape.h : false;
+};
 
 /**
  * A figure's geometry is true (F33): an arrow that ends near a shape ends on it, an angle measures the degrees its label
@@ -712,7 +719,8 @@ export function figureWarnings(blocks: Block[]): string[] {
             const d = edgeDistance(other, end);
             if (d === undefined || d < 0.25 || d >= NEAR_MISS) return;
             // An arrow that starts or ends at a shape's middle means it (a line from the eye), not a miss.
-            const middle: [number, number] = other.kind === 'circle' ? [other.x, other.y] : other.kind === 'box' ? [other.x + other.w / 2, other.y + other.h / 2] : end;
+            const box = asBox(other);
+            const middle: [number, number] = box.kind === 'circle' ? [box.x, box.y] : box.kind === 'box' ? [box.x + box.w / 2, box.y + box.h / 2] : end;
             if (Math.hypot(end[0] - middle[0], end[1] - middle[1]) < 0.25) return;
             const hint =
               other.kind === 'circle'
@@ -733,8 +741,8 @@ export function figureWarnings(blocks: Block[]): string[] {
           if (Math.abs(drawn - wanted) > ANGLE_SLACK) warnings.push(`In ${at}, the angle ${nameOf(shape, i)} says ${said[0]} but is drawn at ${Math.round(drawn)}°: move its "from" or "to" so the picture is true.`);
         }
       }
-      if ((shape.kind === 'circle' || shape.kind === 'box') && shape.label) {
-        const middle: [number, number] = shape.kind === 'circle' ? [shape.x, shape.y] : [shape.x + shape.w / 2, shape.y + shape.h / 2];
+      if ((shape.kind === 'circle' || shape.kind === 'box' || shape.kind === 'icon') && shape.label) {
+        const middle: [number, number] = shape.kind === 'box' ? [shape.x + shape.w / 2, shape.y + shape.h / 2] : [shape.x, shape.y];
         const over = block.shapes.findIndex((other, j) => j > i && other.appear <= shape.appear && covers(other, middle));
         const other = block.shapes[over];
         if (other) warnings.push(`In ${at}, ${nameOf(other, over)} covers the middle of ${nameOf(shape, i)} and hides its label "${shape.label}": move one of them.`);

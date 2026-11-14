@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useFirstVisible } from './hooks';
 import { ASK_MS, AskCard } from './AskCard';
 import { figurePartsOf, labelSize, placeFigure, touchedBy, type Placed } from './figureGeometry';
+import { iconPaths, litLamp, signalLamps } from './figureIcons';
 
 /** How much wider than its grid a figure may be drawn, in pixels per unit. */
 const MAX_PX_PER_UNIT = 12;
@@ -44,7 +45,32 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
       );
     case 'angle':
     case 'normal':
+    case 'measure':
       return <path className={className} d={path} />;
+    case 'arc':
+      return (
+        <path
+          className={className}
+          d={path}
+          markerEnd={shape.head === 'none' ? undefined : `url(#${marker}-${color})`}
+          markerStart={shape.head === 'both' ? `url(#${marker}-${color})` : undefined}
+        />
+      );
+    case 'icon': {
+      // Line art in its 24 × 24 box, scaled to `size` and centered on the shape's point.
+      const scale = shape.size / 24;
+      const lit = shape.icon === 'signal' ? litLamp(color) : undefined;
+      return (
+        <g className={cn(className, 'fig-icon-art', shape.icon === 'signal' && 'signal')} transform={`translate(${shape.x - shape.size / 2} ${shape.y - shape.size / 2}) scale(${scale})`}>
+          <rect className="fig-icon-back" x="1" y="1" width="22" height="22" rx="6" />
+          {iconPaths[shape.icon].map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+          {shape.icon === 'signal' &&
+            signalLamps.map((lamp, i) => <circle key={i} className={cn('fig-lamp', i === lit && `lit fig-${lamp.color}`)} cx="12" cy={lamp.cy} r="2.4" />)}
+        </g>
+      );
+    }
     case 'label':
       return null;
   }
@@ -109,8 +135,8 @@ export function FigureView({ block, shown }: { block: FigureBlock; shown?: numbe
     const was = block.states[before] ?? [];
     // What appears: lines draw themselves, areas grow in, labels rise.
     const fresh = show.items.map(group).filter((g): g is SVGGElement => g !== null);
-    const lines = fresh.flatMap((g) => [...g.querySelectorAll('.fig-arrow, .fig-angle, .fig-normal')]);
-    const solids = fresh.flatMap((g) => [...g.querySelectorAll('.fig-circle, .fig-box, .fig-zone')]);
+    const lines = fresh.flatMap((g) => [...g.querySelectorAll('.fig-arrow, .fig-angle, .fig-normal, .fig-arc, .fig-measure')]);
+    const solids = fresh.flatMap((g) => [...g.querySelectorAll('.fig-circle, .fig-box, .fig-zone, .fig-icon')]);
     const labels = fresh.flatMap((g) => [...g.querySelectorAll('.fig-label')]);
     if (solids.length > 0) tweens.push(gsap.from(solids, { scale: 0.4, autoAlpha: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.pop, stagger: 0.08 }));
     if (lines.length > 0) tweens.push(gsap.fromTo(lines, { drawSVG: '0%' }, { drawSVG: '100%', duration: dur.slow, ease: ease.draw, stagger: 0.15 }));
@@ -139,7 +165,7 @@ export function FigureView({ block, shown }: { block: FigureBlock; shown?: numbe
     }
     for (const index of show.flows) {
       const g = group(index);
-      const path = g?.querySelector<SVGPathElement>('.fig-arrow');
+      const path = g?.querySelector<SVGPathElement>('.fig-arrow, .fig-arc');
       const dot = g?.querySelector('.fig-dot');
       if (!path || !dot) continue;
       tweens.push(

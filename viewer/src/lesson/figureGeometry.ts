@@ -1,6 +1,7 @@
 // Where a figure's pieces go (F31): the path of each arrow and angle, and where each label sits so it reads beside
 // its shape, inside the figure. Pure, so it is tested without a browser.
 import type { FigureBlock, FigureShape, Point } from '../../../server/src/scene.ts';
+import { arcSpan, pointOn } from '../../../server/src/parser/figureAnchor.ts';
 
 /** Size of a label's text, in grid units: about 30 px on a slide 100 units wide. */
 export const LABEL_SIZE = 2.6;
@@ -94,6 +95,21 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
       const n = shape.points.length;
       return [[shape.points.reduce((sum, p) => sum + p[0], 0) / n, shape.points.reduce((sum, p) => sum + p[1], 0) / n]];
     }
+    case 'icon': {
+      const r = shape.size / 2;
+      const side = labelBox([0, 0], lines, size).x1 + r + 1;
+      return [[shape.x, shape.y + r + size * 1.1], [shape.x, shape.y - r - size * 0.9], [shape.x + side, shape.y], [shape.x - side, shape.y]];
+    }
+    case 'arc': {
+      const middle = shape.from + arcSpan(shape.from, shape.to) / 2;
+      const box = labelBox([0, 0], lines, size);
+      const reach = Math.max(box.x1, box.y1) + 0.6;
+      return [shape.r + reach, shape.r - reach].map((d): Point => {
+        const a = (middle * Math.PI) / 180;
+        return [shape.x + d * Math.cos(a), shape.y + d * Math.sin(a)];
+      });
+    }
+    case 'measure':
     case 'normal':
     case 'arrow': {
       // Beside its longest segments: the middle first, then nearer the ends, on the upper side first.
@@ -120,6 +136,28 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
   }
 }
 
+/** The path of an arc (F34): clockwise on screen from `from`, a full circle in two halves. */
+export function arcPath(shape: Extract<FigureShape, { kind: 'arc' }>): string {
+  const span = arcSpan(shape.from, shape.to);
+  const at = (degrees: number): Point => pointOn(shape, undefined, degrees) ?? [shape.x, shape.y];
+  const [sx, sy] = at(shape.from);
+  const r = round(shape.r);
+  if (span >= 360) {
+    const [hx, hy] = at(shape.from + 180);
+    return `M${round(sx)} ${round(sy)} A${r} ${r} 0 1 1 ${round(hx)} ${round(hy)} A${r} ${r} 0 1 1 ${round(sx)} ${round(sy)}`;
+  }
+  const [ex, ey] = at(shape.from + span);
+  return `M${round(sx)} ${round(sy)} A${r} ${r} 0 ${span > 180 ? 1 : 0} 1 ${round(ex)} ${round(ey)}`;
+}
+
+/** A measure's line with a short tick across each end (F34). */
+export function measurePath([a, b]: [Point, Point]): string {
+  const [dx, dy] = unit(b[0] - a[0], b[1] - a[1]);
+  const tick = 1.2;
+  const across = ([x, y]: Point): string => `M${round(x - dy * tick)} ${round(y + dx * tick)} L${round(x + dy * tick)} ${round(y - dx * tick)}`;
+  return `${pathOf([a, b])} ${across(a)} ${across(b)}`;
+}
+
 /** Each shape with its path and its label's place: inside the figure, and clear of the labels placed before it. */
 /** `size` is the labels' text size in grid units: larger when the figure is drawn small (a phone), so they stay readable. */
 export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'height'>, size = LABEL_SIZE): Placed[] {
@@ -141,7 +179,11 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
           ? pathOf(shape.points)
           : shape.kind === 'angle'
             ? angleArc(shape.at, shape.from, shape.to).path
-            : undefined;
+            : shape.kind === 'arc'
+              ? arcPath(shape)
+              : shape.kind === 'measure'
+                ? measurePath(shape.points)
+                : undefined;
     const text = shape.kind === 'label' ? shape.text : shape.label;
     const lines = text ? (shape.kind === 'label' ? [text] : wrapLabel(text)) : [];
     return { shape, lines, ...(path ? { path } : {}) };

@@ -31,9 +31,9 @@ Asked by the user on 2026-11-14: `<figure>` is to become the main component to e
 | The thing drawn as itself | a drop and rays | boxes "UI", "SERVICE" | F31 (`<figure>`, everyday kinds) |
 | What changes, changes on screen (a light turns green, a car crosses, a call travels) | nothing moves | nothing moves | **F32** movement and states (done: `examples/scenes/crossing.exl.md`) |
 | Geometry that is true (normals, rays that touch the drop, angles measured from the right line) | coordinates by hand, no normals | — | **F33** anchors and checks (done: the rainbow on true optics, with normals) |
-| Recognizable objects (Sun, eye, car, signal head) and the bow as an arc, a measured distance | circles | — | **F34** pictograms, arcs, measures |
+| Recognizable objects (Sun, eye, car, signal head) and the bow as an arc, a measured distance | circles | — | **F34** pictograms, arcs, measures (done: the Sun, the eye, the car, signal heads, the bow as arcs) |
 | Labels next to their parts, leaders when far, the step's parts lit and the rest dimmed | labels avoid each other only | — | **F35** clearer reading |
-| Several drops, each sending one color | one drop sends both | — | the rebuilt examples (F32–F35) |
+| Several drops, each sending one color | one drop sends both | — | the rebuilt examples (F32–F35); F34 adds the bow with drops on its red and violet arcs |
 | The final frame complete, readable as a static diagram | yes | — | kept in every phase |
 
 ## Sources

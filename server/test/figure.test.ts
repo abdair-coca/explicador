@@ -118,7 +118,7 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure(`${shapes}\n<show move="drop: 120 10">Away.</show>`)), /"move" 120 10 is outside the figure/);
     assert.match(errorsOf(figure(`${shapes}\n<show move="drop 10 10">Bad.</show>`)), /"move" is "id: …" pairs separated by ";"/);
     assert.match(errorsOf(figure(`${shapes}\n<show set="drop: pink">Pink.</show>`)), /Unknown set "pink"/);
-    assert.match(errorsOf(figure(`${shapes}\n<show flow="drop">Dot.</show>`)), /"flow" sends a dot along an <arrow>; "drop" is a <circle>/);
+    assert.match(errorsOf(figure(`${shapes}\n<show flow="drop">Dot.</show>`)), /"flow" sends a dot along an <arrow> or an <arc>; "drop" is a <circle>/);
     assert.match(errorsOf(figure(`${shapes}\n<show>Nothing.</show>`)), /A <show> needs something to show/);
   });
 
@@ -177,6 +177,40 @@ describe('<figure>', () => {
     assert.equal(warn(`${drop}\n<angle id="a" at="10 50" from="30 50" to="20 41" label="42°" />`), '');
     assert.match(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />`), /"car" covers the middle of "drop" and hides its label "Drop"/);
     assert.equal(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />\n<show items="car">Later.</show>`), '', 'it arrives later');
+  });
+
+  it('draws pictograms, arcs and measures, with their places (F34)', () => {
+    const block = blockOf(
+      figure(
+        [
+          '<icon id="sun" kind="sun" x="10" y="10" color="orange" label="Sun" />',
+          '<icon id="light" kind="signal" x="50" y="20" size="6" color="red" />',
+          '<arc id="bow" x="50" y="52" r="40" from="200" to="340" color="red" label="Bow" />',
+          '<arc id="orbit" x="80" y="30" r="10" from="0" to="0" head="end" />',
+          '<measure id="m" from="sun.right" to="light.left" offset="2">33 m</measure>',
+          '<arrow points="sun.bottom bow@270 bow.end" />',
+          '<show set="light: green" flow="orbit">Green.</show>',
+        ].join('\n'),
+      ),
+    );
+    const [sun, light, bow, orbit, measure, arrow] = block.shapes;
+    assert.ok(sun?.kind === 'icon' && light?.kind === 'icon' && bow?.kind === 'arc' && orbit?.kind === 'arc' && measure?.kind === 'measure' && arrow?.kind === 'arrow');
+    assert.deepEqual([sun.icon, sun.size, light.size, light.color], ['sun', 8, 6, 'red']);
+    assert.deepEqual([bow.from, bow.to, bow.head, orbit.head], [200, 340, 'none', 'end']);
+    assert.equal(measure.label, '33 m');
+    // From (14, 10) to (47, 20), moved 2 to the left of the way it runs.
+    const [[ax, ay], [bx, by]] = measure.points.map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100]) as [[number, number], [number, number]];
+    assert.ok(Math.abs(ax - 14.58) < 0.01 && Math.abs(ay - 8.09) < 0.01 && Math.abs(bx - 47.58) < 0.01 && Math.abs(by - 18.09) < 0.01, JSON.stringify(measure.points));
+    assert.deepEqual(arrow.points.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]), [[10, 14], [50, 12], [87.6, 38.3]]);
+    assert.equal(block.states[1]?.[1]?.color, 'green');
+    assert.deepEqual(block.shows[0]?.flows, [3]);
+  });
+
+  it('refuses unknown pictograms and measures without a length or a distance', () => {
+    assert.match(errorsOf(figure('<icon kind="dragon" x="10" y="10" />')), /Unknown kind "dragon"; use sun, eye, person, car/);
+    assert.match(errorsOf(figure('<measure from="1 1" to="1 1">0 m</measure>')), /<measure> needs "from" and "to" apart/);
+    assert.match(errorsOf(figure('<measure from="1 1" to="9 1"></measure>')), /<measure> needs narration text/);
+    assert.match(errorsOf(figure('<icon id="i" kind="eye" x="10" y="10" />\n<arrow points="1 1 i@30" />')), /"i@30" is no place on <icon> "i"/);
   });
 
   it('keeps to its limits', () => {

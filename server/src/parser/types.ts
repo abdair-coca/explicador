@@ -687,6 +687,12 @@ export interface SystemBlock {
 export const figureColors = ['ink', 'red', 'orange', 'yellow', 'green', 'blue', 'violet', 'gray'] as const;
 export type FigureColor = (typeof figureColors)[number];
 export const arrowHeads = ['end', 'none', 'both'] as const;
+/** The pictograms a figure may use (F34): a closed set, drawn as line art in the viewer's style. */
+export const figureIcons = [
+  'sun', 'eye', 'person', 'car', 'drop', 'house', 'tree', 'signal', 'battery', 'magnet',
+  'cloud', 'factory', 'phone', 'server', 'coin', 'heart', 'leaf', 'bulb', 'clock', 'lock',
+] as const;
+export type FigureIcon = (typeof figureIcons)[number];
 export type ArrowHead = (typeof arrowHeads)[number];
 /** A point on a figure's grid: across, then down. */
 export type Point = [number, number];
@@ -710,6 +716,12 @@ export type FigureShape =
   | (ShapeBase & { kind: 'zone'; points: Point[] })
   /** The normal of a surface at `at` (F33): a dashed line across it, through `points` (its two ends). */
   | (ShapeBase & { kind: 'normal'; at: Point; points: [Point, Point] })
+  /** A line pictogram from a closed set (F34), centered on x y and `size` wide. */
+  | (ShapeBase & { kind: 'icon'; icon: FigureIcon; x: number; y: number; size: number })
+  /** Part of a circle (F34) from `from` to `to` degrees (0 right, 90 down), clockwise on screen. */
+  | (ShapeBase & { kind: 'arc'; x: number; y: number; r: number; from: number; to: number; head: ArrowHead })
+  /** A dimension line between two points (F34), its `label` the length it measures. */
+  | (ShapeBase & { kind: 'measure'; points: [Point, Point] })
   | (Omit<ShapeBase, 'label'> & { kind: 'label'; x: number; y: number; text: string });
 
 /** A shape travelling along points (F32): its anchor (a circle's center, a box's corner…) goes through each, ending on the last. */
