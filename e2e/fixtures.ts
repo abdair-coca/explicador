@@ -139,10 +139,26 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
-/** Moves one part with the key and waits until the presentation is there; a wipe in progress swallows a key. */
+/**
+ * Moves one part with the key and waits until the presentation is there. A key pressed while a slide change plays
+ * (a wipe, or a view transition in WebKit) may be lost, so it waits for that to end first, and presses again if lost.
+ */
 async function step(page: Page, dialog: Locator, key: 'ArrowRight' | 'ArrowLeft'): Promise<string> {
   const before = (await dialog.getAttribute('data-position')) ?? '';
   for (let attempt = 0; attempt < 5; attempt += 1) {
+    // An observer, not expect's polling, which would wait up to its next interval after the change ends.
+    await dialog.evaluate(
+      (element) =>
+        new Promise<void>((resolve) => {
+          if (!element.hasAttribute('data-moving')) return resolve();
+          const observer = new MutationObserver(() => {
+            if (element.hasAttribute('data-moving')) return;
+            observer.disconnect();
+            resolve();
+          });
+          observer.observe(element, { attributes: true, attributeFilter: ['data-moving'] });
+        }),
+    );
     await page.keyboard.press(key);
     try {
       await expect(dialog).not.toHaveAttribute('data-position', before, { timeout: 1500 });

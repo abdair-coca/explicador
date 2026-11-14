@@ -124,16 +124,21 @@ function useIdle(active: boolean): boolean {
 
 type Travel = 'forward' | 'back';
 
-/** Changes the slide inside a view transition, so the old slide leaves and the new one enters in the direction of travel. */
-function moveSlide(travel: Travel, update: () => void): void {
+/**
+ * Changes the slide inside a view transition, so the old slide leaves and the new one enters in the direction of travel.
+ * Resolves once the slide has changed (WebKit waits for a transition in progress to end first).
+ */
+function moveSlide(travel: Travel, update: () => void): Promise<unknown> {
   if (!('startViewTransition' in document) || reducedMotion()) {
     update();
-    return;
+    return Promise.resolve();
   }
   document.documentElement.dataset.travel = travel;
   const transition = document.startViewTransition(() => flushSync(update));
   // A move made while this one plays skips it, and the browser rejects its promises: expected, not an error.
   for (const done of [transition.ready, transition.finished, transition.updateCallbackDone]) done.catch(() => {});
+  // Until the slide has changed, a key reads the old position and is lost; once changed, the next key may start.
+  return transition.updateCallbackDone;
 }
 
 /** A yellow wipe crosses the whole presenter; the slide changes while it covers everything. */
@@ -171,6 +176,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const stage = useRef<HTMLElement>(null);
   const wipe = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
+  const moves = useRef(0);
   const idle = useIdle(fullscreen);
   const slide = slides[Math.min(at.slide, slides.length - 1)];
   const atEnd = at.slide >= slides.length - 1 && at.part >= (slide?.parts ?? 1) - 1;
@@ -200,15 +206,25 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       }
       const travel: Travel = forward ? 'forward' : 'back';
       const update = (): void => setAt(next);
+      // "data-moving" marks the presenter while a slide change would lose a key: the browser tests wait for it to go.
+      // Set on the element, outside React, so marking it renders nothing.
+      const element = root.current;
+      moves.current += 1;
+      element?.setAttribute('data-moving', '');
+      const settle = (): void => {
+        moves.current -= 1;
+        if (moves.current === 0) element?.removeAttribute('data-moving');
+      };
       if (slides[next.slide]?.kind !== 'chapter') {
         if (forward) play('pop');
-        moveSlide(travel, update);
+        void moveSlide(travel, update).catch(() => {}).finally(settle);
         return;
       }
       play('whoosh');
       busy.current = true;
       void wipeTo(wipe.current, travel, update).finally(() => {
         busy.current = false;
+        settle();
       });
     },
     [at, slides],
