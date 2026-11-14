@@ -95,6 +95,15 @@ function blockLines(block: Block): string[] {
         ...block.members.filter((member) => member.desc).map(box),
       ];
     }
+    case 'annotated':
+      return [`## ${block.title}`, block.passage, ...block.notes.map((note, i) => `${i + 1}. "${note.quote}"${note.label ? ` (${note.label})` : ''}: ${clean(note.narration)}`)];
+    case 'argument':
+      return [
+        `## ${block.title}`,
+        `Claim: ${block.claim}`,
+        ...block.points.map((point) => `- ${point.side === 'support' ? 'For' : 'Against'}: ${point.label}: ${clean(point.narration)}${point.reply ? ` Reply: ${clean(point.reply)}` : ''}`),
+        ...(block.verdict ? [`Verdict: ${block.verdict}`] : []),
+      ];
     case 'system': {
       const label = new Map(block.factors.map((item) => [item.id, item.label]));
       const name = (id: string): string => label.get(id) ?? id;

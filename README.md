@@ -108,6 +108,7 @@ Claude writes scenes in **EXL**, a closed catalog of tags. There is no JavaScrip
 | `<space>`, `<cosine>`, `<value kind="vector">`, `<chapter stage>` | Vector spaces with their index, angles and nearest items, the cosine worked out step by step, embeddings as vectors, and a map of the whole process at each chapter |
 | `<structure>` | A tree, an organization chart or a file tree drawn as itself, changing state by state: members glide to their new places |
 | `<system>` | Causes and feedback: factors, signed links and the loops they close, with one change played through them link by link |
+| `<annotated>`, `<argument>` | A text read part by part, its quoted words marked as each note arrives; a claim weighed with its reasons, objections and a verdict |
 | `<brief>`, `arc` | Nothing: the plan every scene opens with (audience, question, one example, the misconception, the check, the terms) and each component's part of the narrative. The server refuses a scene without a brief and checks the order: the example before any rule or answer, the misconception corrected on a slide, terms and acronyms defined before use, a check at the end |
 
 The full format is in [`docs/EXL.md`](docs/EXL.md).

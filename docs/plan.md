@@ -333,3 +333,19 @@ Two forms of the brief still had no picture: a document read part by part (a lea
 - Parser tests for both tags (quotes found across line breaks, missing and overlapping quotes, limits; a claim, points in order, replies, a verdict) and for the form rule.
 - Viewer tests: the passage split into marked spans; parts and subtitles of both.
 - The example renders with no warnings and plays in every browser test; typecheck, lint, build, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase
+
+- **Tag names**: `<passage>` and `<note quote>` for the text and its notes; `<claim>`, `<support>`, `<objection reply>` and `<verdict>` for the argument. An argument's points keep the order the scene weighs them, so a reason and the objection that answers it can follow each other.
+- **A quote is found, not placed**: the parser matches its words with any whitespace between them and keeps their position, so a note never points at words the passage lacks; overlapping notes are refused, so each word belongs to one note at most.
+- **A passage quotes its source**: its words do not count when the term and acronym rules look for a term used before its card (a lease names its deposit before the scene can define it); the notes, which are the scene's own words, do.
+- **The form rule** uses the form → tags table (in `presenting.md` and `docs/EXL.md`); a scene with a brief and no component of its form gets one warning. The stdio test's sloppy scene now breaks 13 rules, so its 13th warning is checked in the cache, which keeps every warning (the result lists 12).
+- **On the page** both tags show everything at once, like `<compare>` and `<timeline>`; the step-by-step reading is Present's.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `<annotated>` and `<argument>` (`server/src/parser/forms.ts`, types, catalog, refs, subtitles, scene text), `formWarnings` and the form → tags table; `viewer/src/lesson/{Annotated,Argument}.tsx`, `annotatedSpans.ts`, Present and its subtitles, CSS; `examples/lease/lease.md` (a fictional lease) and `examples/scenes/lease.exl.md` (four clauses read note by note, two concept cards, the deposit against a fee, the decision to sign weighed point by point, and a check), with no warning; docs; screenshots in `docs/images/f27/`.
+2. **How it was tested**: `server/test/forms.test.ts` (7 tests: quotes across line breaks, missing and overlapping quotes, a missing passage, an argument read in order, its refusals, long narrations, the form rule, terms in a passage) and `viewer/test/forms.test.ts` (3: the passage cut into marked spans, the parts and subtitles of both); the new example in every browser test. typecheck, lint, build, `npm test` (server 277, viewer 176, evals 50) and `npm run e2e` (82 in Chromium) pass.
+3. **Seen in the browser**: each note turns its words yellow and rises beside the passage (below it on a phone, where the subtitle carries it); the argument fills its two columns point by point.
+4. **Limits**: a passage is plain text (no images or tables) of up to 3000 characters; on a phone a long passage pushes its notes below the slide, and the subtitle tells them.
+5. **Pending**: F28 (sources beyond code).

@@ -73,6 +73,20 @@ Every component says what it does for the brief's question with `arc`. The order
 - **One `contrast`, one `answer`, an end.** One slide sets the misconception against the fact; one answers the question; the last is a `check` or a `recap`. In a lesson, each chapter repeats example → idea → check, and the review is the recap.
 - **Titles are claims.** A title of one or two words ("Weights") is a label: say the slide's point.
 
+### Form → tags
+
+The brief's `form` picks the scene's main picture; `render_scene` warns when no component draws it.
+
+| Form (`<brief form>`) | The idea is… | Draw it with |
+|---|---|---|
+| `structure` | parts and how they relate or change | `<structure>`, `<arch>`, `<data>` |
+| `process` | something going through steps or states | `<flow>`, `<state>`, `<journey>`, `<trace>`, `<timeline>` |
+| `quantity` | amounts, scale and how they change | `<chart>`, `<calc>`, `<plot>`, `<stats>`, `<derive>`, `<matrix>`, `<threshold>`, `<scatter>`, `<space>`, `<cosine>` |
+| `system` | causes and feedback | `<system>` |
+| `annotated` | a document read part by part | `<annotated>` |
+| `argument` | a thesis with reasons and objections, or a decision | `<argument>`, `<compare>` |
+| `timeline` | events in order | `<timeline>`, `<journey>` |
+
 ### Two briefs
 
 A technical one, for a structure:
@@ -109,6 +123,8 @@ The fields are written in the user's language, like the rest of the scene.
 |---|---|---|
 | How does one real example change along the whole process? | `<trace>` with `kind` per value | the same example changes form; surviving pieces glide to their new place |
 | What are the parts and how do they connect? | `<arch>` (`<group>` for many parts) | boxes appear, then the arrows |
+| What does this text say, part by part? (a lease, a law, a page of an interface) | `<annotated>` with a `<note>` per part | the passage, each quoted part turning yellow as its note rises beside it |
+| Should we, or is it true? What speaks for it and against it? | `<argument>` | the claim, then each reason and objection with its reply, then the verdict |
 | What causes what, and what feeds back? (load and retries, prices and demand, an ecosystem) | `<system>` with a `<push>` and its `<effect>`s | factors on a ring, the loops marked R or B; each step draws its link and lights the factor it moves up or down |
 | How is it built, and how does it change, step by step? (a tree, an organization chart, a file tree) | `<structure>` with `<change>`s | the structure itself: each member glides to its new place, a new one grows out of its parent |
 | What happens, step by step? | `<flow>` | a token travels each arrow, step by step |

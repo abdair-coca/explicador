@@ -34,6 +34,8 @@ import { QuizView } from '../lesson/Quiz';
 import { ThresholdView } from '../lesson/Threshold';
 import { StructureView } from '../lesson/Structure';
 import { SystemView } from '../lesson/System';
+import { AnnotatedView } from '../lesson/Annotated';
+import { ArgumentView } from '../lesson/Argument';
 import { TimelineView } from '../lesson/Timeline';
 import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
@@ -503,6 +505,20 @@ function SlideView({ scene, slide, part, chapters, theme }: { scene: ScenePayloa
         <div className="mx-auto w-full max-w-6xl space-y-8">
           <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
           <TimelineView block={block} shown={part} />
+        </div>
+      );
+    case 'annotated':
+      return (
+        <div className="mx-auto w-full max-w-6xl space-y-5">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <AnnotatedView block={block} shown={part} />
+        </div>
+      );
+    case 'argument':
+      return (
+        <div className="mx-auto w-full max-w-5xl space-y-5">
+          <h2 className="slide-title w-fit text-3xl font-black tracking-tight">{block.title}</h2>
+          <ArgumentView block={block} shown={part} />
         </div>
       );
     case 'system':

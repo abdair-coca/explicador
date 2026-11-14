@@ -674,6 +674,44 @@ export interface SystemBlock {
   ref?: Ref;
 }
 
+/** A note on a passage: the words it points at (`start`–`end` in the passage) and what it says about them. */
+export interface AnnotatedNote {
+  quote: string;
+  start: number;
+  end: number;
+  label?: string;
+  narration: string;
+}
+
+/** A text read part by part (F27): a clause of a lease, an article of a law, a paragraph of a page. */
+export interface AnnotatedBlock {
+  type: 'annotated';
+  id: string;
+  title: string;
+  passage: string;
+  notes: AnnotatedNote[];
+  ref?: Ref;
+}
+
+/** A reason for the claim, or an objection to it with its reply. */
+export interface ArgumentPoint {
+  side: 'support' | 'objection';
+  label: string;
+  narration: string;
+  reply?: string;
+}
+
+/** A claim weighed point by point (F27): the reasons for it, the objections to it and their replies, and a verdict. */
+export interface ArgumentBlock {
+  type: 'argument';
+  id: string;
+  title: string;
+  claim: string;
+  points: ArgumentPoint[];
+  verdict?: string;
+  ref?: Ref;
+}
+
 /** A formula derived line by line; the viewer moves the symbols two lines share. */
 export interface DeriveBlock {
   type: 'derive';
@@ -759,7 +797,7 @@ export interface CosineBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock | SystemBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock | SystemBlock | AnnotatedBlock | ArgumentBlock;
 
 /**
  * What a component does in the scene's narrative (F24): poses the `question`, shows the brief's `example`, draws the

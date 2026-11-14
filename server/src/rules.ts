@@ -5,7 +5,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { isNotebookPath } from './files.ts';
 import { resolveInside } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
-import type { ArcPart, Block, ChapterBlock, Scene } from './scene.ts';
+import type { ArcPart, Block, BriefForm, ChapterBlock, Scene } from './scene.ts';
 import { slideWarnings } from './slides.ts';
 
 /** A subtitle is read while its part plays: about 20 words, never more than this. */
@@ -28,6 +28,7 @@ export function sceneWarnings(root: string, scene: Scene, refs: readonly string[
   return [
     ...briefWarnings(scene),
     ...arcWarnings(scene),
+    ...formWarnings(scene),
     ...termWarnings(scene),
     ...acronymWarnings(scene),
     ...titleWarnings(blocks),
@@ -85,10 +86,10 @@ export function keyWords(text: string): string[] {
 const UNSHOWN = new Set(['ref', 'id', 'type', 'kind', 'arc', 'code', 'op', 'role', 'theme', 'stage', 'group', 'parent', 'node', 'from', 'to', 'cluster']);
 
 /** Every text a block shows or narrates, in one string: titles, labels, narration, options, whys, notes. */
-function blockText(block: Block): string {
+function blockText(block: Block, skip: ReadonlySet<string> = UNSHOWN): string {
   const parts: string[] = [];
   const walk = (value: unknown, key: string): void => {
-    if (UNSHOWN.has(key)) return;
+    if (skip.has(key)) return;
     if (typeof value === 'string') parts.push(value);
     else if (Array.isArray(value)) value.forEach((item) => walk(item, ''));
     else if (value && typeof value === 'object') for (const [name, item] of Object.entries(value)) walk(item, name);
@@ -221,6 +222,29 @@ export function arcWarnings(scene: Scene): string[] {
   return warnings;
 }
 
+// The form ----------------------------------------------------------------------------------------------------------
+
+/** The components that draw each form of the brief (presenting.md, "Form → tags"). */
+export const formTags: Record<BriefForm, readonly Block['type'][]> = {
+  structure: ['structure', 'arch', 'data'],
+  process: ['flow', 'state', 'journey', 'trace', 'timeline'],
+  quantity: ['chart', 'calc', 'plot', 'stats', 'derive', 'matrix', 'threshold', 'scatter', 'space', 'cosine'],
+  system: ['system'],
+  annotated: ['annotated'],
+  argument: ['argument', 'compare'],
+  timeline: ['timeline', 'journey'],
+};
+
+/** A scene draws the form its brief names: a tree for a structure, a web of causes for a system. */
+export function formWarnings(scene: Scene): string[] {
+  const form = scene.brief?.form;
+  if (!form || scene.blocks.some((block) => formTags[form].includes(block.type))) return [];
+  return [`The brief's form is "${form}", but no component draws it: use ${formTags[form].map((tag) => `<${tag}>`).join(', ')} for the scene's main picture, or change the form.`];
+}
+
+/** What a block says in its own words: a passage quotes its source, so a term in it is the source's, not the scene's. */
+const OWN_WORDS = new Set([...UNSHOWN, 'passage']);
+
 // Terms and acronyms ---------------------------------------------------------------------------------------------------
 
 /** Lowercase words without accents, separated by single spaces: "TF-IDF" reads "tf idf". */
@@ -251,7 +275,7 @@ export function termWarnings(scene: Scene): string[] {
       undefinedTerms.push(`"${term}"`);
       continue;
     }
-    const first = shown.findIndex((block) => uses(blockText(block), term));
+    const first = shown.findIndex((block) => uses(blockText(block, OWN_WORDS), term));
     const block = shown[first];
     if (block && first < card) early.push(`"${term}" (in ${named(block)})`);
   }
@@ -289,7 +313,7 @@ export function acronymWarnings(scene: Scene): string[] {
   const defined = new Set<string>();
   const unknown = new Map<string, string>();
   for (const block of blocks) {
-    const text = block.type === 'markdown' ? block.text : blockText(block);
+    const text = block.type === 'markdown' ? block.text : blockText(block, OWN_WORDS);
     before += `\n${text}`;
     if (block.type === 'concept') for (const match of block.term.matchAll(ACRONYM)) defined.add(match[0]);
     if (!isComponent(block) && block.type !== 'chapter') continue;
@@ -534,6 +558,8 @@ export function subtitleWarnings(blocks: Block[]): string[] {
     else if (block.type === 'timeline') block.events.forEach((event) => check(`${at} event "${event.label}"`, event.narration));
     else if (block.type === 'structure') block.changes.forEach((change) => check(`${at} change "${change.label}"`, change.narration));
     else if (block.type === 'system') block.steps.forEach((step, i) => check(`${at} step ${i + 1}`, step.narration));
+    else if (block.type === 'annotated') block.notes.forEach((note, i) => check(`${at} note ${i + 1}`, note.narration));
+    else if (block.type === 'argument') block.points.forEach((point) => check(`${at} point "${point.label}"`, point.narration));
     else if (block.type === 'plot') block.marks.forEach((mark) => check(`${at} mark "${mark.label}"`, mark.narration));
     else if (block.type === 'matrix') block.focuses.forEach((focus, i) => check(`${at} highlight ${i + 1}`, focus.narration));
     else if (block.type === 'trace') block.values.forEach((value) => check(`${at} value "${value.label}"`, value.note));

@@ -559,7 +559,7 @@ export function buildThreshold(element: Element, ordinal: number, report: Report
 }
 
 /** A tag's body as Markdown: line breaks kept, the common indentation removed. Child tags are reported. */
-function markdownBody(element: Element, report: Report): string {
+export function markdownBody(element: Element, report: Report): string {
   const lines = element.children
     .map((c) => {
       if (c.kind === 'element') report(c.offset, `<${c.name}> is not allowed inside <${element.name}>`);

@@ -510,7 +510,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F24. Narrative arc and comprehension rules. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F25. Form "structure with states": `<structure>` (stop). Done 2026-11-14; outcome in `docs/plan.md`; stopped for the user's review of F23–F25.
 - [x] F26. Form "causal system": `<system>`. Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F27. Forms "annotated space" and "argument".
+- [x] F27. Forms "annotated space" and "argument". Done 2026-11-14; outcome in `docs/plan.md`.
 - [ ] F28. Sources beyond code.
 - [ ] F29. Interactivity that teaches.
 - [ ] F30. Measure the result (stop).
@@ -629,4 +629,5 @@ Open points:
 | F24 | done (2026-11-14) |
 | F25 | done (2026-11-14), stopped for the user's review |
 | F26 | done (2026-11-14) |
-| F27–F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F27 | done (2026-11-14) |
+| F28–F30 | planned (user, 2026-11-13); see `docs/plan.md` |

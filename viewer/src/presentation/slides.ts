@@ -81,6 +81,10 @@ function partsOf(block: Block): number {
       return block.states.length;
     case 'system':
       return 1 + block.steps.length;
+    case 'annotated':
+      return 1 + block.notes.length;
+    case 'argument':
+      return 1 + block.points.length + (block.verdict ? 1 : 0);
     default:
       return 1;
   }

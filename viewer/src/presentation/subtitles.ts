@@ -61,6 +61,10 @@ export function subtitleOf(block: Block | undefined, part: number): string | und
       return said(block.lines[part]?.note);
     case 'timeline':
       return said(block.events[part]?.narration);
+    case 'annotated':
+      return part > 0 ? said(block.notes[part - 1]?.narration) : undefined;
+    case 'argument':
+      return part > 0 ? said(block.points[part - 1]?.narration) : undefined;
     case 'system':
       return part > 0 ? said(block.steps[part - 1]?.narration) : undefined;
     case 'structure': {

@@ -14,6 +14,8 @@ import { QuizView } from '../lesson/Quiz';
 import { ThresholdScene } from '../lesson/Threshold';
 import { StructureScene } from '../lesson/Structure';
 import { SystemScene } from '../lesson/System';
+import { AnnotatedScene } from '../lesson/Annotated';
+import { ArgumentScene } from '../lesson/Argument';
 import { TimelineScene } from '../lesson/Timeline';
 import { JourneyScene } from '../lesson/Journey';
 import { StatsView } from '../lesson/Stats';
@@ -74,6 +76,10 @@ export function BlockView({ block }: { block: Block }) {
       return <StructureScene block={block} />;
     case 'system':
       return <SystemScene block={block} />;
+    case 'annotated':
+      return <AnnotatedScene block={block} />;
+    case 'argument':
+      return <ArgumentScene block={block} />;
     // A chapter only means something in the lesson layout, which draws its header.
     case 'chapter':
     // The theme dresses the page and the slides; it draws nothing in the flow.

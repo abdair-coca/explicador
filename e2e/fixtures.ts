@@ -32,6 +32,7 @@ export const examples: Example[] = [
   { name: 'rag', project: 'rag' },
   { name: 'search-tree', project: 'trees' },
   { name: 'cache-storm', project: 'cache' },
+  { name: 'lease', project: 'lease' },
 ];
 
 /**

@@ -25,6 +25,7 @@ import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildM
 import { buildBrief } from './brief.ts';
 import { buildStructure } from './structure.ts';
 import { buildSystem } from './system.ts';
+import { buildAnnotated, buildArgument } from './forms.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
   arcParts,
@@ -197,6 +198,8 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   cosine: buildCosine,
   structure: buildStructure,
   system: buildSystem,
+  annotated: buildAnnotated,
+  argument: buildArgument,
 };
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
@@ -484,6 +487,10 @@ function collectRefs(blocks: Block[]): string[] {
       case 'structure':
         add(block.ref);
         block.members.forEach((member) => add(member.ref));
+        break;
+      case 'annotated':
+      case 'argument':
+        add(block.ref);
         break;
       case 'system':
         add(block.ref);

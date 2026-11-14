@@ -180,18 +180,19 @@ describe('MCP server over stdio', () => {
     assert.equal(rendered.isError, false, 'warnings never block a render');
     assert.match(rendered.text, /^Warning: No <theme>/m);
     assert.match(rendered.text, /^Warning: These boxes have no desc.*"Login form"/m);
-    assert.match(rendered.text, /^Warning: No <code>/m);
+    assert.match(rendered.text, /^Warning: …and 1 more, listed once these are fixed\./m);
     assert.match(rendered.text, /^Warning: No component takes up the misconception of the brief/m);
     assert.match(rendered.text, /^Warning: No <quiz> with options/m);
     assert.match(rendered.text, /^Warning: These components declare no part of the arc: <arch> "The login"/m);
-    assert.match(rendered.text, /breaks 12 rules of the explicador skill: fix every warning and call render_scene again/);
+    assert.match(rendered.text, /breaks 13 rules of the explicador skill: fix every warning and call render_scene again/);
     const cachePath = join(project, '.explicador/scenes/sloppy.json');
     const saved = JSON.parse(readFileSync(cachePath, 'utf8')) as { warnings?: string[] };
-    assert.equal(saved.warnings?.length, 12, 'the cache keeps them, where an eval can read them');
+    assert.equal(saved.warnings?.length, 13, 'the cache keeps them, where an eval can read them');
+    assert.ok(saved.warnings?.some((warning) => warning.startsWith('No <code>')), 'the cache keeps the ones the result left out');
 
     const shown = await call('show_scene', { topic: 'sloppy' });
     assert.match(shown.text, /is fresh/);
-    assert.match(shown.text, /It breaks 12 rules the server checks\. Fix each warning below/);
+    assert.match(shown.text, /It breaks 13 rules the server checks\. Fix each warning below/);
     assert.match(shown.text, /^Warning: These boxes have no desc/m);
     assert.doesNotMatch(shown.text, /Answer from this EXL/);
 
