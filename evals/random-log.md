@@ -43,3 +43,7 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | volcan | es | 6 | 1.00 | nature science | figure, concept, compare, timeline, stats, quiz | — (draws the magma chamber with the new ellipse) |
 | 2026-11-14 | placa-solar | es | 7 | 1.00 | science hardware | figure, concept, concept, compare, derive, journey, quiz | — |
 | 2026-11-14 | evolucion | es | 4 | 1.00 | nature science | figure, compare, concept, quiz | — |
+| 2026-11-14 | caida-roma | es | 4 | 1.00 | history society | figure, concept, system, quiz | — (stopped here by the user) |
+| 2026-11-14 | piramides | es | 7 | 1.00 | history science | trace, concept, compare, stats, figure, argument, quiz | — (stopped here by the user) |
+| 2026-11-14 | seguro-coche | es | 6 | 1.00 | society business | figure, concept, compare, calc, timeline, quiz | — (stopped here by the user) |
+| 2026-11-14 | heat-pump | en | 5 | 1.00 | science hardware | figure, concept, compare, calc, quiz | — (stopped here by the user) |

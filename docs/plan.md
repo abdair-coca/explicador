@@ -537,3 +537,10 @@ The user asked for a loop that runs until they stop it: let Sonnet (the model wi
 - typecheck, lint, build, `npm test` pass, and `npm run e2e` when the viewer changed.
 - The round's scenes render with no warnings, or the warning they hit is fixed in the skill or the server.
 - The log names what was found and what was changed.
+
+### Outcome (2026-11-14, stopped by the user after 15 rounds)
+
+1. **What changed**: `npm run eval:random` (`evals/random.ts`, `evals/topics.json` with 89 topics, `examples/blank`, every slide captured with `e2e/capture.spec.ts`); eight everyday themes and a theme and accent drawn at random per presentation; decoration that keeps clear of the content and the subtitle; a warning and a guide section for a `<figure>` of the subject and for the number of slides asked; in figures: framing to what is drawn, labels off their own pictograms and shapes whatever their lines, zone labels with room, ellipses (`<circle ry>`), `head="start"`, warnings for moves that hide labels and arcs that turn the wrong way; traces keep their input in sight and diff only edits; Spanish numbers, units and totals; flows read the caller's way; causal loops' badges off the links; a matrix highlight named once. Every round is in `evals/random-log.md`.
+2. **How it was tested**: 43 random topics on Sonnet over 15 rounds (42 at 1.00, one at 0.57 that led to the slide-count fix; $12.88 at list price), every slide reviewed; each fix with its test; typecheck, lint, build, `npm test` (server 302, viewer 204, evals 50) and `npm run e2e` (97 in Chromium) pass.
+3. **Effect**: scenes went from one skeleton (trace, concept, compare, chart, quiz) with no drawing to a figure of their own subject in almost every scene, and more forms (system, argument, timeline, matrix, structure).
+4. **Pending**: a state machine of six or more states shrinks to small text on a slide (ELK's row wrapping broke edges and was reverted); value labels of tiny grouped bars crowd each other; the compare's headers are often the same words.
