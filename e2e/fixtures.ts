@@ -31,6 +31,7 @@ export const examples: Example[] = [
   { name: 'notebook-lesson', project: 'notebook' },
   { name: 'rag', project: 'rag' },
   { name: 'search-tree', project: 'trees' },
+  { name: 'cache-storm', project: 'cache' },
 ];
 
 /**

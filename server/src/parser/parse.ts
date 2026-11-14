@@ -24,6 +24,7 @@ import {
 import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildTheme, buildThreshold, buildTrace } from './lesson.ts';
 import { buildBrief } from './brief.ts';
 import { buildStructure } from './structure.ts';
+import { buildSystem } from './system.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
   arcParts,
@@ -195,6 +196,7 @@ const builders: Record<string, (element: Element, ordinal: number, report: Repor
   space: buildSpace,
   cosine: buildCosine,
   structure: buildStructure,
+  system: buildSystem,
 };
 
 function buildBlock(element: Element, ordinal: number, report: Report): Block | undefined {
@@ -482,6 +484,10 @@ function collectRefs(blocks: Block[]): string[] {
       case 'structure':
         add(block.ref);
         block.members.forEach((member) => add(member.ref));
+        break;
+      case 'system':
+        add(block.ref);
+        block.factors.forEach((factor) => add(factor.ref));
         break;
       case 'calc':
         add(block.ref);

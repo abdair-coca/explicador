@@ -5,7 +5,7 @@
 // each line of a derivation. A scatter shows its axes, each class, its boundary and the points on the wrong side;
 // a comparison its two names, each row and the tally; a timeline each event. A vector space shows its items, the
 // query, the index's choice, each comparison and the ranking; a cosine its vectors, products, sum, lengths and result;
-// a structure each of its states.
+// a structure each of its states; a system itself at rest, then each step of its push.
 // Each → reveals the next part; with none left, → opens the next slide.
 // The slides back a speaker, who does the explaining: prose is not a slide, except the scene's `#` title as its cover,
 // unless the scene has nothing but prose (then each Markdown block is a slide, so Present is never empty).
@@ -79,6 +79,8 @@ function partsOf(block: Block): number {
       return cosineModel(block).parts.length;
     case 'structure':
       return block.states.length;
+    case 'system':
+      return 1 + block.steps.length;
     default:
       return 1;
   }

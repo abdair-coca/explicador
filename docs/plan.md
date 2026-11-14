@@ -298,3 +298,20 @@ Some ideas are not a structure or a sequence but a web of causes: more traffic m
 - Viewer tests: the ring, link geometry (two opposite links bend apart), loop badges inside the frame, parts and subtitles.
 - Browser tests: the new example draws, walks Present forward and back, has no overlapping boxes and no sideways scroll.
 - The example renders with no warnings; `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase
+
+- **Tag names**: `<factor>`, `<link>`, `<loop>`, `<push>` and `<effect>`, all new; `sign="same|opposite"` instead of `+`/`−`, because the words say what they mean to a non-technical writer and reader.
+- **Loops are found, not declared**: a model can forget a loop or get its kind wrong; the parser lists every cycle (shortest first, at most 64 searched, 8 drawn) and `<loop>` only names one.
+- **The first step is a `<push>`**, and an effect changes its target's direction by the link's sign; a factor that turns the other way is marked "pushed back" (`reversed`), which is how a balancing loop shows on screen.
+- **The ring follows the longest loop**: the factors go round in that loop's order, and every other factor sits beside the one it shares most links with, so the main loop's arrows run between neighbours and a small loop sits beside its partner (declaration order made the cache's loop cross the whole ring and hide a badge).
+- **A drawn link is a solid copy** that draws itself and fades into the link's own style, because drawing a dashed (`opposite`) line directly erased its dashes.
+- **`<compare>` names and cells now break long words** (`overflow-wrap: anywhere`): "fetch_with_backoff()" pushed the comparison slide 57 px sideways on a phone.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `<system>` with `<factor>`, `<link>`, `<loop>`, `<push>` and `<effect>` (`server/src/parser/system.ts`, types, catalog, refs, the subtitle rule, the eval's scene text); `viewer/src/lesson/{System.tsx,systemLayout.ts}`, Present and its subtitles, CSS; `examples/cache/reads.py` and `examples/scenes/cache-storm.exl.md` (a sale on a cold cache: a timeline of the incident, two concept cards, the system with a retry storm and the cache's balancing loop played link by link, the fix as a comparison and a check), with a brief, an arc and no warning; the docs; screenshots in `docs/images/f26/`.
+2. **How it was tested**: `server/test/system.test.ts` (6 tests: loops and their kind, a named loop and one that is no loop, a push with its directions and a push back, every refusal, bad factors and links, limits, long narrations) and `viewer/test/system.test.ts` (6: the ring inside the frame without overlaps, opposite links bending apart, arrows starting at the border, loop badges inside and apart, two factors facing, the ring order, Present's parts and subtitles); the new example in every browser test. typecheck, lint, build, `npm test` (server 270, viewer 173, evals 50) and `npm run e2e` (75 in Chromium) pass.
+3. **Seen in the browser**: each step draws its link with dots flowing along it and lights the factor it reaches; the cache's loop pushes "Cache misses" back down (red arrow, ringed).
+4. **Limits**: on a phone, Present shrinks the ring to the screen's width like other diagrams, so its text is small; the page scrolls it sideways instead. One push per system; a second push is a second `<system>`.
+5. **Pending**: F27 (forms "annotated space" and "argument").

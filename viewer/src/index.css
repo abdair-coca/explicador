@@ -731,12 +731,12 @@ body {
 /* Comparisons (F16f): two sides, each with its color, facing each other row by row. */
 .compare { display: grid; gap: 0.75rem; --a: var(--series-1); --b: var(--series-2); }
 .compare-head, .compare-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(5rem, 9rem) minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
-.compare-name { border-radius: 16px; padding: 0.7rem 1rem; font-size: 1.25rem; font-weight: 900; color: #fff; text-align: center; line-height: 1.2; }
+.compare-name { border-radius: 16px; padding: 0.7rem 1rem; font-size: 1.25rem; font-weight: 900; color: #fff; text-align: center; line-height: 1.2; overflow-wrap: anywhere; min-width: 0; }
 .compare-name.compare-a { background: var(--a); box-shadow: 0 4px 0 color-mix(in oklab, var(--a) 70%, black); }
 .compare-name.compare-b { background: var(--b); box-shadow: 0 4px 0 color-mix(in oklab, var(--b) 70%, black); }
 .compare-vs { align-self: center; justify-self: center; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 9999px; background: var(--foreground); color: var(--primary); font-size: 0.85rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
 .compare-rows { display: grid; gap: 0.6rem; }
-.compare-cell { position: relative; border: 2px solid var(--border); border-radius: 14px; background: var(--card); padding: 0.65rem 0.9rem; line-height: 1.45; color: var(--foreground); }
+.compare-cell { position: relative; border: 2px solid var(--border); border-radius: 14px; background: var(--card); padding: 0.65rem 0.9rem; line-height: 1.45; color: var(--foreground); overflow-wrap: anywhere; min-width: 0; }
 .compare-cell.compare-a { border-left: 6px solid var(--a); }
 .compare-cell.compare-b { border-right: 6px solid var(--b); }
 .compare-cell.winner { border-color: var(--hit); background: color-mix(in oklab, var(--hit) 8%, white); font-weight: 700; }
@@ -951,3 +951,31 @@ body {
 .structure-member.marked { background: var(--primary); }
 .structure-member.fresh { box-shadow: 0 0 0 5px var(--primary-light), 0 3px 0 var(--foreground); }
 .slide .structure-label, .presenter .structure-label { font-size: clamp(1rem, 1.6vw, 1.35rem); }
+
+/* <system> (F26): factors on a ring, signed links, loops; each step draws its link and lights its factor. */
+.system .system-factor .face { fill: var(--card); stroke: var(--foreground); stroke-width: 2.5; }
+.system .system-factor.current .face { fill: var(--primary); }
+.system .system-factor.up:not(.current) .face, .system .system-factor.down:not(.current) .face { fill: var(--primary-light); }
+.system-factor-label { font: 800 15px Nunito, sans-serif; fill: var(--foreground); }
+.system-link .line { fill: none; stroke: var(--edge); stroke-width: 2.5; transition: opacity var(--dur-base) var(--ease-out); }
+.system-link.opposite .line { stroke-dasharray: 7 5; }
+.system-link.active .line { stroke: var(--foreground); stroke-width: 3.5; }
+.system-link.dimmed { opacity: 0.45; }
+.system-head.rest { fill: var(--edge); }
+.system-head.active { fill: var(--foreground); }
+.system-sign { fill: var(--card); stroke: var(--foreground); stroke-width: 2; }
+.system-link.opposite .system-sign { fill: #fde4e4; }
+.system-link.same .system-sign { fill: #e3eefc; }
+.system-sign-text { font: 900 16px Nunito, sans-serif; fill: var(--foreground); }
+.system-link-label { font: 800 12px Nunito, sans-serif; fill: var(--muted-foreground); paint-order: stroke; stroke: var(--card); stroke-width: 4px; }
+.system-loop circle, .system-loop-arc { fill: none; stroke: var(--muted-foreground); stroke-width: 2; }
+.system-loop.reinforcing .system-loop-arc { stroke: #d9480f; }
+.system-loop.balancing .system-loop-arc { stroke: #1c7ed6; }
+.system-loop-letter { font: 900 16px Nunito, sans-serif; fill: var(--foreground); }
+.system-loop-label { font: 800 12px Nunito, sans-serif; fill: var(--muted-foreground); }
+.system-change circle { stroke: var(--foreground); stroke-width: 2; }
+.system-change.up circle { fill: #2f7ae5; }
+.system-change.down circle { fill: #e5484d; }
+.system-change.reversed circle { stroke: var(--primary-dark, #b88a00); stroke-width: 4; }
+.system-change text { font: 900 17px Nunito, sans-serif; fill: #fff; }
+.system-link .trace { fill: none; stroke: var(--foreground); stroke-width: 3.5; opacity: 0; visibility: hidden; }

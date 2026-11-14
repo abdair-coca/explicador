@@ -19,6 +19,7 @@ const wanted: Record<string, Shot[]> = {
   'bench-interes-compuesto': [1, 2],
   login: [1, 2],
   'search-tree': [{ slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],
+  'cache-storm': [{ slide: 4, part: 0 }, { slide: 4, part: 5 }, 4, { slide: 4, part: 5, phone: true }],
 };
 
 test.skip(!folder, 'set EXPLICADOR_CAPTURE to a folder to capture slides');

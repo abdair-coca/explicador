@@ -613,6 +613,67 @@ export interface StructureBlock {
   ref?: Ref;
 }
 
+export const linkSigns = ['same', 'opposite'] as const;
+export type LinkSign = (typeof linkSigns)[number];
+export const directions = ['up', 'down'] as const;
+export type Direction = (typeof directions)[number];
+export type LoopKind = 'reinforcing' | 'balancing';
+
+/** A quantity of a causal system that can go up or down. */
+export interface SystemFactor {
+  id: string;
+  label: string;
+  desc?: string;
+  ref?: Ref;
+}
+
+/** More of `from` brings more of `to` (`same`) or less (`opposite`). */
+export interface SystemLink {
+  from: string;
+  to: string;
+  sign: LinkSign;
+  label?: string;
+}
+
+/** A cycle of links, found by the parser: reinforcing with an even number of `opposite` links, balancing with an odd one. */
+export interface SystemLoop {
+  /** Factor ids in the order the links run. */
+  through: string[];
+  /** Indexes of the links that close it, in the same order. */
+  links: number[];
+  kind: LoopKind;
+  label?: string;
+}
+
+/** One step of a push through the system: a factor pushed, or an effect along a link. */
+export interface SystemStep {
+  kind: 'push' | 'effect';
+  /** The factor that moves in this step. */
+  factor: string;
+  change: Direction;
+  /** For an effect: the link it follows. */
+  link?: number;
+  /** The factor had moved the other way before: this step pushes it back. */
+  reversed?: boolean;
+  narration: string;
+}
+
+/**
+ * A causal system (F26): factors, signed links, the loops they close, and one push through it step by step. `moved`
+ * holds, for each step, the direction of every factor that has moved so far.
+ */
+export interface SystemBlock {
+  type: 'system';
+  id: string;
+  title: string;
+  factors: SystemFactor[];
+  links: SystemLink[];
+  loops: SystemLoop[];
+  steps: SystemStep[];
+  moved: Record<string, Direction>[];
+  ref?: Ref;
+}
+
 /** A formula derived line by line; the viewer moves the symbols two lines share. */
 export interface DeriveBlock {
   type: 'derive';
@@ -698,7 +759,7 @@ export interface CosineBlock {
 }
 
 /** Blocks of lessons that hold no clickable items. */
-export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock;
+export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | MatrixBlock | QuizBlock | CalcBlock | ThresholdBlock | ConceptBlock | ThemeBlock | PlotBlock | DeriveBlock | ScatterBlock | CompareBlock | TimelineBlock | SpaceBlock | CosineBlock | StructureBlock | SystemBlock;
 
 /**
  * What a component does in the scene's narrative (F24): poses the `question`, shows the brief's `example`, draws the

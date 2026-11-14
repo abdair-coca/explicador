@@ -90,6 +90,12 @@ export const catalog: Record<string, TagSpec> = {
   structure: { attrs: { id: 'optional', title: 'required', direction: 'optional', ref: 'optional' }, children: ['member', 'change'] },
   member: { attrs: { id: 'required', label: 'required', parent: 'optional', side: 'optional', desc: 'optional', ref: 'optional' } },
   change: { attrs: { label: 'required', add: 'optional', remove: 'optional', move: 'optional', mark: 'optional' }, text: true },
+  system: { attrs: { id: 'optional', title: 'required', ref: 'optional' }, children: ['factor', 'link', 'loop', 'push', 'effect'] },
+  factor: { attrs: { id: 'required', label: 'required', desc: 'optional', ref: 'optional' } },
+  link: { attrs: { from: 'required', to: 'required', sign: 'required', label: 'optional' } },
+  loop: { attrs: { through: 'required', label: 'required' } },
+  push: { attrs: { factor: 'required', change: 'required' }, text: true },
+  effect: { attrs: { from: 'required', to: 'required' }, text: true },
   // The pedagogical brief (F23): read by the server, never shown.
   brief: { attrs: { form: 'required' }, children: ['audience', 'question', 'example', 'misconception', 'check', 'terms'] },
   audience: { attrs: {}, text: true },
@@ -102,7 +108,7 @@ export const catalog: Record<string, TagSpec> = {
 /** Top-level tags that are slides of their own: every one but the brief, the theme and the chapter cards. */
 export const componentTags: readonly string[] = [
   'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'calc', 'threshold',
-  'concept', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure',
+  'concept', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system',
 ];
 // Every component declares its part of the narrative arc (F24).
 for (const tag of componentTags) {
@@ -113,7 +119,7 @@ for (const tag of componentTags) {
 /** Tags that open a block at the top level of a scene; every other tag lives inside one of them. */
 export const topLevelTags: readonly string[] = [
   'brief', 'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',
-  'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure',
+  'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine', 'structure', 'system',
 ];
 
 export const limits = {
@@ -186,6 +192,11 @@ export const limits = {
   exampleLength: 1200,
   structureMembers: 40,
   structureChanges: 20,
+  systemFactors: 12,
+  systemLinks: 30,
+  systemLoops: 8,
+  systemSteps: 20,
+  linkLabelLength: 40,
   // The brief.
   briefFieldLength: 300,
   briefTerms: 12,

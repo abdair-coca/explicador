@@ -95,6 +95,17 @@ function blockLines(block: Block): string[] {
         ...block.members.filter((member) => member.desc).map(box),
       ];
     }
+    case 'system': {
+      const label = new Map(block.factors.map((item) => [item.id, item.label]));
+      const name = (id: string): string => label.get(id) ?? id;
+      return [
+        `## ${block.title}`,
+        ...block.factors.map(box),
+        ...block.links.map((link) => `- More ${name(link.from)} brings ${link.sign === 'same' ? 'more' : 'less'} ${name(link.to)}${link.label ? ` (${link.label})` : ''}`),
+        ...block.loops.map((loop) => `Loop${loop.label ? ` "${loop.label}"` : ''} (${loop.kind}): ${loop.through.map(name).join(' → ')} → ${name(loop.through[0] ?? '')}`),
+        ...block.steps.map((step, i) => `${i + 1}. ${name(step.factor)} goes ${step.change}${step.reversed ? ' (pushed back)' : ''}: ${clean(step.narration)}`),
+      ];
+    }
     case 'derive':
       return [`## ${block.title}`, ...block.lines.map((line, i) => `${i + 1}. ${line.tex}${line.note ? ` — ${clean(line.note)}` : ''}`)];
     case 'compare':
