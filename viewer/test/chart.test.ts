@@ -10,6 +10,7 @@ import {
   isDiverging,
   lineGeometry,
   nearestIndex,
+  localNumbers,
   tickUnit,
   withUnit,
 } from '../src/lesson/chartGeometry.ts';
@@ -38,6 +39,8 @@ describe('chart helpers', () => {
     assert.equal(withUnit('1000', undefined, 'es'), '1000');
     assert.equal(withUnit('12000', 'entradas', 'es'), '12\u00a0000 entradas');
     assert.equal(withUnit('150000.5', undefined, 'es'), '150\u00a0000,5');
+    assert.equal(localNumbers('1.500 € y 41800 J', 'es'), '1.500 € y 41\u00a0800 J');
+    assert.equal(localNumbers('41800', 'en'), '41800');
     assert.equal(tickUnit('%'), '%');
     assert.equal(tickUnit('€ al mes'), undefined, 'a long unit is said once');
   });

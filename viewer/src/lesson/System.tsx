@@ -89,7 +89,8 @@ export function SystemView({ block, shown }: { block: SystemBlock; shown?: numbe
         {block.loops.map((loop, i) => {
           const spot = geometry.loops[i];
           if (!spot) return null;
-          const lines = loop.label ? wrapText(loop.label, fonts.caption, 120, 2) : [];
+          // The middle of the ring has room for a sentence: four short lines rather than a cut one (F36).
+          const lines = loop.label ? wrapText(loop.label, fonts.caption, 150, 4) : [];
           return (
             <g key={i} className={cn('system-loop', loop.kind)} transform={`translate(${spot.x} ${spot.y})`}>
               <title>{`${loop.kind === 'reinforcing' ? 'Reinforcing' : 'Balancing'} loop: ${loop.through.map((id) => label.get(id) ?? id).join(' → ')}`}</title>

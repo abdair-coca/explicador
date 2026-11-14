@@ -12,7 +12,8 @@ import { Badge } from '../components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useSpeaker } from './context';
 import { CountUp } from './CountUp';
-import { diffWords, words, type Token } from './diff';
+import { localNumbers } from './chartGeometry';
+import { editOf, words, type Token } from './diff';
 import { t } from '../i18n';
 import { useFirstVisible, useFollowCode } from './hooks';
 import { barsOf, keyed, pieceChanges, pieceNames, stripOf, vectorOf } from './traceShape';
@@ -210,7 +211,7 @@ export const numberFit = (text: string): number => Math.min(1, 6 / Math.max(1, [
 function NumberBody({ value }: { value: TraceValue }) {
   return (
     <p className="trace-number tabular-nums" style={{ '--fit': numberFit(value.text) } as React.CSSProperties}>
-      <CountUp text={value.text} />
+      <CountUp text={localNumbers(value.text)} />
     </p>
   );
 }
@@ -226,7 +227,7 @@ function ValueBody({ value }: { value: TraceValue }) {
   if (kind === 'bars') return <BarsBody items={value.items ?? []} />;
   if (kind === 'number') return (
     <p className="trace-number tabular-nums" style={{ '--fit': numberFit(value.text) } as React.CSSProperties}>
-      {value.text}
+      {localNumbers(value.text)}
     </p>
   );
   if (kind === 'vector') return <VectorBody value={value} />;
@@ -260,7 +261,7 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   const value = block.values[index];
   const previous = block.values[index - 1];
   const bothText = !value?.kind && !previous?.kind;
-  const tokens = useMemo(() => (previous && value && bothText ? diffWords(previous.text, value.text) : undefined), [previous, value, bothText]);
+  const tokens = useMemo(() => (previous && value && bothText ? editOf(previous.text, value.text) : undefined), [previous, value, bothText]);
   const speaker = useSpeaker();
   if (!value) return null;
   const kind = value.kind ?? 'text';

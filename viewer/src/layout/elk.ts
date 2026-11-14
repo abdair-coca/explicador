@@ -233,6 +233,9 @@ export async function layoutGraph(nodes: ViewNode[], edges: EdgeInput[]): Promis
   return toLayout(result, sized, edges);
 }
 
+/** Whether ELK lays an edge out reversed: an answer back. */
+const backward = (e: EdgeInput): boolean => e.kind === 'return';
+
 function elkGraph(sized: Sized[], edges: EdgeInput[]): ElkNode {
   const nodes = sized.map((s) => s.node);
   return {
@@ -263,8 +266,10 @@ function elkGraph(sized: Sized[], edges: EdgeInput[]): ElkNode {
       const text = e.label ?? e.reserve;
       return {
         id: e.id,
-        sources: [e.from],
-        targets: [e.to],
+        // An answer goes back the way the call came: laid out as the call's direction, it closes no cycle, so the
+        // one who calls stays on the left (F36: the phone that sends a photo, not the router that answers).
+        sources: [backward(e) ? e.to : e.from],
+        targets: [backward(e) ? e.from : e.to],
         ...(text ? { labels: [{ id: `${e.id}:label`, text, width: edgeLabelWidth(text), height: EDGE_LABEL.height }] } : {}),
       };
     }),
@@ -279,9 +284,8 @@ function toLayout(result: ElkNode, sized: Sized[], edges: EdgeInput[]): Layout {
   const laidEdges = edges.map((e): LaidEdge => {
     const laid = result.edges?.find((r) => r.id === e.id);
     const section = laid?.sections?.[0];
-    const points: Point[] = section
-      ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint]
-      : straight(laidNodes, e.from, e.to);
+    const routed: Point[] | undefined = section ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint] : undefined;
+    const points: Point[] = routed ? (backward(e) ? routed.reverse() : routed) : straight(laidNodes, e.from, e.to);
     const label = laid?.labels?.[0];
     const length = polylineLength(points);
     return {

@@ -5,7 +5,7 @@ import { splitCallouts } from '../src/lib/callouts.ts';
 import { codeBreaks } from '../src/lesson/breaks.ts';
 import { planLesson } from '../src/lesson/chapters.ts';
 import { cellOutcome, computeMetric, counts, covers, formatRatio, outcomes } from '../src/lesson/confusion.ts';
-import { changeCounts, diffLetters, diffWords } from '../src/lesson/diff.ts';
+import { changeCounts, diffLetters, diffWords, editOf } from '../src/lesson/diff.ts';
 import { matrixFocuses } from '../src/lesson/focuses.ts';
 import { formatLike, splitNumbers, textAt } from '../src/lesson/numbers.ts';
 import { chapterDone, emptyProgress, lessonSummary, markSeen, record } from '../src/lesson/progress.ts';
@@ -63,6 +63,13 @@ describe('progress', () => {
     progress = markSeen(progress, 'end');
     assert.equal(markSeen(progress, 'end'), progress, 'seen twice changes nothing');
     assert.deepEqual(lessonSummary(plan, progress), { done: 2, total: 3, chapters: 2 });
+  });
+});
+
+describe('editOf', () => {
+  it('marks an edit, and leaves another sentence unmarked', () => {
+    assert.ok(editOf('the food was horrible', 'the food was great')?.some((token) => token.kind !== 'same'));
+    assert.equal(editOf('19 200 000 bits en ondas de 5 GHz', 'foto.jpg, 2 400 000 bytes'), undefined);
   });
 });
 

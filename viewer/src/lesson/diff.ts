@@ -129,3 +129,18 @@ export function changeCounts(tokens: Token[]): { removed: number; added: number;
   for (const token of tokens) if (token.kind !== 'same') counts[token.kind] += 1;
   return counts;
 }
+
+/** Below this share of words in common, two texts are different sentences, not one edited (F36). */
+const RELATED = 0.4;
+
+/**
+ * The marks a trace shows between two texts: a word diff when the new text is an edit of the old one, and none when
+ * it is another sentence altogether ("19 200 000 bits en ondas" → "foto.jpg, 2 400 000 bytes"), where marking each
+ * word removed or changed only scrambles the new text.
+ */
+export function editOf(before: string, after: string): Token[] | undefined {
+  const a = words(before);
+  const b = words(after);
+  const shared = lcsTable(a, b)[0]?.[0] ?? 0;
+  return shared / Math.max(a.length, b.length, 1) >= RELATED ? diffWords(before, after) : undefined;
+}

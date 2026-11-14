@@ -496,7 +496,7 @@ body {
 .trace-card.past .trace-name, .trace-card.past .trace-bar-value, .trace-large .trace-card.past .trace-name, .trace-large .trace-card.past .trace-bar-value { font-size: 0.8rem; }
 .trace-card.past .trace-number, .trace-large .trace-card.past .trace-number { font-size: calc(2.2rem * var(--fit, 1)); }
 .trace-card.past .trace-cell, .trace-card.past .trace-bar { animation: none; }
-.trace-folded { align-self: center; font-weight: 900; font-size: 1.1rem; color: var(--muted-foreground); border: 2px dashed var(--border); border-radius: 999px; padding: 0.35rem 0.7rem; }
+.trace-folded { align-self: start; margin-top: 0.6rem; font-weight: 900; font-size: 1.1rem; color: var(--muted-foreground); border: 2px dashed var(--border); border-radius: 999px; padding: 0.35rem 0.7rem; }
 @media (max-width: 720px) {
   .trace-strip { grid-template-columns: minmax(0, 1fr); gap: 2.2rem; }
   /* On a phone the strip keeps only the step just before the current one. */

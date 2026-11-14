@@ -3,6 +3,7 @@
 // pops in.
 import type { StatsBlock } from '../../../server/src/scene.ts';
 import { cn } from '@/lib/utils';
+import { localNumbers } from './chartGeometry';
 import { CountUp } from './CountUp';
 
 export function StatsView({ block, shown }: { block: StatsBlock; shown?: number }) {
@@ -24,7 +25,7 @@ export function StatsView({ block, shown }: { block: StatsBlock; shown?: number 
               style={shown === undefined ? { animationDelay: `${i * 70}ms` } : undefined}
               {...(shown === undefined ? {} : { 'data-part': i, 'data-fx': 'pop' })}
             >
-              {hidden ? <span className={value}>{stat.value}</span> : <CountUp text={stat.value} className={value} />}
+              {hidden ? <span className={value}>{localNumbers(stat.value)}</span> : <CountUp text={localNumbers(stat.value)} className={value} />}
               <p className="mt-1.5 text-sm font-bold leading-snug text-muted-foreground">{stat.label}</p>
             </li>
           );

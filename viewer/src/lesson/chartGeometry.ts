@@ -86,12 +86,21 @@ export function numbersOf(block: ChartBlock): number[][] {
  * A value as written, with the unit ("84.6 %" stays "84.6%" for a symbol, "12 ms" for a word). A Spanish scene writes
  * its numbers the Spanish way (F36): a decimal comma and a space before every unit ("10,5 €", "84,6 %").
  */
+/**
+ * Numbers written the scene's way (F36): Spanish takes a decimal comma and groups numbers of five digits or more in
+ * threes ("41 800", "2,5"); four-digit ones stay whole ("1000"). English text is left as written.
+ */
+export function localNumbers(text: string, lang: Language = language()): string {
+  if (lang !== 'es') return text;
+  // "1.500" is already Spanish for fifteen hundred: a dot before exactly three digits stays.
+  return text.replace(/(\d)\.(?!\d{3}(?!\d))(\d)/g, '$1,$2').replace(/(?<![\d,.])\d{5,}/g, (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'));
+}
+
 /** The unit a tick carries: a short one ("%", "€", "ms") on every tick; a longer one is said once, as a caption. */
 export const tickUnit = (unit: string | undefined): string | undefined => (unit && [...unit.trim()].length <= 2 ? unit : undefined);
 
 export function withUnit(text: string, unit: string | undefined, lang: Language = language()): string {
-  // Spanish groups numbers of five digits or more in threes ("12 000"), and four-digit ones not.
-  const shown = lang === 'es' ? text.replace(/(\d)\.(\d)/g, '$1,$2').replace(/(?<![\d,])\d{5,}/g, (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')) : text;
+  const shown = localNumbers(text, lang);
   if (!unit) return shown;
   return lang === 'es' || /^[\p{L}]/u.test(unit) ? `${shown} ${unit}` : `${shown}${unit}`;
 }
