@@ -82,17 +82,22 @@ function besideLine(p: Point, q: Point, along: number, side: 1 | -1, lines: stri
 
 /** Where a shape's label may go, best first. */
 function candidates(shape: FigureShape, lines: string[], size: number): Point[] {
+  // How far a label's middle sits above or below a shape: half its height, whatever its lines (F36: a two-line label
+  // above a box lay on the box's edge), and a gap, a little more below for the descenders.
+  const half = labelBox([0, 0], lines, size).y1;
+  const over = half + size * 0.325;
+  const under = half + size * 0.525;
   switch (shape.kind) {
     case 'circle': {
-      const below: Point = [shape.x, shape.y + shape.r + size * 1.1];
-      const above: Point = [shape.x, shape.y - shape.r - size * 0.9];
+      const below: Point = [shape.x, shape.y + shape.r + under];
+      const above: Point = [shape.x, shape.y - shape.r - over];
       const side = (labelBox([0, 0], lines, size).x1 + shape.r + 1) * 1;
       const around: Point[] = [below, above, [shape.x + side, shape.y], [shape.x - side, shape.y]];
       // Inside a circle big enough to hold it, around a small one.
       return shape.r >= 7 ? [[shape.x, shape.y], ...around] : around;
     }
     case 'box':
-      return [[shape.x + shape.w / 2, shape.y + shape.h / 2], [shape.x + shape.w / 2, shape.y + shape.h + size * 1.1], [shape.x + shape.w / 2, shape.y - size * 0.9]];
+      return [[shape.x + shape.w / 2, shape.y + shape.h / 2], [shape.x + shape.w / 2, shape.y + shape.h + under], [shape.x + shape.w / 2, shape.y - over]];
     case 'zone': {
       const n = shape.points.length;
       const cx = shape.points.reduce((sum, p) => sum + p[0], 0) / n;
@@ -112,7 +117,7 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
     case 'icon': {
       const r = shape.size / 2;
       const side = labelBox([0, 0], lines, size).x1 + r + 1;
-      return [[shape.x, shape.y + r + size * 1.1], [shape.x, shape.y - r - size * 0.9], [shape.x + side, shape.y], [shape.x - side, shape.y]];
+      return [[shape.x, shape.y + r + under], [shape.x, shape.y - r - over], [shape.x + side, shape.y], [shape.x - side, shape.y]];
     }
     case 'arc': {
       const middle = shape.from + arcSpan(shape.from, shape.to) / 2;

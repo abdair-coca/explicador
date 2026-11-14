@@ -28,3 +28,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | bolsa | es | 6 | 1.00 | business society | trace, concept, compare, figure, timeline, quiz | — |
 | 2026-11-14 | rotonda | es | 6 | 1.00 | society science | figure, concept, compare, argument, timeline, quiz | Lucía's car parked on the "Salida" label (a zone's label had one place, its middle): zone labels may now sit above, below or beside it. Seen, not fixed: the roundabout's arrow turns clockwise while the cars go counter-clockwise |
 | 2026-11-14 | coffee-roasting | en | 7 | 1.00 | food science | trace, concept, timeline, figure, compare, chart, quiz | the green bean moved onto the roasted one and both labels clashed: a warning now covers shapes a `move` parks on a labelled one |
+| 2026-11-14 | dns | es | 5 | 1.00 | network web | figure, concept, compare, trace, quiz | — |
+| 2026-11-14 | supply-demand-en | en | 5 | 1.00 | business society | figure, concept, compare, chart, quiz | — |
+| 2026-11-14 | red-electrica | es | 6 | 1.00 | hardware society science | figure, concept, compare, derive, journey, quiz | a two-line label above a box lay on its edge ("Transformador del barrio"): labels above and below a shape now keep clear whatever their lines |

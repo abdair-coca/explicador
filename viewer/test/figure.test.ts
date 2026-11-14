@@ -48,6 +48,20 @@ describe('figure geometry', () => {
     assert.deepEqual(frameOf(block, placeFigure(block)), { x: 0, y: 0, w: block.width, h: block.height });
   });
 
+  it('keeps a label of two lines off the box it names (F36)', () => {
+    const [box] = placeFigure({
+      width: 100,
+      height: 60,
+      shapes: [
+        { kind: 'box', x: 45, y: 26, w: 10, h: 6, label: 'Transformador del barrio', color: 'green', appear: 0 },
+        { kind: 'arrow', points: [[20, 29], [80, 29]], head: 'end', dashed: false, color: 'red', appear: 0 },
+      ],
+    });
+    assert.ok(box?.labelAt && box.lines.length === 2, JSON.stringify(box?.lines));
+    const label = labelBox(box.labelAt, box.lines);
+    assert.ok(label.y1 <= 26 || label.y0 >= 32, `the label ${JSON.stringify(label)} lies on its box`);
+  });
+
   it('keeps a label off its own pictogram at the edge of the figure', () => {
     const [eye] = placeFigure({
       width: 100,
