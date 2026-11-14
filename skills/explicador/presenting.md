@@ -52,6 +52,10 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 8. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a misconception the scene takes up and a `<quiz>` that asks the check, the arc in order, terms and acronyms defined before use, titles that are claims, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 9. **Check** against the checklist at the end. Done when every line is true.
 
+### A number of slides asked
+
+When the user asks for a number of slides ("exactly 5 more"), every slide after the cover counts, the closing `<quiz>` too. Plan them so the rules fit inside that number rather than dropping a rule: the check is always one of them; outside software the `<figure>` of the subject is another, and it can carry the brief's example and the answer at once (its shows follow the example to the result); keep the brief's `<terms>` to what fits (each needs its `<concept>` slide, so with few slides name one term and say the rest in plain words); the contrast can be a figure's show, a quiz option's why or a `<compare>`. With 3 slides: the figure of the example, the contrast, the check.
+
 ### Its own touch
 
 No two subjects look alike, so no two presentations should (principle: every idea has its form). Before writing, ask what the reader would *see* if they stood in front of the brief's example, and draw that:

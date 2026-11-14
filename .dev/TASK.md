@@ -21,3 +21,4 @@ A loop until the user stops it: Sonnet writes a presentation on a random topic w
 - Round 2 (hipoteca, oferta-demanda; Sonnet 1.00 both, $0.59): typecheck 0, lint 0, server 301, viewer 199, evals 50, e2e 97.
 - Round 3 (arcoiris-doble, ciclo-agua; Sonnet 1.00 both, $0.62): typecheck 0, lint 0, server 301, viewer 200, evals 50, e2e 97.
 - Round 4 (microondas, wifi, huracan; Sonnet 1.00 all, $0.81): typecheck 0, lint 0, server 301, viewer 201, evals 50, e2e 97.
+- Round 5 (recursion, vote-counting 0.57, jet-engine; Sonnet, $0.83): typecheck 0, lint 0, server 301, viewer 201, evals 50 (no viewer change, no e2e).
