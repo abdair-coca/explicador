@@ -146,3 +146,47 @@ Taken to the per-slide checks of the request: "every slide declares its part of 
 3. **Bench**: the 8 bench scenes written before F23 now count one warning each ("No <brief>"); `login-tienda` and `regresion-resenas` use the example scenes and count none. No eval was run.
 4. **Limit**: "taken up" is a word heuristic; a block can share the words and still not correct the idea. F30 measures whether it helps.
 5. **Pending**: the per-slide checks (the arc, the question answered, terms defined before use) are F24.
+
+## F24 — Narrative arc and comprehension rules
+
+The brief says what the scene is for; the arc says what each slide does for it. Every component declares its part of the arc, and the server checks the order the principles ask for: the concrete case before the rule, the answer after the example, the misconception corrected on a slide, every term and acronym defined before it is used.
+
+### Scope
+
+1. **`arc` on every component** (every top-level tag except `<brief>`, `<theme>` and `<chapter>`), a closed list:
+   | `arc` | The slide… |
+   |---|---|
+   | `question` | poses the problem: the case or the stakes, before anything is explained |
+   | `example` | shows the brief's concrete example |
+   | `idea` | draws the rule, the mechanism or the term from the example |
+   | `contrast` | puts the misconception against what really happens |
+   | `apply` | uses the idea on a new case or shows a consequence |
+   | `answer` | answers the brief's question |
+   | `check` | asks the reader to predict or work something out |
+   | `recap` | sums up or reviews |
+   An unknown value is a parser error. Defaults, so the common case needs nothing: a `<concept>` is an `idea`, a `<quiz>` with options a `check`, a flashcard a `recap`. Like `id`, it is documented once for every block.
+2. **Arc warnings** (only for a scene with a brief; an older scene already gets "No <brief>"):
+   - components that declare no part of the arc, listed;
+   - **concrete first**: an `idea` before the first `example`, or an `answer` before the first `example` (the map that shows the result before the case);
+   - no `example` slide that shows the brief's example (one of its numbers, quoted values or names);
+   - no `contrast` slide;
+   - no `answer` slide;
+   - the last component is not a `check` or a `recap`.
+3. **Comprehension warnings**:
+   - **Terms before use** (with a brief): every term of `<terms>` needs a `<concept>` whose `term` names it, and no component before that concept shows the term.
+   - **Acronyms** (every scene): a word of 2–6 capital letters (a hyphen may join two: "TF-IDF") shown by a component, which the scene never spells out (`ACR (words)` or `words (ACR)` anywhere in it), no `<concept term>` names, and the brief's `<audience>` does not say the reader knows.
+   - **Label titles** (every scene): a component `title` of one or two words ("Weights", "Overview") is a label, not the slide's claim.
+4. **Skill and docs**: `presenting.md` (the arc after the brief, its table, the order; the templates declare their arc and satisfy every rule), `SKILL.md`, `docs/EXL.md`, `AGENTS.md`; the example scenes declare their arc and pass every rule; `docs/baseline-f22.md` gets the column of warnings the bench scenes get with the rules of F23 and F24.
+
+### Deviations from the request
+
+- **The arc is per component, not per slide.** A component is one slide or a run of slides of one picture (a flow's steps); its parts share one role. A `<chapter>` card has no arc: it names a section, and its components carry theirs.
+- **"The scene answers the question"** is checked as an `answer` slide existing after the example, not by reading the answer: whether a title answers a question is not checkable without a model.
+- **Decoration and counters** (principle 6, "three counters at once") are the viewer's, not rules over EXL, and are left for F29.
+
+### Acceptance criteria
+
+- Parser tests: every arc value; an unknown arc; arc on `<chapter>` or `<theme>` refused.
+- Rule tests: each warning above, firing and not firing; defaults for `<concept>` and `<quiz>`; acronyms spelled out, named by a concept, known by the audience, and not.
+- The example scenes and the guide's templates declare their arc and render with no warnings.
+- `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
