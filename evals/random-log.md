@@ -19,3 +19,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | juicio | es | 6 | 1.00 | society history | figure, concept, compare, timeline, state, quiz | pending: a six-state machine shrinks to ~8 px text on a slide; ELK's row wrapping (aspect 1.4, or top-down) broke edges into slanted pieces and was reverted |
 | 2026-11-14 | porcentajes | es | 7 | 1.00 | business society | trace, concept, compare, derive, derive, chart, quiz | — |
 | 2026-11-14 | cielo-azul | es | 7 | 1.00 | nature science | trace, concept, chart, compare, figure, timeline, quiz | — |
+| 2026-11-14 | music-scale | en | 7 | 1.00 | art science | figure, concept, concept, compare, derive, matrix, quiz | — |
+| 2026-11-14 | vacunas | es | 5 | 1.00 | health science | figure, concept, compare, timeline, quiz | — |
+| 2026-11-14 | separacion-poderes | es | 7 | 1.00 | society history | figure, concept, arch, compare, timeline, argument, quiz | the temple lay under the verdict and the scroll on the comparison (3 % was too lenient): decoration now keeps 10 px clear of the content and of the subtitle |

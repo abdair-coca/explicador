@@ -28,8 +28,10 @@ function ShapeView({ shape }: { shape: Shape }) {
 }
 
 const CORNERS: readonly Corner[] = ['tr', 'br', 'bl', 'tl'];
-/** How much of a drawing may lie on the slide's content before it moves or hides: a sliver at its edge. */
-const MAX_COVER = 0.03;
+/** How much of a drawing may lie on the slide's content before it moves or hides: next to nothing (F36, round 7). */
+const MAX_COVER = 0.002;
+/** Room kept clear around the content, in pixels: a drawing that only touches a card still competes with it. */
+const MARGIN = 10;
 
 /**
  * Where the slide's content is: the tight boxes of its text, and the boxes of its cards, pictures and drawings. A
@@ -52,7 +54,7 @@ export function contentBoxes(root: HTMLElement): DOMRect[] {
     const painted = element instanceof SVGSVGElement || element.tagName === 'IMG' || element.tagName === 'CANVAS' || element.tagName === 'TABLE' || !transparent(style.backgroundColor) || parseFloat(style.borderTopWidth) > 0 || parseFloat(style.borderLeftWidth) > 0;
     if (painted) boxes.push(element.getBoundingClientRect());
   }
-  return boxes.filter((box) => box.width > 0 && box.height > 0);
+  return boxes.filter((box) => box.width > 0 && box.height > 0).map((box) => new DOMRect(box.x - MARGIN, box.y - MARGIN, box.width + 2 * MARGIN, box.height + 2 * MARGIN));
 }
 
 /** Whether a computed color paints nothing: `transparent`, or an alpha of 0 in any notation (rgba, oklch, color-mix). */
@@ -76,7 +78,9 @@ function covered(part: DOMRect, boxes: readonly DOMRect[]): number {
  * and hides a drawing that every free corner would put on the content (F36: decoration never competes with it).
  */
 function clear(element: HTMLElement, content: HTMLElement): void {
-  const boxes = contentBoxes(content);
+  // The subtitle sits under the stage, outside it, and is read as much as the slide.
+  const subtitles = Array.from(element.parentElement?.querySelectorAll<HTMLElement>('.subtitle-line') ?? []);
+  const boxes = [content, ...subtitles].flatMap((root) => contentBoxes(root));
   const used = new Set<Corner>();
   for (const part of Array.from(element.querySelectorAll<SVGSVGElement>('.motif-part'))) {
     const own = CORNERS.find((corner) => part.classList.contains(`motif-${corner}`)) ?? 'tr';
