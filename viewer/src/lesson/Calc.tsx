@@ -2,6 +2,7 @@
 // model turns it into a probability on the sigmoid and decides the class. The viewer does all the arithmetic.
 import { useMemo, useRef } from 'react';
 import type { CalcBlock } from '../../../server/src/scene.ts';
+import { t } from '../i18n';
 import { stepDuration, usePlayback, useReducedMotion } from '../animation/playback';
 import { SceneFrame, StepControls, StepProgress } from '../components/scenes';
 import { cn } from '@/lib/utils';
@@ -11,7 +12,7 @@ import { useSpeaker } from './context';
 import { useFirstVisible, useFollowCode } from './hooks';
 
 function stepLabels(model: CalcModel): string[] {
-  return [...model.rows.map((row) => row.label), 'score', ...(model.logistic ? ['probability', 'decision'] : [])];
+  return [...model.rows.map((row) => row.label), model.logistic ? 'score' : t('total'), ...(model.logistic ? ['probability', 'decision'] : [])];
 }
 
 function WaterfallView({ model, index }: { model: CalcModel; index: number }) {

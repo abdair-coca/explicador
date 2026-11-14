@@ -6,3 +6,5 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 |---|---|---|---|---|---|---|---|
 | 2026-11-14 | iva | es | 6 | 1.00 | business society | trace, concept, compare, chart, flow, quiz | decoration moves to free corners or hides; long trace numbers shrink to fit; Spanish chart numbers ("10,5 €"); a warning and a guide section ask for a `<figure>` of the subject (the flow of the tax was a tangle of boxes) and no shared skeleton |
 | 2026-11-14 | compound-interest-en | en | 7 | 1.00 | business math | trace, concept, concept, compare, chart, derive, quiz | same skeleton as `iva`: guide "Its own touch" |
+| 2026-11-14 | hipoteca | es | 7 | 1.00 | business society | stats, trace, concept, calc, timeline, chart, compare, quiz | `<calc>` said "score" (an ML word) in a Spanish scene: a plain sum says "total", in the scene's language, with decimal commas |
+| 2026-11-14 | oferta-demanda | es | 6 | 1.00 | business society | stats, concept, chart, compare, trace, quiz | the trace folded its first step (the input): it now stays in sight; a long unit ("entradas") is said once over the axis; Spanish groups five-digit numbers ("12 000") |

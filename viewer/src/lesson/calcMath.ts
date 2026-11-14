@@ -1,7 +1,8 @@
 // The arithmetic of a <calc>: running totals, the score, and for a logistic model the sigmoid, the probability
 // and the decision. Done here so the agent never computes; plus the waterfall's geometry in real pixels.
+import { t } from '../i18n.ts';
 import type { CalcBlock } from '../../../server/src/scene.ts';
-import { CHAR_PX, fit } from './chartGeometry.ts';
+import { CHAR_PX, fit, withUnit } from './chartGeometry.ts';
 import { barTicks, formatTick, linear } from './scale.ts';
 
 export interface CalcRow {
@@ -77,12 +78,12 @@ export function calcNarration(block: CalcBlock, model: CalcModel, index: number)
   const row = model.rows[index];
   if (row) {
     return {
-      title: `${row.label}: ${row.text} → ${row.after.toFixed(model.decimals)}`,
-      text: row.note ?? (index === 0 ? 'The calculation starts here.' : row.value >= 0 ? 'It pushes the score up.' : 'It pushes the score down.'),
+      title: `${row.label}: ${withUnit(row.text, undefined)} → ${withUnit(row.after.toFixed(model.decimals), undefined)}`,
+      text: row.note ?? t(index === 0 ? 'The calculation starts here.' : row.value >= 0 ? (model.logistic ? 'It pushes the score up.' : 'It adds to the total.') : model.logistic ? 'It pushes the score down.' : 'It takes from the total.'),
     };
   }
   const logistic = model.logistic;
-  if (index === parts) return { title: `Score = ${model.totalText}`, text: model.roundingNote ?? 'The sum of every part.' };
+  if (index === parts) return { title: `${model.logistic ? 'Score' : t('Total')} = ${withUnit(model.totalText, undefined)}`, text: model.roundingNote ?? t('The sum of every part.') };
   if (!logistic) return { title: '' };
   if (index === parts + 1) {
     return {
@@ -126,7 +127,7 @@ export interface Waterfall {
 const ROW = 30;
 
 /** One row per part, from the running total before it to after it, then the total from zero. */
-export function waterfall(model: CalcModel, width: number, totalLabel = 'score'): Waterfall {
+export function waterfall(model: CalcModel, width: number, totalLabel = model.logistic ? 'score' : t('total')): Waterfall {
   const ends = [0, ...model.rows.flatMap((row) => [row.before, row.after]), model.total];
   const ticks = barTicks(ends, Math.max(3, Math.min(6, Math.floor(width / 110))));
   const labels = [...model.rows.map((row) => row.label), totalLabel];
@@ -137,7 +138,7 @@ export function waterfall(model: CalcModel, width: number, totalLabel = 'score')
   const bars: WaterfallBar[] = model.rows.map((row, i) => ({
     label: fit(row.label, left - 12),
     full: row.label,
-    text: row.text,
+    text: withUnit(row.text, undefined),
     x0: x(row.before),
     x1: x(row.after),
     y: 8 + i * ROW,
@@ -148,7 +149,7 @@ export function waterfall(model: CalcModel, width: number, totalLabel = 'score')
   bars.push({
     label: totalLabel,
     full: totalLabel,
-    text: model.totalText,
+    text: withUnit(model.totalText, undefined),
     x0: x(0),
     x1: x(model.total),
     y: 8 + model.rows.length * ROW + 6,
@@ -164,7 +165,7 @@ export function waterfall(model: CalcModel, width: number, totalLabel = 'score')
     rowHeight: ROW,
     bar: 18,
     zero: x(0),
-    ticks: ticks.values.map((value) => ({ at: x(value), text: formatTick(value, ticks.step) })),
+    ticks: ticks.values.map((value) => ({ at: x(value), text: withUnit(formatTick(value, ticks.step), undefined) })),
     bars,
   };
 }

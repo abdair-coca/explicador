@@ -205,7 +205,8 @@ describe('trace strip', () => {
   it('keeps the last three steps in sight and folds the earlier ones', () => {
     assert.deepEqual(stripOf(4, 0), { folded: 0, past: [] });
     assert.deepEqual(stripOf(4, 3), { folded: 0, past: [0, 1, 2] });
-    assert.deepEqual(stripOf(8, 6), { folded: 3, past: [3, 4, 5] });
+    assert.deepEqual(stripOf(8, 6), { folded: 3, past: [0, 4, 5] });
+    assert.deepEqual(stripOf(5, 4), { folded: 1, past: [0, 2, 3] }, 'the input stays in sight');
     assert.deepEqual(stripOf(3, 9), { folded: 0, past: [0, 1] });
   });
 });

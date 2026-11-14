@@ -84,12 +84,16 @@ export function vectorOf(value: TraceValue): { cells: VectorCell[]; hidden: numb
   return { cells, hidden: size - cells.length, size };
 }
 
-/** Past steps kept in sight beside the current one; earlier ones fold into a "+n" mark. */
+/** Past steps kept in sight beside the current one; the ones between the first and the last two fold into a "+n" mark. */
 export const PAST_SHOWN = 3;
 
-/** The steps a trace shows at step `index` (F31): how many fold away, then the past ones in sight before the current one. */
+/**
+ * The steps a trace shows at step `index` (F31): the past ones in sight before the current one, and how many fold
+ * away. The first step, the real input, always stays in sight (F36): the "+n" mark sits right after it.
+ */
 export function stripOf(count: number, index: number): { folded: number; past: number[] } {
   const current = Math.max(0, Math.min(count - 1, index));
-  const first = Math.max(0, current - PAST_SHOWN);
-  return { folded: first, past: Array.from({ length: current - first }, (_, i) => first + i) };
+  if (current <= PAST_SHOWN) return { folded: 0, past: Array.from({ length: current }, (_, i) => i) };
+  const recent = Array.from({ length: PAST_SHOWN - 1 }, (_, i) => current - (PAST_SHOWN - 1) + i);
+  return { folded: current - PAST_SHOWN, past: [0, ...recent] };
 }

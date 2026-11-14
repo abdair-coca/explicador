@@ -10,6 +10,7 @@ import {
   isDiverging,
   lineGeometry,
   nearestIndex,
+  tickUnit,
   withUnit,
 } from '../src/lesson/chartGeometry.ts';
 import { heatOf, isNumeric } from '../src/lesson/heat.ts';
@@ -35,6 +36,10 @@ describe('chart helpers', () => {
     assert.equal(withUnit('10.5', '€', 'es'), '10,5 €');
     assert.equal(withUnit('84.6', '%', 'es'), '84,6 %');
     assert.equal(withUnit('1000', undefined, 'es'), '1000');
+    assert.equal(withUnit('12000', 'entradas', 'es'), '12\u00a0000 entradas');
+    assert.equal(withUnit('150000.5', undefined, 'es'), '150\u00a0000,5');
+    assert.equal(tickUnit('%'), '%');
+    assert.equal(tickUnit('€ al mes'), undefined, 'a long unit is said once');
   });
 
   it('dims by highlight: a series grays the others, a row dims the other rows', () => {

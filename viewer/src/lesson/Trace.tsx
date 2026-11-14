@@ -277,17 +277,21 @@ export function TraceView({ block, index }: { block: TraceBlock; index: number }
   return (
     <ol
       className={cn('trace-strip', speaker && 'trace-large', past.length > 0 && 'with-past')}
-      style={{ '--strip': `${folded > 0 ? 'max-content ' : ''}repeat(${past.length}, minmax(0, 1fr)) minmax(0, ${past.length > 0 ? 2 : 1}fr)` } as React.CSSProperties}
+      style={{ '--strip': `${folded > 0 ? 'minmax(0, 1fr) max-content ' : ''}repeat(${folded > 0 ? past.length - 1 : past.length}, minmax(0, 1fr)) minmax(0, ${past.length > 0 ? 2 : 1}fr)` } as React.CSSProperties}
       aria-label={t('Steps')}
     >
-      {folded > 0 && (
-        <li className="trace-folded" aria-label={`${folded} ${t('earlier steps')}`}>
-          +{folded}
-        </li>
-      )}
-      {past.map((i) => {
+      {past.map((i, at) => {
         const step = block.values[i];
-        return step ? <PastCard key={i} value={step} index={i} /> : null;
+        return (
+          <Fragment key={i}>
+            {step && <PastCard value={step} index={i} />}
+            {at === 0 && folded > 0 && (
+              <li className="trace-folded" aria-label={`${folded} ${t('earlier steps')}`}>
+                +{folded}
+              </li>
+            )}
+          </Fragment>
+        );
       })}
       <li key="current" className="trace-card current space-y-3" aria-current="step">
         <div className="flex flex-wrap items-center gap-2">

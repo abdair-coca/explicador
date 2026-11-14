@@ -100,6 +100,11 @@ function Plot({ block, geometry, onTip }: { block: ChartBlock; geometry: ChartGe
           : undefined
       }
     >
+      {g.unitCaption && (
+        <text aria-hidden="true" className="chart-tick chart-unit" x={4} y={g.top - 14} textAnchor="start">
+          {g.unitCaption}
+        </text>
+      )}
       {/* Grid and value axis. */}
       {g.ticks.map((tick) =>
         horizontal ? (

@@ -144,6 +144,12 @@ export const es: Record<string, string> = {
   changed: 'cambiados',
   Steps: 'Pasos',
   'earlier steps': 'pasos anteriores',
+  total: 'total',
+  Total: 'Total',
+  'The calculation starts here.': 'El cálculo empieza aquí.',
+  'It adds to the total.': 'Suma al total.',
+  'It takes from the total.': 'Resta del total.',
+  'The sum of every part.': 'La suma de todas las partes.',
   'What this step changed': 'Qué cambió este paso',
   // Box kinds and lines.
   actor: 'actor',

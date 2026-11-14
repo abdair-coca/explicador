@@ -62,6 +62,8 @@ export interface ChartGeometry {
   top: number;
   bottom: number;
   ticks: Tick[];
+  /** A long unit ("€ al mes", "entradas") said once above the value axis instead of on every tick (F36). */
+  unitCaption?: string;
   /** Pixel position of zero on the value axis (bars). */
   zero?: number;
   marks: Mark[];
@@ -84,8 +86,12 @@ export function numbersOf(block: ChartBlock): number[][] {
  * A value as written, with the unit ("84.6 %" stays "84.6%" for a symbol, "12 ms" for a word). A Spanish scene writes
  * its numbers the Spanish way (F36): a decimal comma and a space before every unit ("10,5 €", "84,6 %").
  */
+/** The unit a tick carries: a short one ("%", "€", "ms") on every tick; a longer one is said once, as a caption. */
+export const tickUnit = (unit: string | undefined): string | undefined => (unit && [...unit.trim()].length <= 2 ? unit : undefined);
+
 export function withUnit(text: string, unit: string | undefined, lang: Language = language()): string {
-  const shown = lang === 'es' ? text.replace(/(\d)\.(\d)/g, '$1,$2') : text;
+  // Spanish groups numbers of five digits or more in threes ("12 000"), and four-digit ones not.
+  const shown = lang === 'es' ? text.replace(/(\d)\.(\d)/g, '$1,$2').replace(/(?<![\d,])\d{5,}/g, (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')) : text;
   if (!unit) return shown;
   return lang === 'es' || /^[\p{L}]/u.test(unit) ? `${shown} ${unit}` : `${shown}${unit}`;
 }
@@ -164,9 +170,11 @@ export function barsGeometry(block: ChartBlock, width: number): ChartGeometry {
   const names = seriesOf(block);
   const numbers = numbersOf(block);
   const ticks = barTicks(allValues(block));
-  const tickTexts = ticks.values.map((v) => withUnit(formatTick(v, ticks.step), block.unit));
+  const unit = tickUnit(block.unit);
+  const caption = block.unit && !unit ? block.unit : undefined;
+  const tickTexts = ticks.values.map((v) => withUnit(formatTick(v, ticks.step), unit));
   const left = Math.max(...tickTexts.map((t) => t.length)) * CHAR_PX + 12;
-  const top = names.length > 1 ? 22 + LINE_PX * (names.length - 1) : 22;
+  const top = (names.length > 1 ? 22 + LINE_PX * (names.length - 1) : 22) + (caption ? 8 : 0);
   const bottom = top + PLOT_HEIGHT;
   const right = Math.max(left + 40, width - 8);
   const y = linear([ticks.min, ticks.max], [bottom, top]);
@@ -215,7 +223,7 @@ export function barsGeometry(block: ChartBlock, width: number): ChartGeometry {
       mark.labelY = mark.value >= 0 ? before.labelY - LINE_PX : before.labelY + LINE_PX;
     });
   }
-  return { width, height: bottom + 30, left, right, top, bottom, ticks: tickList(ticks, y, block.unit), zero, marks, labels };
+  return { width, height: bottom + 30, left, right, top, bottom, ticks: tickList(ticks, y, unit), ...(caption ? { unitCaption: caption } : {}), zero, marks, labels };
 }
 
 export function hbarsGeometry(block: ChartBlock, width: number): ChartGeometry {
@@ -272,10 +280,12 @@ export function lineGeometry(block: ChartBlock, width: number): ChartGeometry {
   const names = seriesOf(block);
   const numbers = numbersOf(block);
   const ticks = lineTicks(allValues(block));
-  const tickTexts = ticks.values.map((v) => withUnit(formatTick(v, ticks.step), block.unit));
+  const unit = tickUnit(block.unit);
+  const caption = block.unit && !unit ? block.unit : undefined;
+  const tickTexts = ticks.values.map((v) => withUnit(formatTick(v, ticks.step), unit));
   const left = Math.max(...tickTexts.map((t) => t.length)) * CHAR_PX + 12;
   const endRoom = names.length > 1 ? Math.min(Math.max(...names.map((n) => n.length)) * CHAR_PX + 14, Math.round(width * 0.25)) : 0;
-  const top = 14;
+  const top = caption ? 30 : 14;
   const bottom = top + PLOT_HEIGHT;
   const right = Math.max(left + 40, width - 12 - endRoom);
   const y = linear([ticks.min, ticks.max], [bottom, top]);
@@ -325,7 +335,7 @@ export function lineGeometry(block: ChartBlock, width: number): ChartGeometry {
   // End labels go only when none of them would overlap another.
   const ends = lines.flatMap((line) => (line.end ? [line.end.y] : [])).sort((a, b) => a - b);
   if (ends.some((value, i) => i > 0 && value - (ends[i - 1] ?? 0) < END_LABEL_GAP)) for (const line of lines) delete line.end;
-  return { width, height: bottom + 30, left, right, top, bottom, ticks: tickList(ticks, y, block.unit), marks, labels, lines, xs };
+  return { width, height: bottom + 30, left, right, top, bottom, ticks: tickList(ticks, y, unit), ...(caption ? { unitCaption: caption } : {}), marks, labels, lines, xs };
 }
 
 export function chartGeometry(block: ChartBlock, width: number): ChartGeometry {
