@@ -1,6 +1,7 @@
 // Where the parts of a <system> sit (F26): the factors on a ring, each link a curved arrow between their boxes (two
 // links between the same factors bend to opposite sides), its sign at its middle, and each loop's badge inside the
-// loop, pulled toward the ring's center and kept apart from the other badges. Coordinates are the SVG's own.
+// loop, pulled toward the ring's center, at the place nearby its badge and sentence cross the fewest links, signs,
+// factors and other badges. Coordinates are the SVG's own.
 import type { SystemBlock } from '../../../server/src/scene.ts';
 
 export const FACTOR = { w: 156, h: 62 } as const;
@@ -82,20 +83,47 @@ export function systemGeometry(block: Pick<SystemBlock, 'factors' | 'links' | 'l
     return { path: `M${f(from.x)} ${f(from.y)} Q${f(control.x)} ${f(control.y)} ${f(to.x)} ${f(to.y)}`, mid };
   });
 
+  // Every link as points along its curve, to keep the loops' badges and sentences off them (F36).
+  const curves = block.links.map((link) => {
+    const [, ax, ay, cx, cy, bx, by] = (/M([-\d.]+) ([-\d.]+) Q([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)/.exec(links[block.links.indexOf(link)]?.path ?? '') ?? []).map(Number);
+    return Array.from({ length: 21 }, (_, i): Point => {
+      const t = i / 20;
+      const u = 1 - t;
+      return { x: u * u * (ax ?? 0) + 2 * u * t * (cx ?? 0) + t * t * (bx ?? 0), y: u * u * (ay ?? 0) + 2 * u * t * (cy ?? 0) + t * t * (by ?? 0) };
+    });
+  });
+  /** The badge and the sentence under it, centered on `p`. */
+  const area = (p: Point, label: boolean): { x0: number; y0: number; x1: number; y1: number } => ({ x0: p.x - 78, y0: p.y - BADGE, x1: p.x + 78, y1: p.y + (label ? 70 : BADGE) });
+  const inside = (q: Point, a: { x0: number; y0: number; x1: number; y1: number }): boolean => q.x > a.x0 && q.x < a.x1 && q.y > a.y0 && q.y < a.y1;
   const loops: Point[] = [];
+  const taken: { x0: number; y0: number; x1: number; y1: number }[] = [];
   for (const loop of block.loops) {
     const members = loop.through.map((id) => factors.get(id) ?? center);
     const centroid = { x: members.reduce((sum, p) => sum + p.x, 0) / members.length, y: members.reduce((sum, p) => sum + p.y, 0) / members.length };
     // A loop of two lies on the chord between its factors, under its own links: pull it further in.
     const pull = members.length <= 2 ? 0.55 : 0.3;
-    const spot = { x: centroid.x + (center.x - centroid.x) * pull, y: centroid.y + (center.y - centroid.y) * pull };
-    // Clear of the other badges and of the links' signs.
-    const crowded = (): boolean =>
-      loops.some((other) => Math.hypot(other.x - spot.x, other.y - spot.y) < BADGE * 3) || links.some((link) => Math.hypot(link.mid.x - spot.x, link.mid.y - spot.y) < BADGE * 2);
-    for (let tries = 0; tries < 12 && crowded(); tries += 1) spot.y += BADGE * 1.2;
-    spot.x = Math.min(width - BADGE * 3, Math.max(BADGE * 3, spot.x));
-    spot.y = Math.min(height - BADGE * 2, Math.max(BADGE, spot.y));
-    loops.push(spot);
+    const preferred = { x: centroid.x + (center.x - centroid.x) * pull, y: centroid.y + (center.y - centroid.y) * pull };
+    const label = Boolean(loop.label);
+    let best = preferred;
+    let least = Infinity;
+    for (const dy of [0, -0.5, 0.5, -1, 1, -1.5, 1.5]) {
+      for (const dx of [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2]) {
+        const spot = {
+          x: Math.min(width - 80, Math.max(80, preferred.x + dx * 90)),
+          y: Math.min(height - (label ? 72 : BADGE * 2), Math.max(BADGE, preferred.y + dy * 60)),
+        };
+        const box = area(spot, label);
+        const cost =
+          curves.reduce((sum, points) => sum + points.filter((q) => inside(q, box)).length, 0) +
+          links.filter((link) => inside(link.mid, { x0: box.x0 - 12, y0: box.y0 - 12, x1: box.x1 + 12, y1: box.y1 + 12 })).length * 8 +
+          [...factors.values()].filter((f) => f.x + FACTOR.w / 2 > box.x0 && f.x - FACTOR.w / 2 < box.x1 && f.y + FACTOR.h / 2 > box.y0 && f.y - FACTOR.h / 2 < box.y1).length * 20 +
+          taken.filter((t) => t.x1 > box.x0 && t.x0 < box.x1 && t.y1 > box.y0 && t.y0 < box.y1).length * 20 +
+          Math.hypot(spot.x - preferred.x, spot.y - preferred.y) / 25;
+        if (cost < least) [best, least] = [spot, cost];
+      }
+    }
+    loops.push(best);
+    taken.push(area(best, label));
   }
   return { width, height, factors, links, loops };
 }

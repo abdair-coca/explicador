@@ -31,3 +31,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | dns | es | 5 | 1.00 | network web | figure, concept, compare, trace, quiz | — |
 | 2026-11-14 | supply-demand-en | en | 5 | 1.00 | business society | figure, concept, compare, chart, quiz | — |
 | 2026-11-14 | red-electrica | es | 6 | 1.00 | hardware society science | figure, concept, compare, derive, journey, quiz | a two-line label above a box lay on its edge ("Transformador del barrio"): labels above and below a shape now keep clear whatever their lines |
+| 2026-11-14 | inflacion | es | 6 | 1.00 | business society | figure, concept, compare, derive, system, quiz | the loop's badge and sentence sat on a link and its sign: the badge now takes the place nearby that crosses the fewest links, signs, factors and badges |
+| 2026-11-14 | busqueda-binaria | es | 7 | 1.00 | math code | trace, concept, compare, figure, chart, derive, quiz | seen: value labels of tiny grouped bars crowd each other ("7 pasos" on the 100-step bar) |
+| 2026-11-14 | efecto-invernadero | es | 5 | 1.00 | nature science | figure, concept, compare, calc, quiz | — |

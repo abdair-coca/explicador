@@ -27,3 +27,4 @@ A loop until the user stops it: Sonnet writes a presentation on a random topic w
 - Round 9 (bolsa, rotonda, coffee-roasting; Sonnet 1.00 all, $0.89): typecheck 0, lint 0, server 301, viewer 202, evals 50, e2e 97.
 - Round 10 (dns, supply-demand-en, red-electrica; Sonnet 1.00 all, $0.99): typecheck 0, lint 0, server 301, viewer 203, evals 50, e2e 97.
 - After round 10 (arc heads, turning warning): typecheck 0, lint 0, server 301, viewer 203, evals 50, e2e 97.
+- Round 11 (inflacion, busqueda-binaria, efecto-invernadero; Sonnet 1.00 all, $1.00): typecheck 0, lint 0, server 301, viewer 203, evals 50, e2e 97.
