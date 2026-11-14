@@ -34,3 +34,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | inflacion | es | 6 | 1.00 | business society | figure, concept, compare, derive, system, quiz | the loop's badge and sentence sat on a link and its sign: the badge now takes the place nearby that crosses the fewest links, signs, factors and badges |
 | 2026-11-14 | busqueda-binaria | es | 7 | 1.00 | math code | trace, concept, compare, figure, chart, derive, quiz | seen: value labels of tiny grouped bars crowd each other ("7 pasos" on the 100-step bar) |
 | 2026-11-14 | efecto-invernadero | es | 5 | 1.00 | nature science | figure, concept, compare, calc, quiz | — |
+| 2026-11-14 | seasons-en | en | 6 | 1.00 | space science nature | figure, concept, compare, timeline, argument, quiz | — |
+| 2026-11-14 | corazon | es | 7 | 1.00 | health science | trace, concept, concept, compare, figure, stats, quiz | "Nuestra gota" was cut to "ra gota" at the figure's edge (label widths are estimated): the frame now widens to take a label past the grid |
+| 2026-11-14 | acordes | es | 6 | 1.00 | art science | trace, concept, compare, figure, matrix, quiz | a matrix highlight's name showed twice in Present (badge and note): the note shows only for a metric |

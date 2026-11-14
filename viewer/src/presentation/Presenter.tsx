@@ -386,7 +386,8 @@ function MatrixSlide({ block, part }: { block: MatrixBlock; part: number }) {
         <div ref={grid} className="min-w-0 max-w-full">
           <MatrixGrid block={block} focus={focus} large />
         </div>
-        {focus && (
+        {/* The badge already names the highlight and the subtitle says its narration: the note only adds a metric's formula (F36). */}
+        {focus?.metric && (
           <div key={part} className="min-w-[16rem] max-w-xl flex-1 text-xl">
             <FocusNote focus={focus} />
           </div>

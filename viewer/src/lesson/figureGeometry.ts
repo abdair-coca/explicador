@@ -430,26 +430,29 @@ export function frameOf(block: Pick<FigureBlock, 'width' | 'height'> & Partial<P
         take(shape.x + shape.w + ox, shape.y + shape.h + oy);
       }
       if (item.labelAt && item.lines.length > 0) {
+        // The label's width is estimated from its letters; bold capitals run wider, so leave a fifth more each side.
         const box = labelBox(item.labelAt, item.lines, size);
-        take(box.x0 + ox, box.y0 + oy);
-        take(box.x1 + ox, box.y1 + oy);
+        const slack = (box.x1 - box.x0) * 0.2;
+        take(box.x0 - slack + ox, box.y0 + oy);
+        take(box.x1 + slack + ox, box.y1 + oy);
       }
       for (const [x, y] of item.leader ?? []) take(x + ox, y + oy);
     }
   });
   if (!Number.isFinite(x0)) return whole;
   const margin = Math.max(2, size * 0.6);
-  const frame = {
+  const crop = {
     x: Math.max(0, x0 - margin),
     y: Math.max(0, y0 - margin),
-    w: 0,
-    h: 0,
+    w: Math.min(block.width, x1 + margin) - Math.max(0, x0 - margin),
+    h: Math.min(block.height, y1 + margin) - Math.max(0, y0 - margin),
   };
-  frame.w = Math.min(block.width, x1 + margin) - frame.x;
-  frame.h = Math.min(block.height, y1 + margin) - frame.y;
   // Cropping less than a sixth of the grid on both axes is not worth a drawing that no longer sits where it was written.
-  if (frame.w > block.width * 0.84 && frame.h > block.height * 0.84) return whole;
-  return frame;
+  const frame = crop.w > block.width * 0.84 && crop.h > block.height * 0.84 ? whole : crop;
+  // A label that runs past the grid's edge widens the frame rather than being cut ("…ra gota").
+  const left = Math.min(frame.x, x0);
+  const right = Math.max(frame.x + frame.w, x1);
+  return { x: left, y: frame.y, w: right - left, h: frame.h };
 }
 
 /** A part of a figure's slide: how many shows have played and, for a question, what it asks before the next one (F32). */
