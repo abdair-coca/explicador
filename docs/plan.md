@@ -130,3 +130,19 @@ Taken to the per-slide checks of the request: "every slide declares its part of 
 - Parser tests: a valid brief; each field missing, repeated, empty, too long; a vague example; an unknown form; a brief after another tag; two briefs. Rule tests: misconception addressed and not; a check quiz and only flashcards; no brief.
 - `render_scene` refuses a scene without a brief (stdio test); the example scenes and the guide's templates carry one and render with no warnings.
 - `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` and `npm run e2e` pass.
+
+### Decisions taken in this phase
+
+- **Key words of the misconception**: words of 4 letters or more, compared by their first 5 letters (so "balanced" meets "balance"), without framing words ("believing", "creer", "that"…) and without the words the brief's `question` also has: those name the topic, which every block names, so "the model understands the review" is not taken up just because a block says "model" and "review".
+- **A concrete example**: a capitalized word counts as a name only after the first word and not right after `.`, `!`, `?` or `:`, so a sentence's own capital does not pass ("Insertion of values. Then a search" is refused).
+- **The parser accepts a scene without a brief**, so scenes cached before F23 still open; `render_scene` refuses to save one, and `show_scene` lists "No <brief>" as a warning that asks to rebuild it.
+- **`<brief>` comes before `<theme>`**: the theme's rule is now "before every other tag but `<brief>`".
+- The guide's two example briefs are fenced as `xml` (a brief alone is no scene, and every `exl` block of the guide must be a whole scene with no warnings); a test parses them.
+
+### Outcome (2026-11-14)
+
+1. **What changed**: `server/src/parser/brief.ts` (the tag, its fields and the concrete-example check), `scene.brief`, `briefWarnings` in `rules.ts` (`sceneWarnings` takes the scene), the refusal in `render_scene`, the brief in `docs/EXL.md`, `SKILL.md`, `presenting.md` (step 1, two example briefs), `AGENTS.md` and `README.md`; the five example scenes and both templates carry a brief and a check quiz.
+2. **How it was tested**: `server/test/brief.test.ts` (17 tests: every field missing, repeated, empty, too long and on two lines; a vague example; an unknown form; a brief after a tag; two briefs; the misconception taken up and not; a check quiz and only flashcards; no brief) and two stdio tests (the refusal with its template; a scene cached without a brief). typecheck, lint, build, `npm test` (server 240, viewer 162, evals 50) and `npm run e2e` (61 in Chromium) pass.
+3. **Bench**: the 8 bench scenes written before F23 now count one warning each ("No <brief>"); `login-tienda` and `regresion-resenas` use the example scenes and count none. No eval was run.
+4. **Limit**: "taken up" is a word heuristic; a block can share the words and still not correct the idea. F30 measures whether it helps.
+5. **Pending**: the per-slide checks (the arc, the question answered, terms defined before use) are F24.

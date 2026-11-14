@@ -87,11 +87,18 @@ export const catalog: Record<string, TagSpec> = {
   analogy: { attrs: {}, text: true },
   formula: { attrs: {}, text: true },
   example: { attrs: {}, text: true },
+  // The pedagogical brief (F23): read by the server, never shown.
+  brief: { attrs: { form: 'required' }, children: ['audience', 'question', 'example', 'misconception', 'check', 'terms'] },
+  audience: { attrs: {}, text: true },
+  question: { attrs: {}, text: true },
+  misconception: { attrs: {}, text: true },
+  check: { attrs: {}, text: true },
+  terms: { attrs: {}, text: true },
 };
 
 /** Tags that open a block at the top level of a scene; every other tag lives inside one of them. */
 export const topLevelTags: readonly string[] = [
-  'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',
+  'brief', 'arch', 'flow', 'data', 'state', 'journey', 'trace', 'chart', 'matrix', 'quiz', 'stats', 'chapter', 'calc', 'threshold',
   'concept', 'theme', 'plot', 'derive', 'scatter', 'compare', 'timeline', 'space', 'cosine',
 ];
 
@@ -163,6 +170,9 @@ export const limits = {
   analogyLength: 300,
   formulaLength: 500,
   exampleLength: 1200,
+  // The brief.
+  briefFieldLength: 300,
+  briefTerms: 12,
 } as const;
 
 export type Report = (offset: number, message: string) => void;

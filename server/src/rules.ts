@@ -5,7 +5,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { isNotebookPath } from './files.ts';
 import { resolveInside } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
-import type { Block, ChapterBlock } from './scene.ts';
+import type { Block, ChapterBlock, Scene } from './scene.ts';
 import { slideWarnings } from './slides.ts';
 
 /** A subtitle is read while its part plays: about 20 words, never more than this. */
@@ -21,10 +21,12 @@ const LISTED = 6;
 /** Referred files larger than this are not searched for numbers. */
 const SOURCE_BYTES = 8 * 1024 * 1024;
 
-/** Every warning for a scene: whole-file refs, the slide warnings and the rules below. */
-export function sceneWarnings(root: string, blocks: Block[], refs: readonly string[]): string[] {
+/** Every warning for a scene: its brief, whole-file refs, the slide warnings and the rules below. */
+export function sceneWarnings(root: string, scene: Scene, refs: readonly string[]): string[] {
+  const { blocks } = scene;
   const unfocused = boxesWithoutRange(root, blocks);
   return [
+    ...briefWarnings(scene),
     ...(unfocused.length > 0
       ? [`These boxes point at a whole file, so the code window cannot focus their code: ${listed(unfocused)}. Give each a line range (path:start-end; for a notebook, cell numbers).`]
       : []),
@@ -52,6 +54,82 @@ function named(block: Block): string {
   if (block.type === 'concept') return `<concept> "${block.term}"`;
   if (block.type === 'quiz') return `<quiz> "${block.question}"`;
   return 'title' in block && block.title ? `<${block.type}> "${block.title}"` : `<${block.type}>`;
+}
+
+// The brief ----------------------------------------------------------------------------------------------------------
+
+/** Words that frame a misconception instead of stating it ("Believing that…", "Creer que…"); never key words. */
+const FRAMING = new Set(
+  (
+    'that this these those with from have there their they them then than what when where which while will would could should about into only also just more most ' +
+    'some such very been being does doing believing believe believes thinking think thinks assuming assume assumes idea people ' +
+    'creer cree creen creyendo pensar piensa piensan pensando suponer supone suponen como cuando donde para pero porque sobre entre este esta esto estos estas ' +
+    'todo toda todos todas solo tiene tienen puede pueden cada otro otra mismo misma algo nada mucho idea gente ' +
+    'pour avec dans sont croire penser isso esse essa achar'
+  ).split(' '),
+);
+/** The first letters that decide whether two words are the same word ("balanced" and "balance"). */
+const STEM = 5;
+
+/** The words of a text that carry its meaning: 4 letters or more, framing words left out, cut to their stem. */
+export function keyWords(text: string): string[] {
+  const words = text.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^\p{L}\p{N}]+/u);
+  return [...new Set(words.filter((word) => word.length >= 4 && !FRAMING.has(word)).map((word) => word.slice(0, STEM)))];
+}
+
+/** Every text a block shows or narrates, in one string: titles, labels, narration, options, whys, notes. */
+function blockText(block: Block): string {
+  const parts: string[] = [];
+  const walk = (value: unknown, key: string): void => {
+    if (key === 'ref' || key === 'id' || key === 'type') return;
+    if (typeof value === 'string') parts.push(value);
+    else if (Array.isArray(value)) value.forEach((item) => walk(item, ''));
+    else if (value && typeof value === 'object') for (const [name, item] of Object.entries(value)) walk(item, name);
+  };
+  walk(block, '');
+  return parts.join(' ');
+}
+
+/**
+ * Whether at least half of the misconception's key words appear in one component, check or concept. Words it shares with
+ * the brief's question name the topic, which every block names, so they do not count.
+ */
+export function takesUp(misconception: string, blocks: readonly Block[], question = ''): boolean {
+  const topic = keyWords(question);
+  const wanted = keyWords(misconception).filter((word) => !topic.includes(word));
+  if (wanted.length === 0) return true;
+  const needed = Math.ceil(wanted.length / 2);
+  return blocks.some((block) => {
+    if (block.type === 'markdown' || block.type === 'theme' || block.type === 'chapter') return false;
+    const present = keyWords(blockText(block));
+    const found = wanted.filter((word) => present.some((other) => other.startsWith(word) || word.startsWith(other)));
+    return found.length >= needed;
+  });
+}
+
+/** The brief is the plan of the scene: its misconception is corrected on screen and its check is asked as a quiz. */
+export function briefWarnings(scene: Scene): string[] {
+  const { brief, blocks } = scene;
+  if (!brief) {
+    return [
+      'No <brief>: this scene was made before every scene opened with one. Rebuild it under the same topic: first a <brief form="…"> right after the # title ' +
+        '(audience, question, example, misconception, check, terms; presenting.md, step 1), then every slide designed from it.',
+    ];
+  }
+  const warnings: string[] = [];
+  if (!takesUp(brief.misconception, blocks, brief.question)) {
+    warnings.push(
+      `No component takes up the misconception of the brief ("${brief.misconception}"): correct it where the reader would make it, ` +
+        'with its own words, in a <quiz> option and its why, a <compare>, a <concept> or the narration of the step that disproves it.',
+    );
+  }
+  if (!blocks.some((block) => block.type === 'quiz' && block.options.length > 0)) {
+    warnings.push(
+      `No <quiz> with options: the reader never predicts the check of the brief ("${brief.check}"). ` +
+        'Ask it as a <quiz> near the end, with plausible wrong options and a why for each.',
+    );
+  }
+  return warnings;
 }
 
 // Numbers ------------------------------------------------------------------------------------------------------------
@@ -366,7 +444,7 @@ export function codeWarnings(blocks: Block[]): string[] {
 
 // One example --------------------------------------------------------------------------------------------------------
 
-/** A flow is a process something goes through: one real input follows it as a <trace> (presenting.md, step 4). */
+/** A flow is a process something goes through: one real input follows it as a <trace> (presenting.md, step 5). */
 export function exampleWarnings(blocks: Block[]): string[] {
   if (!blocks.some((block) => block.type === 'flow') || blocks.some((block) => block.type === 'trace')) return [];
   return [

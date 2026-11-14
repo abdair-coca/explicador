@@ -6,7 +6,8 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 
 - Anything that is not a scene tag is Markdown and appears as prose in the viewer, in order.
 - A scene tag starts at the beginning of a line (up to 3 spaces of indentation) outside code fences. Tags inside fenced code blocks, inline in a sentence, or autolinks such as `<https://…>` stay Markdown.
-- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons and deep dives `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<space>` and `<cosine>`, plus `<theme>`. A document needs at least one; `<theme>` only decorates and does not count. Every top-level tag except `<theme>` takes an optional `id`.
+- Top-level tags: `<arch>`, `<flow>`, `<data>` and `<state>`, and for lessons and deep dives `<chapter>`, `<stats>`, `<journey>`, `<trace>`, `<chart>`, `<matrix>`, `<quiz>`, `<calc>`, `<threshold>`, `<concept>`, `<plot>`, `<derive>`, `<scatter>`, `<compare>`, `<timeline>`, `<space>` and `<cosine>`, plus `<theme>` and `<brief>`. A document needs at least one; `<theme>` only decorates and `<brief>` is never shown, so neither counts. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`.
+- Every scene opens with a `<brief>` (see "The brief"): only Markdown, the `#` title, may come before it. The parser accepts a document without one, so scenes cached before it existed still open, but `render_scene` refuses to save it.
 - Any other tag at the start of a line is an error (`<script>`, `<div>`, …), and so is a child tag outside a block.
 - Attribute values are always quoted, with `"` or `'`. `attr={…}` is rejected. Entities `&amp; &lt; &gt; &quot; &apos;` are decoded.
 - `<!-- comments -->` are allowed inside blocks.
@@ -75,11 +76,14 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<cluster>` | `id`, `label`, `x`, `y` (required) | optional narration, only in `<space>` |
 | `<cosine>` | `title`, `a`, `b` (required), `id`, `dims`, `score`, `ref` | 2–12 `<dim>` |
 | `<dim>` | `a`, `b` (required), `label` | none (self-closing), only in `<cosine>` |
-| `<theme>` | `name` (required), `accent` | none (self-closing), top level, once, before every other tag |
+| `<theme>` | `name` (required), `accent` | none (self-closing), top level, once, before every other tag but `<brief>` |
 | `<concept>` | `term` (required), `id`, `ref` | `<define>` (required), `<analogy>`, `<formula>`, `<example>`, each at most once |
 | `<define>`, `<analogy>` | none | the text, inline Markdown (required), only in `<concept>` |
 | `<formula>` | none | LaTeX without `$` (required), only in `<concept>` |
-| `<example>` | none | Markdown, line breaks kept (required), only in `<concept>` |
+| `<example>` | none | in `<concept>`: Markdown, line breaks kept (required); in `<brief>`: one line with concrete data |
+| `<brief>` | `form` (required) | `<audience>`, `<question>`, `<example>`, `<misconception>`, `<check>` and `<terms>`, each exactly once; top level, before every other tag, never shown |
+| `<audience>`, `<question>`, `<misconception>`, `<check>` | none | one line of text (required), at most 300 characters, only in `<brief>` |
+| `<terms>` | none | 1–12 terms separated by commas, each at most 60 characters, only in `<brief>` |
 
 - `id`: starts with a letter, then letters, digits, `-` or `_`, up to 40 characters. Node ids are unique within their block and block ids within the document. A missing block id becomes `arch-1`, `flow-2`, … (by position).
 - `kind`: `actor`, `ui`, `service`, `module`, `function`, `store` or `external`; default `module`.
@@ -100,6 +104,38 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 - `<walk>` starts at the initial state; each `<go event>` takes the one transition that leaves the current state on that event (none or several is an error) and moves to its target.
 - In `<data>` and `<state>`, `<drill node>` names an entity or a state.
 - Limits per block: 60 nodes and groups, 120 edges, 100 steps.
+
+## The brief
+
+Before designing, the model decides for whom the scene is, which question it answers and with which example. Every scene opens with that plan, right after its `#` title:
+
+```exl
+# Where does each value go in a search tree?
+
+<brief form="structure">
+<audience>Second-year engineering students; they know what a linked list is</audience>
+<question>How does a binary search tree decide where each value goes, and what shape does it end up with?</question>
+<example>Insert 50, 30, 70, 20 in that order</example>
+<misconception>Believing the tree always stays balanced</misconception>
+<check>Predict where 40 goes and whether the tree becomes full</check>
+<terms>node, child, height (in levels), full tree, degenerate tree</terms>
+</brief>
+
+<theme name="code" />
+
+<arch title="Smaller values go left, larger ones right">
+  <node id="n50" label="50" desc="The first value: the root" />
+  <node id="n30" label="30" desc="Smaller than 50: left" />
+  <node id="n70" label="70" desc="Larger than 50: right" />
+  <edge from="n50" to="n30" label="left" />
+  <edge from="n50" to="n70" label="right" />
+</arch>
+```
+
+- `form` is the shape of the idea, which picks the picture: `structure` (parts and how they relate or change: a tree, an organization chart, an architecture), `process` (something goes through steps or states: a request, a law, a recipe), `quantity` (amounts, scale and how they change: interest, a funnel, metrics), `system` (causes and feedback: inflation, an ecosystem, a cache under load), `annotated` (a document, image or code read part by part: a lease, an interface), `argument` (a thesis with evidence and objections, or a decision with options and costs) or `timeline` (events in order: a history).
+- `<audience>`: who reads it and what they already know. `<question>`: the one question the scene answers. `<example>`: the one concrete case followed from start to finish. `<misconception>`: the wrong idea the reader most likely brings, which the scene corrects. `<check>`: what the reader predicts or works out at the end. `<terms>`: the terms the reader meets, separated by commas. Their text is in the scene's language.
+- Each field is required exactly once and is one line of at most 300 characters; `<terms>` holds 1–12 terms of at most 60 characters. The `<example>` must hold concrete data: a digit, a quoted literal (`"…"`, `«…»`, `` `…` ``) or a capitalized name after its first word that does not start a sentence ("Gutenberg", "Ana"). "Inserting some values" is refused.
+- The brief is not a block: it travels as `scene.brief`, so the viewer, the slides, exports and the eval's scene text never show it.
 
 ## Lessons
 
@@ -168,8 +204,11 @@ line 7, column 1: Unclosed <arch>: expected </arch>
 
 Syntax errors (unclosed tags, input that ends inside a tag, bad quoting) stop parsing at the first one; validation errors are all reported together.
 
+`render_scene` refuses a scene without `<brief>` and answers with a brief to fill in.
+
 After a scene is saved, `render_scene` may add warnings, one `Warning:` line each, which never block it: the skill asks the agent to fix every one and render again until the result says "No warnings". They are stored with the cached scene, and `show_scene` lists them again (computed anew, so rules added later apply to older scenes) and asks to fix them before answering from the cache. The rules (`server/src/slides.ts`, `server/src/rules.ts`):
 
+- The brief: no component, check or concept takes up its misconception (at least half of the misconception's key words, the words of 4 letters or more that are not in its question and do not just frame it, such as "believing", in the text of one block); no `<quiz>` with options, where the reader predicts its check; or, for a scene cached before briefs existed, no `<brief>` at all (rebuild it with one).
 - A box whose `ref` names a whole file of more than 30 lines (or 2 notebook cells) instead of a line range.
 - The presentation, where a speaker shows the `#` title as the cover and one component per slide with its `title` as its sentence: a scene without `<theme>`; a scene that does not open with a `# ` title; a chapter (or a scene without chapters) with no component, unless it holds two or more `<quiz>` (a review); a block or chapter `title` of more than 12 words. `<chapter>`, `<quiz>` and `<theme>` are not components.
 - Numbers, in a scene that refers to a notebook: every number a component shows as data (stat and stage values, chart and matrix rows, calc parts and total, threshold scores, trace numbers, bars, table values and vectors, plot marks, curve points and parameters, scatter dots and boundary, space positions and scores, cosine dimensions and score, compare cells, and the decimals of a derivation) must appear in an output or a cell of the notebooks it refers to, or in another file it refers to, as written or rounded to the decimals shown; a percentage may be a printed fraction × 100.

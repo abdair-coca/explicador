@@ -1,5 +1,14 @@
 # The shop's data
 
+<brief form="structure">
+<audience>Developers new to this shop's code; they know what a table and a key are</audience>
+<question>What does the shop keep, and how do users, sessions and carts relate?</question>
+<example>The user Ada logs in once, gets one session and fills her one cart</example>
+<misconception>Believing the shop keeps its data in a database that survives a restart</misconception>
+<check>Predict what is left of Ada's session and cart after the server restarts</check>
+<terms>entity, primary key, foreign key, one-to-many</terms>
+</brief>
+
 <theme name="database" />
 
 Everything lives in memory: users in a fixed list, sessions and carts in `Map`s keyed by id.
@@ -31,3 +40,9 @@ Everything lives in memory: users in a fixed list, sessions and carts in `Map`s 
   <code node="user" ref="src/db/users.js:2-10">The only user is written in the code, with an scrypt hash: there is no sign-up and no database.</code>
   <code node="session" ref="src/auth/sessions.js:7-11">A session is a random id mapped to its user and to an expiry one hour ahead.</code>
 </data>
+
+<quiz id="restart-check" question="The server restarts. What is left of Ada's session and cart?">
+<option why="There is no database: sessions and carts live in Maps in memory, which a restart empties.">Both, they are kept in a database</option>
+<option correct="true" why="Only the fixed list of users is written in the code; sessions and carts lived in memory and are gone.">Nothing: only the list of users survives</option>
+<option why="Both Maps live in the same memory, so neither survives the restart.">The cart, but not the session</option>
+</quiz>

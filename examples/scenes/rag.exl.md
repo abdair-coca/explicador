@@ -1,5 +1,14 @@
 # How does a question find its answer in the help center?
 
+<brief form="process">
+<audience>Developers who have used a search box but never built one; they know arrays and JSON</audience>
+<question>How does the help center find the paragraph that answers a customer's question?</question>
+<example>The question "When do I get my money back?" finds the refunds chunk with a cosine of 0.988</example>
+<misconception>Believing the question is compared with all 12 chunks, word by word</misconception>
+<check>Predict which of two chunks scores higher and which meaning makes the difference</check>
+<terms>embedding, vector store, index, cluster, centroid, cosine similarity</terms>
+</brief>
+
 <theme name="database" />
 
 The help center answers questions by **retrieval**: it turns every paragraph into numbers once, keeps them in a table, groups them, and when a question arrives it turns the question into numbers too and looks for the paragraphs that point the same way. The real run of `npm run demo` in this project prints every number below.

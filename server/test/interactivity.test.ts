@@ -9,12 +9,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { tempProject } from './helpers.ts';
+import { tempProject, testBrief } from './helpers.ts';
 
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 const SESSION = 'e2e-session-1';
 
 const loginExl = [
+  testBrief,
   '<arch id="overview" title="Login parts">',
   '  <node id="form" label="Login form" kind="ui" ref="src/ui/login-form.js" />',
   '  <group id="auth" label="Auth">',
@@ -27,6 +28,7 @@ const loginExl = [
   '</arch>',
 ].join('\n');
 const routesExl = [
+  testBrief,
   '<flow id="routes-flow" title="handleLogin">',
   '  <node id="routes" label="handleLogin" kind="function" ref="src/api/auth-routes.js:6-20" />',
   '  <step from="routes">Validates the body.</step>',
@@ -321,7 +323,7 @@ describe('clicks reach the monitor of the same session', () => {
     assert.ok((await call('read_notebook', { path: 'src/api/auth-routes.js' })).isError);
     assert.ok((await call('read_notebook', { path: 'analysis.ipynb', cells: '1-40' })).isError);
 
-    const exl = (ref: string) => `<arch id="nb" title="Notebook">\n<node id="n" label="Analysis" ref="${ref}" />\n</arch>`;
+    const exl = (ref: string) => `${testBrief}\n<arch id="nb" title="Notebook">\n<node id="n" label="Analysis" ref="${ref}" />\n</arch>`;
     const whole = await call('render_scene', { topic: 'notebook whole', exl: exl('analysis.ipynb') });
     assert.ok(!whole.isError, whole.text);
     assert.match(whole.text, /Warning: These boxes point at a whole file.*Analysis \(analysis\.ipynb\)/);

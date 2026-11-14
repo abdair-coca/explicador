@@ -33,14 +33,54 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 
 ## Recipe
 
-1. **The question.** Start with a `#` title that is the question the scene answers ("What happens when you log in?"), then `<theme>`. Done when the title has at most 12 words.
-2. **The ideas.** List for yourself 3 to 7 ideas, each one sentence. Done when each one could be a slide.
-3. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
-4. **One example through everything.** Pick one real input and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
-5. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
-6. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
-7. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
-8. **Check** against the checklist at the end. Done when every line is true.
+1. **The brief.** Before any slide, decide what the scene is for and write it as a `<brief form="…">` right after the `#` title, one line per field (the examples are below):
+   - `<audience>`: who reads it and what they already know.
+   - `<question>`: the one question the scene answers.
+   - `<example>`: one concrete case with its real data (numbers, a quoted value, a name), followed from the first slide to the last.
+   - `<misconception>`: the wrong idea the reader most likely brings.
+   - `<check>`: what the reader predicts or works out at the end to show they understood.
+   - `<terms>`: the terms they will meet, separated by commas (1–12).
+   - `form`: the shape of the idea, which picks the picture: `structure` (parts and how they relate or change), `process` (steps or states), `quantity` (amounts and how they change), `system` (causes and feedback), `annotated` (a document or code read part by part), `argument` (a thesis with evidence, or a decision with options) or `timeline` (events in order).
+
+   Every later step comes from the brief: the title is its question, the example is the one the `<trace>` follows, each term gets a `<concept>` card the first time it appears, one slide corrects the misconception with its own words (a `<quiz>` option and its why, a `<compare>`, a `<concept>`, or the narration of the step that disproves it), and the last `<quiz>` asks the check. Done when every field names something concrete; `render_scene` refuses a scene without a brief.
+2. **The question.** The `#` title is the brief's question in at most 12 words ("What happens when you log in?"); then `<brief>`, then `<theme>`. Done when the title has at most 12 words.
+3. **The ideas.** List for yourself 3 to 7 ideas, each one sentence. Done when each one could be a slide.
+4. **A component per idea.** Pick it from the table below. Done when every idea, and every chapter, has its component.
+5. **One example through everything.** Take the brief's example and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
+6. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
+7. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
+8. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a misconception the scene takes up and a `<quiz>` that asks the check, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
+9. **Check** against the checklist at the end. Done when every line is true.
+
+### Two briefs
+
+A technical one, for a structure:
+
+```xml
+<brief form="structure">
+<audience>Second-year engineering students; they know what a linked list is</audience>
+<question>How does a binary search tree decide where each value goes, and what shape does it end up with?</question>
+<example>Insert 50, 30, 70, 20 in that order</example>
+<misconception>Believing the tree always stays balanced</misconception>
+<check>Predict where 40 goes and whether the tree becomes full</check>
+<terms>node, child, height (in levels), full tree, degenerate tree</terms>
+</brief>
+```
+
+A non-technical one, for a quantity:
+
+```xml
+<brief form="quantity">
+<audience>Adults taking their first loan; they know percentages, not finance</audience>
+<question>Why does a loan at 5 % a year cost more than 5 % a year of what you borrowed?</question>
+<example>Borrow 1 000 € at 5 % a year for 3 years, the interest added at the end of each year</example>
+<misconception>Believing the interest is always 5 % of the first 1 000 €</misconception>
+<check>Predict whether the third year's interest is more than, less than or exactly 50 €</check>
+<terms>principal, interest rate, compound interest</terms>
+</brief>
+```
+
+The fields are written in the user's language, like the rest of the scene.
 
 ## Which component for which question
 
@@ -76,6 +116,15 @@ A list of more than 3 bullets is almost always one of these: steps in order → 
 
 ```exl
 # What happens when you log in?
+
+<brief form="process">
+<audience>Shop customers; they know what a password is, not what a hash is</audience>
+<question>What does the shop do with your password when you log in?</question>
+<example>Ana logs in as "ana@shop.com" with the password "hunter2"</example>
+<misconception>Believing the shop keeps your password and could email it back to you</misconception>
+<check>Explain why the shop cannot email you your password</check>
+<terms>password hash, session</terms>
+</brief>
 
 <theme name="security" />
 
@@ -117,8 +166,8 @@ The password travels once, then only its hash is compared.
 > [!TIP]
 > This is why the shop can never email you your password: it does not have it.
 
-<quiz question="Why can't the shop send you your password?">
-<option why="It could store it; it chooses not to.">It forgot it</option>
+<quiz question="Why can't the shop email you your password?">
+<option why="It could keep it; it chooses not to.">It forgot it</option>
 <option correct="true" why="It only keeps a hash, and a hash cannot be turned back into the password.">It only keeps a hash</option>
 </quiz>
 ```
@@ -129,6 +178,15 @@ With your project's code, every value of the trace comes from the code or a log,
 
 ```exl
 # Can a model tell a good review from a bad one?
+
+<brief form="process">
+<audience>Beginners who have never trained a model; they know what a probability is</audience>
+<question>How does the model turn a review into a probability of being positive?</question>
+<example>The review "a great film, really great" gets the score 0.438 and the probability 0.608</example>
+<misconception>Believing the score is already a probability</misconception>
+<check>Predict the probability the model gives to a score of 0</check>
+<terms>score, sigmoid, probability</terms>
+</brief>
 
 <theme name="ml" />
 
@@ -232,7 +290,8 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 
 ## Checklist before you answer
 
-- The scene opens with a `#` question of at most 12 words, then a `<theme>`.
+- The scene opens with a `#` question of at most 12 words, then a `<brief>` whose six fields are concrete, then a `<theme>`.
+- One slide corrects the brief's misconception in its own words, and a `<quiz>` with options asks its check.
 - Every idea and every chapter has a component; every component's `title` is its point, in at most 12 words.
 - One `<trace>` follows a real example through the whole process, from the real input to the real output.
 - Every technical term is introduced once by a `<concept>` with an analogy (or replaced by plain words for a non-technical audience).

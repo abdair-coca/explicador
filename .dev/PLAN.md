@@ -625,4 +625,5 @@ Open points:
 | F20 | done (2026-11-13), user review pending |
 | F21 | done (2026-11-13), user review pending |
 | F22 | done (2026-11-13), stopped for the user's review |
-| F23–F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F23 | done (2026-11-14) |
+| F24–F30 | planned (user, 2026-11-13); see `docs/plan.md` |

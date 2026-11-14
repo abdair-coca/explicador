@@ -1,5 +1,14 @@
 # What happens when you log in?
 
+<brief form="process">
+<audience>Developers new to this shop's code; they know HTTP, JSON and cookies</audience>
+<question>What happens between typing a password and getting a session cookie?</question>
+<example>Ada logs in as "ada@example.com" with the password "lovelace"</example>
+<misconception>Believing the server stores the password and compares it as typed</misconception>
+<check>Predict what the server compares when Ada types her password</check>
+<terms>scrypt, salt, constant-time comparison, session, HttpOnly cookie</terms>
+</brief>
+
 <theme name="security" />
 
 The browser form posts the credentials as JSON. The auth routes validate the input, the auth service checks the password with scrypt and opens an in-memory session, and the session id comes back as an `HttpOnly` cookie that later guards the cart.
@@ -81,5 +90,11 @@ Follow one login, Ada's, with the demo password from the users table.
     The id is 24 random bytes and lives only in memory, so a restart logs everyone out.
   </code>
 </flow>
+
+<quiz id="login-check" question="When Ada types lovelace, what does the server compare?">
+<option why="The server never stores the password: the users table keeps only a salt and an scrypt key.">The password she typed with the stored password</option>
+<option correct="true" why="It runs scrypt on what she typed with the stored salt and compares the two keys in constant time.">The scrypt key of what she typed with the stored key</option>
+<option why="The email only finds the user; the password still has to match.">Only her email, which finds her account</option>
+</quiz>
 
 Wrong email and wrong password get the same `401` message, so the API does not leak which accounts exist.

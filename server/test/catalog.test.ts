@@ -14,7 +14,7 @@ const guide = read('skills/explicador/presenting.md');
 const tags = Object.keys(catalog);
 /** Top-level tags whose `id` is optional: documented once for every block, not tag by tag. */
 const blockId = (tag: string, attr: string): boolean => attr === 'id' && topLevelTags.includes(tag) && catalog[tag]?.attrs.id === 'optional';
-const components = topLevelTags.filter((tag) => tag !== 'chapter' && tag !== 'theme');
+const components = topLevelTags.filter((tag) => tag !== 'chapter' && tag !== 'theme' && tag !== 'brief');
 const mentions = (text: string, tag: string): boolean => new RegExp(`<${tag}(?=[\\s>/])`).test(text);
 
 interface Row {
@@ -99,9 +99,9 @@ describe('the skill (SKILL.md)', () => {
   });
 
   it('says once that every block takes an optional id', () => {
-    for (const tag of topLevelTags) assert.equal(catalog[tag]?.attrs.id, tag === 'theme' ? undefined : 'optional', `<${tag}> id`);
-    assert.match(skill, /Every top-level tag except `<theme>` takes an optional `id`/);
-    assert.match(reference, /Every top-level tag except `<theme>` takes an optional `id`/);
+    for (const tag of topLevelTags) assert.equal(catalog[tag]?.attrs.id, tag === 'theme' || tag === 'brief' ? undefined : 'optional', `<${tag}> id`);
+    assert.match(skill, /Every top-level tag except `<theme>` and `<brief>` takes an optional `id`/);
+    assert.match(reference, /Every top-level tag except `<theme>` and `<brief>` takes an optional `id`/);
   });
 });
 

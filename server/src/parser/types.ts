@@ -647,8 +647,32 @@ export type LessonBlock = ChapterBlock | StatsBlock | TraceBlock | ChartBlock | 
 
 export type Block = MarkdownBlock | SceneBlock | LessonBlock;
 
+/**
+ * The form an idea takes, which picks the scene's picture: parts and how they relate (`structure`), steps or states
+ * (`process`), amounts and how they change (`quantity`), causes and feedback (`system`), a document read part by part
+ * (`annotated`), a thesis or a decision (`argument`), events in order (`timeline`).
+ */
+export const briefForms = ['structure', 'process', 'quantity', 'system', 'annotated', 'argument', 'timeline'] as const;
+export type BriefForm = (typeof briefForms)[number];
+
+/**
+ * What the model decided before designing a scene (F23): for whom, which question it answers, the one example it
+ * follows, the wrong idea it corrects, how the reader checks themselves and the terms they meet. It is never shown.
+ */
+export interface Brief {
+  form: BriefForm;
+  audience: string;
+  question: string;
+  example: string;
+  misconception: string;
+  check: string;
+  terms: string[];
+}
+
 export interface Scene {
   blocks: Block[];
+  /** Outside `blocks`, so the viewer, the slides, exports and the eval's scene text never show it. */
+  brief?: Brief;
 }
 
 export interface ExlError {

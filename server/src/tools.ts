@@ -10,7 +10,7 @@ import { describeIndex, ensureIndex } from './index/index.ts';
 import { lessonHint, needsLesson } from './lessons.ts';
 import { describeNotebook } from './notebook.ts';
 import type { Navigator } from './navigation.ts';
-import { formatErrors, limits, parseExl, parseRefString, topLevelTags } from './parser/index.ts';
+import { briefForms, briefTemplate, formatErrors, limits, parseExl, parseRefString, topLevelTags } from './parser/index.ts';
 import { resolveInside, stateDir, writeFileAtomic } from './project.ts';
 import { sceneWarnings } from './rules.ts';
 import type { Ref } from './scene.ts';
@@ -73,7 +73,7 @@ export const instructions = [
   '1. Load the explicador skill first (Skill tool, skill "explicador"): it holds the scene format and the rules every scene follows.',
   '2. Call show_scene with a short topic (the one the user names, if any). Fresh: answer from it without reading code.',
   '3. Missing or stale: call ensure_index, read only the code you need, write the scene as EXL and call render_scene;',
-  `EXL is Markdown plus the scene tags ${sceneTags}.`,
+  `EXL is Markdown plus the scene tags ${sceneTags}. Every scene opens with a <brief> right after its # title (the audience, the question, one example, the misconception, the check, the terms); render_scene refuses a scene without one.`,
   'render_scene refuses a scene with errors and, once it is saved, lists warnings: fix every error and every warning, and render again until it says "No warnings".',
   '4. Reply in the chat in a few sentences, in the user\'s language, with the viewer URL.',
   'Notebooks and data or ML code are explained as lessons: <chapter>s over their real values, every number copied from an output.',
@@ -132,9 +132,9 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
         );
       }
       const refs = Object.keys(lookup.scene.files);
-      const oldNotebook = needsLesson(shown.blocks, refs);
+      const oldNotebook = needsLesson(shown.scene.blocks, refs);
       // Rules are checked again on every lookup: a scene cached before a rule existed must follow it too.
-      const warnings = oldNotebook ? [] : sceneWarnings(root, shown.blocks, refs);
+      const warnings = oldNotebook ? [] : sceneWarnings(root, shown.scene, refs);
       if (lookup.status === 'fresh') {
         return text(
           [
@@ -171,7 +171,7 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
     'render_scene',
     {
       description:
-        'Validate an EXL document, cache it under the topic with hashes of the files its refs point to, and show it in the viewer. ' +
+        'Validate an EXL document (it opens with a <brief>), cache it under the topic with hashes of the files its refs point to, and show it in the viewer. ' +
         'On errors nothing is saved; fix them and call again. Once saved it may list warnings: fix every one and call again until none is left.',
       inputSchema: {
         topic: topicSchema,
@@ -190,7 +190,18 @@ export function registerTools(mcp: McpServer, deps: ToolDeps): void {
       if (!safeKey(topic)) return text(`Topic "${topic}" needs letters or digits.`, true);
       const parsed = parseExl(exl);
       if (!parsed.ok) return text(`EXL errors, nothing saved:\n${formatErrors(parsed.errors)}`, true);
-      const warnings = sceneWarnings(root, parsed.scene.blocks, parsed.refs);
+      if (!parsed.scene.brief) {
+        return text(
+          [
+            'No <brief>, nothing saved. Every scene opens with one, right after the # title: decide for whom, which question, which one example, ' +
+              'which misconception and which check before designing the slides (presenting.md, step 1). Copy this and fill it in the user\'s language:',
+            briefTemplate,
+            `form is one of ${briefForms.join(', ')}.`,
+          ].join('\n'),
+          true,
+        );
+      }
+      const warnings = sceneWarnings(root, parsed.scene, parsed.refs);
       const saved = cache.save(topic, exl, parsed.refs, warnings);
       if (!saved.ok) {
         return text(

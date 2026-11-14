@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl } from '../src/parser/index.ts';
 import { boxWarnings, codeWarnings, exampleWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
-import type { Block } from '../src/scene.ts';
+import type { Block, Scene } from '../src/scene.ts';
 import { tempProject } from './helpers.ts';
 
 const repo = join(import.meta.dirname, '..', '..');
@@ -13,6 +13,11 @@ const blocksOf = (source: string): Block[] => {
   const parsed = parseExl(source);
   assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
   return parsed.scene.blocks;
+};
+const sceneOf = (source: string): Scene => {
+  const parsed = parseExl(source);
+  assert.ok(parsed.ok, parsed.ok ? '' : formatErrors(parsed.errors));
+  return parsed.scene;
 };
 const refsOf = (source: string): string[] => {
   const parsed = parseExl(source);
@@ -186,7 +191,7 @@ describe('the scenes the skill shows', () => {
     const projects = { login: 'shop', 'data-model': 'shop', 'session-states': 'shop', 'notebook-lesson': 'notebook', rag: 'rag' };
     for (const [name, project] of Object.entries(projects)) {
       const source = readFileSync(join(repo, 'examples/scenes', `${name}.exl.md`), 'utf8');
-      assert.deepEqual(sceneWarnings(join(repo, 'examples', project), blocksOf(source), refsOf(source)), [], name);
+      assert.deepEqual(sceneWarnings(join(repo, 'examples', project), sceneOf(source), refsOf(source)), [], name);
     }
   });
 
@@ -194,7 +199,7 @@ describe('the scenes the skill shows', () => {
     for (const file of ['skills/explicador/presenting.md', 'skills/explicador/SKILL.md']) {
       const text = readFileSync(join(repo, file), 'utf8').replace(/\r\n/g, '\n');
       for (const [, template = ''] of text.matchAll(/^```exl\n([\s\S]*?)^```/gm)) {
-        assert.deepEqual(sceneWarnings(tempProject(), blocksOf(template), []), [], `${file}: ${template.slice(0, 40)}`);
+        assert.deepEqual(sceneWarnings(tempProject(), sceneOf(template), []), [], `${file}: ${template.slice(0, 40)}`);
       }
     }
   });

@@ -38,3 +38,15 @@ export const fakeViewer = {
   'assets/index-abc.js': 'const s = "</script>"; const r = "$&$1"; document.title = s + r;',
   'assets/index-abc.css': 'body{color:red}/* </style> */',
 };
+
+/** A brief for the scenes tests render: every scene opens with one (F23). */
+export const testBrief = [
+  '<brief form="process">',
+  '<audience>Developers new to the shop</audience>',
+  '<question>How does the shop log a user in?</question>',
+  '<example>Ada logs in as "ada@example.com"</example>',
+  '<misconception>Believing the password is stored as typed</misconception>',
+  '<check>Predict what the server compares</check>',
+  '<terms>hash, session</terms>',
+  '</brief>',
+].join('\n');

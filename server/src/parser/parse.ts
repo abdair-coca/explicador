@@ -21,6 +21,7 @@ import {
   type Report,
 } from './common.ts';
 import { buildCalc, buildChapter, buildChart, buildConcept, buildJourney, buildMatrix, buildQuiz, buildStats, buildTheme, buildThreshold, buildTrace } from './lesson.ts';
+import { buildBrief } from './brief.ts';
 import { buildCompare, buildCosine, buildDerive, buildPlot, buildScatter, buildSpace, buildTimeline } from './visuals.ts';
 import {
   cardinalities,
@@ -39,6 +40,7 @@ import {
   type Transition,
   type WalkStep,
   type ArchEdge,
+  type Brief,
   type CodeSnippet,
   type Drill,
   type Block,
@@ -84,6 +86,8 @@ export function parseExl(source: string): ParseResult {
   let markdownStart = 0;
   let pos = 0;
   let fence: string | undefined;
+  let brief: Brief | undefined;
+  let briefs = 0;
 
   const flushMarkdown = (end: number): void => {
     const raw = src.slice(markdownStart, end);
@@ -131,8 +135,18 @@ export function parseExl(source: string): ParseResult {
         errors.push(at.error(error.offset, error.message));
         return { ok: false, errors };
       }
-      const block = buildBlock(element, blocks.length + 1, (offset, message) => errors.push(at.error(offset, message)));
-      if (block) blocks.push(block);
+      const report: Report = (offset, message) => errors.push(at.error(offset, message));
+      if (element.name === 'brief') {
+        // The brief comes first: only Markdown (the # title) may stand before it.
+        briefs += 1;
+        if (briefs > 1) report(tagStart, 'Only one <brief> per scene');
+        else if (blocks.some((block) => block.type !== 'markdown')) report(tagStart, 'Put <brief> before every other tag, right after the # title');
+        const built = buildBrief(element, report);
+        if (briefs === 1) brief = built;
+      } else {
+        const block = buildBlock(element, blocks.length + 1, report);
+        if (block) blocks.push(block);
+      }
       markdownStart = end;
       pos = end;
       continue;
@@ -151,7 +165,7 @@ export function parseExl(source: string): ParseResult {
     errors.push({ line: 1, column: 1, message: `A lesson has at most ${limits.chapters} chapters` });
   }
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, scene: { blocks }, refs: collectRefs(blocks) };
+  return { ok: true, scene: { blocks, ...(brief ? { brief } : {}) }, refs: collectRefs(blocks) };
 }
 
 const builders: Record<string, (element: Element, ordinal: number, report: Report) => Block> = {
@@ -373,7 +387,7 @@ function checkTheme(blocks: Block[], errors: ExlError[]): void {
   const themes = tags.filter((block) => block.type === 'theme');
   if (themes.length > 1) errors.push({ line: 1, column: 1, message: 'Only one <theme> per scene; a chapter can take its own with <chapter theme="…">' });
   else if (themes.length === 1 && tags[0]?.type !== 'theme') {
-    errors.push({ line: 1, column: 1, message: 'Put <theme> before every other tag, right after the title' });
+    errors.push({ line: 1, column: 1, message: 'Put <theme> before every other tag but <brief>, right after the title and the brief' });
   }
 }
 

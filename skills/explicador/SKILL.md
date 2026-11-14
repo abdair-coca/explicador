@@ -8,7 +8,7 @@ when_to_use: 'Requests in any language such as "how does X work", "what happens 
 
 You explain code with **scenes**: an EXL document (Markdown plus a few diagram tags) that the Explicador MCP server validates, caches and plays in a local viewer tab. Always answer the user in their language; write the scene text (titles, labels, narration, prose) in that language too.
 
-Every scene is a page that explains in full and a presentation someone can watch alone: Present shows the `#` title as the cover, then one component per slide with its `title` as its one sentence, and the narration of each part as a subtitle under it (a speaker turns subtitles off with S). By default the audience uses technical vocabulary made easy. When the user wants to understand a whole process well ("how does our RAG work", "explain the checkout end to end", "explícamelo a fondo, de principio a fin"), build a **deep dive**: a `<journey>` map of the whole process in the intro, then one `<chapter stage="…">` per stop with its own picture and the same real example all the way through; never `##` headings in place of chapters. **Before writing any EXL, read [presenting.md](presenting.md)**: what Present shows, the deep dive, a component for every idea, one example through the whole process, which tag answers which question, templates to copy, LaTeX, and the checklist.
+Every scene is a page that explains in full and a presentation someone can watch alone: Present shows the `#` title as the cover, then one component per slide with its `title` as its one sentence, and the narration of each part as a subtitle under it (a speaker turns subtitles off with S). By default the audience uses technical vocabulary made easy. When the user wants to understand a whole process well ("how does our RAG work", "explain the checkout end to end", "explícamelo a fondo, de principio a fin"), build a **deep dive**: a `<journey>` map of the whole process in the intro, then one `<chapter stage="…">` per stop with its own picture and the same real example all the way through; never `##` headings in place of chapters. **Before writing any EXL, read [presenting.md](presenting.md)**: the brief every scene opens with, what Present shows, the deep dive, a component for every idea, one example through the whole process, which tag answers which question, templates to copy, LaTeX, and the checklist.
 
 ## Workflow
 
@@ -27,7 +27,7 @@ First decide what is asked, because each answer has its own tool:
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the EXL and call `render_scene`**. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
+5. **Write the brief, then the EXL, and call `render_scene`**. Every scene opens with a `<brief>` right after its `#` title: for whom, which question, which one example, which misconception and which check, decided before any slide ([presenting.md](presenting.md), step 1); `render_scene` refuses a scene without one. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
 6. **Reply in the chat** with a short explanation (3–6 sentences, no list of the scene's steps, no code) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -72,10 +72,19 @@ When the topic is a Jupyter notebook, or a data or ML script, explain it as a **
 
 ## EXL in short
 
-Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` takes an optional `id`.
+Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of a line; attribute values are always quoted strings; no `{expressions}`, no other HTML. Every top-level tag except `<theme>` and `<brief>` takes an optional `id`.
 
 ```exl
 # What happens when you log in?
+
+<brief form="process">
+<audience>Developers new to this code; they know HTTP and JSON</audience>
+<question>What happens between typing a password and getting a session cookie?</question>
+<example>Ada logs in as "ada@example.com" with the password "lovelace"</example>
+<misconception>Believing the server stores the password as the user typed it</misconception>
+<check>Predict what the server compares when Ada logs in</check>
+<terms>scrypt, salt, constant-time comparison, session cookie</terms>
+</brief>
 
 <theme name="security" />
 
@@ -118,7 +127,14 @@ One short paragraph of context.
     The route answers with an HttpOnly cookie, so the browser carries the session from now on.
   </step>
 </flow>
+
+<quiz question="Does the server store the password the user typed?">
+<option why="It keeps only a salt and the scrypt key, so a stolen table gives no password away.">Yes, to compare it at the next login</option>
+<option correct="true" why="At login it derives the key again from what was typed, with the stored salt, and compares the keys.">No, only a key derived from it</option>
+</quiz>
 ```
+
+- `<brief form>` comes first, right after the `#` title, and is never shown: `<audience>`, `<question>`, `<example>` (concrete data: numbers, a quoted value or a name), `<misconception>`, `<check>` and `<terms>` (comma-separated, 1–12), each exactly once, one line of at most 300 characters. `form` = `structure`, `process`, `quantity`, `system`, `annotated`, `argument` or `timeline`. How to write it: [presenting.md](presenting.md), step 1. The server warns when no component takes up the misconception and when no `<quiz>` with options asks the check.
 
 - `<arch title>`: the static picture: `<node>`s and `<edge from to label?>`s. Use it for "what are the parts".
 - `<group id label kind?>` (in `<arch>` only) boxes related nodes; the viewer shows it collapsed and zooms in on click, without asking you. Edges may point at a group.
@@ -135,7 +151,7 @@ One short paragraph of context.
 - `ref`: `path`, `path:line` or `path:start-end`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
-  - `<theme name="ml" accent? />` once, right after the title (see "Theme" below).
+  - `<theme name="ml" accent? />` once, right after the brief (see "Theme" below).
   - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? stage? />` self-closing; runs until the next chapter. `stage` = the id of a `<journey>` stage: the chapter opens with the journey as a map, that stage lit.
   - `<stats title?>` with 1–6 `<stat value="0.833" label="test accuracy" ref? />`.
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
@@ -166,7 +182,7 @@ For embeddings, vector stores, indexes and similarity search (RAG, recommendatio
 
 ## Theme
 
-Give every scene a `<theme name="…" />` right after its title, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
+Give every scene a `<theme name="…" />` right after its brief, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
 
 ## Good scenes
 

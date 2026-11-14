@@ -1,5 +1,14 @@
 # Can a model tell a good review from a bad one?
 
+<brief form="process">
+<audience>Beginners who have never trained a model; they know what a table and a percentage are</audience>
+<question>How does a model learn to tell a positive review from a negative one, and where does it fail?</question>
+<example>The test review "worst film year really bad", which the model wrongly calls positive</example>
+<misconception>Believing the model understands what the words of a review mean</misconception>
+<check>Predict which way the model leans for a new review from the weights of its words</check>
+<terms>labelled dataset, stop word, train/test split, bag of words, TF-IDF, logistic regression, confusion matrix, precision and recall, sigmoid</terms>
+</brief>
+
 <theme name="ml" />
 
 This notebook teaches a computer to read a short movie review and say whether it is **positive** or **negative**. It never understands the words: it counts them, and learns how much each one pushes towards "positive". Here is how far that gets with 24 reviews.

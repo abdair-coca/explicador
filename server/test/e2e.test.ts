@@ -6,7 +6,8 @@ import { after, before, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { fakeViewer, tempProject } from './helpers.ts';
+import { SceneCache } from '../src/cache/index.ts';
+import { fakeViewer, tempProject, testBrief } from './helpers.ts';
 
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 const exl = readFileSync(join(repo, 'examples/scenes/login.exl.md'), 'utf8');
@@ -59,7 +60,7 @@ describe('MCP server over stdio', () => {
 
     const rendered = await call('render_scene', { topic: 'login', exl });
     assert.equal(rendered.isError, false, rendered.text);
-    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <trace id="login-trace">, <flow id="login-flow">\)/);
+    assert.match(rendered.text, /Rendered "login" \(<theme id="theme">, <arch id="login-architecture">, <trace id="login-trace">, <flow id="login-flow">, <quiz id="login-check">\)/);
     assert.match(rendered.text, /No warnings: the scene follows every rule the server checks\./);
     viewerUrl = /at (http:\/\/127\.0\.0\.1:\d+\/\?t=[a-f0-9]+)/.exec(rendered.text)?.[1] ?? '';
     assert.ok(viewerUrl);
@@ -85,7 +86,7 @@ describe('MCP server over stdio', () => {
     assert.deepEqual(body.scene.changes, [{ path: 'src/auth/sessions.js', change: 'modified' }]);
     assert.deepEqual(
       body.scene.blocks.map((b) => b.type),
-      ['markdown', 'theme', 'markdown', 'arch', 'markdown', 'trace', 'flow', 'markdown'],
+      ['markdown', 'theme', 'markdown', 'arch', 'markdown', 'trace', 'flow', 'quiz', 'markdown'],
     );
     // Key code arrives with the real lines, read from the project when the scene is shown.
     const password = body.scene.blocks[3]?.codes?.find((c) => c.node === 'password');
@@ -119,11 +120,18 @@ describe('MCP server over stdio', () => {
 
     const ghost = await call('render_scene', {
       topic: 'ghost',
-      exl: '<arch title="A"><node id="a" label="A" ref="src/ghost.js" /></arch>',
+      exl: `${testBrief}\n<arch title="A"><node id="a" label="A" ref="src/ghost.js" /></arch>`,
     });
     assert.equal(ghost.isError, true);
     assert.match(ghost.text, /- src\/ghost\.js/);
     assert.match((await call('show_scene', { topic: 'ghost' })).text, /No cached scene/);
+
+    const unplanned = await call('render_scene', { topic: 'unplanned', exl: '# A\n\n<arch title="A">\n<node id="a" label="A" ref="src/ui/login-form.js:1-5" />\n</arch>' });
+    assert.equal(unplanned.isError, true, 'a scene without a brief is refused');
+    assert.match(unplanned.text, /^No <brief>, nothing saved\. Every scene opens with one, right after the # title/);
+    assert.match(unplanned.text, /<brief form="process">\n<audience>/);
+    assert.match(unplanned.text, /form is one of structure, process, quantity, system, annotated, argument, timeline\./);
+    assert.match((await call('show_scene', { topic: 'unplanned' })).text, /No cached scene/);
   });
 
   it('caches <data> and <state> scenes and invalidates them through their refs', async () => {
@@ -153,21 +161,33 @@ describe('MCP server over stdio', () => {
     writeFileSync(join(project, 'unused.txt'), '');
   });
 
+  it('asks a scene cached before briefs existed to be rebuilt with one', async () => {
+    const old = exl.replace(/<brief[\s\S]*?<\/brief>\n\n/, '');
+    assert.ok(!old.includes('<brief'));
+    const saved = new SceneCache(project).save('old login', old, ['src/ui/login-form.js', 'src/api/auth-routes.js', 'src/auth/auth-service.js', 'src/auth/password.js', 'src/auth/sessions.js', 'src/db/users.js']);
+    assert.ok(saved.ok);
+    const shown = await call('show_scene', { topic: 'old login' });
+    assert.match(shown.text, /It breaks a rule the server checks/);
+    assert.match(shown.text, /^Warning: No <brief>: this scene was made before every scene opened with one\. Rebuild it under the same topic/m);
+  });
+
   it('stores what a render asks to fix, and asks again before answering from the cache', async () => {
-    const sloppy = '# Logging in\n\n<arch title="The login">\n<node id="form" label="Login form" ref="src/ui/login-form.js:1-5" />\n</arch>';
+    const sloppy = `# Logging in\n\n${testBrief}\n\n<arch title="The login">\n<node id="form" label="Login form" ref="src/ui/login-form.js:1-5" />\n</arch>`;
     const rendered = await call('render_scene', { topic: 'sloppy', exl: sloppy });
     assert.equal(rendered.isError, false, 'warnings never block a render');
     assert.match(rendered.text, /^Warning: No <theme>/m);
     assert.match(rendered.text, /^Warning: These boxes have no desc.*"Login form"/m);
     assert.match(rendered.text, /^Warning: No <code>/m);
-    assert.match(rendered.text, /breaks 3 rules of the explicador skill: fix every warning and call render_scene again/);
+    assert.match(rendered.text, /^Warning: No component takes up the misconception of the brief/m);
+    assert.match(rendered.text, /^Warning: No <quiz> with options/m);
+    assert.match(rendered.text, /breaks 5 rules of the explicador skill: fix every warning and call render_scene again/);
     const cachePath = join(project, '.explicador/scenes/sloppy.json');
     const saved = JSON.parse(readFileSync(cachePath, 'utf8')) as { warnings?: string[] };
-    assert.equal(saved.warnings?.length, 3, 'the cache keeps them, where an eval can read them');
+    assert.equal(saved.warnings?.length, 5, 'the cache keeps them, where an eval can read them');
 
     const shown = await call('show_scene', { topic: 'sloppy' });
     assert.match(shown.text, /is fresh/);
-    assert.match(shown.text, /It breaks 3 rules the server checks\. Fix each warning below/);
+    assert.match(shown.text, /It breaks 5 rules the server checks\. Fix each warning below/);
     assert.match(shown.text, /^Warning: These boxes have no desc/m);
     assert.doesNotMatch(shown.text, /Answer from this EXL/);
 

@@ -67,7 +67,7 @@ export function loadScene(topic: Topic): LoadedScene {
     exl,
     scene: parsed.scene,
     text: sceneText(parsed.scene),
-    warnings: sceneWarnings(root, parsed.scene.blocks, parsed.refs),
+    warnings: sceneWarnings(root, parsed.scene, parsed.refs),
     components: parsed.scene.blocks.filter((block) => !NOT_COMPONENT.has(block.type)).length,
   };
 }
