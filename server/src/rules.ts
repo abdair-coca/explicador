@@ -5,7 +5,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { isNotebookPath } from './files.ts';
 import { resolveInside } from './project.ts';
 import { boxesWithoutRange } from './ranges.ts';
-import type { ArcPart, Block, BriefForm, ChapterBlock, Scene } from './scene.ts';
+import type { ArcPart, Block, BriefForm, ChapterBlock, FigureBlock, Scene } from './scene.ts';
 import { slideWarnings } from './slides.ts';
 
 /** A subtitle is read while its part plays: about 20 words, never more than this. */
@@ -44,6 +44,7 @@ export function sceneWarnings(root: string, scene: Scene, refs: readonly string[
     ...quizWarnings(blocks),
     ...codeWarnings(blocks, refs),
     ...exampleWarnings(blocks),
+    ...figureWarnings(blocks),
   ];
 }
 
@@ -668,4 +669,77 @@ export function exampleWarnings(blocks: Block[]): string[] {
     'No <trace>: follow one real input through the flow (what the user types, a request, a row), changing form at each step: ' +
       '<trace title="…"><value label="What goes in">the real input</value><value kind="table" label="…" code="the call" note="one sentence">name=value|…</value>…</trace>, every value from the code or its data.',
   ];
+}
+
+// Figures -------------------------------------------------------------------------------------------------------------
+
+/** How close an arrow's end may come to a circle or a box without touching it before it reads as a miss. */
+const NEAR_MISS = 3;
+/** How far a drawn angle may be from the degrees its label says. */
+const ANGLE_SLACK = 3;
+
+type Shape = FigureBlock['shapes'][number];
+const nameOf = (shape: Shape, i: number): string => (shape.id ? `"${shape.id}"` : `shape ${i + 1}`);
+
+/** Distance from a point to the edge of a circle or a box. */
+function edgeDistance(shape: Shape, [x, y]: [number, number]): number | undefined {
+  if (shape.kind === 'circle') return Math.abs(Math.hypot(x - shape.x, y - shape.y) - shape.r);
+  if (shape.kind !== 'box') return undefined;
+  const dx = Math.max(shape.x - x, 0, x - (shape.x + shape.w));
+  const dy = Math.max(shape.y - y, 0, y - (shape.y + shape.h));
+  if (dx > 0 || dy > 0) return Math.hypot(dx, dy);
+  return Math.min(x - shape.x, shape.x + shape.w - x, y - shape.y, shape.y + shape.h - y);
+}
+
+const covers = (shape: Shape, [x, y]: [number, number]): boolean =>
+  shape.kind === 'circle' ? Math.hypot(x - shape.x, y - shape.y) < shape.r : shape.kind === 'box' ? x > shape.x && x < shape.x + shape.w && y > shape.y && y < shape.y + shape.h : false;
+
+/**
+ * A figure's geometry is true (F33): an arrow that ends near a shape ends on it, an angle measures the degrees its label
+ * says, and no shape hides the middle of a labelled one declared before it.
+ */
+export function figureWarnings(blocks: Block[]): string[] {
+  const warnings: string[] = [];
+  for (const block of blocks) {
+    if (block.type !== 'figure') continue;
+    const at = named(block);
+    block.shapes.forEach((shape, i) => {
+      if (shape.kind === 'arrow') {
+        const ends = [shape.points[0], shape.points[shape.points.length - 1]];
+        for (const end of ends) {
+          if (!end) continue;
+          block.shapes.forEach((other, j) => {
+            const d = edgeDistance(other, end);
+            if (d === undefined || d < 0.25 || d >= NEAR_MISS) return;
+            // An arrow that starts or ends at a shape's middle means it (a line from the eye), not a miss.
+            const middle: [number, number] = other.kind === 'circle' ? [other.x, other.y] : other.kind === 'box' ? [other.x + other.w / 2, other.y + other.h / 2] : end;
+            if (Math.hypot(end[0] - middle[0], end[1] - middle[1]) < 0.25) return;
+            const hint =
+              other.kind === 'circle'
+                ? `${other.id ?? 'it'}@${Math.round((((Math.atan2(end[1] - other.y, end[0] - other.x) * 180) / Math.PI) + 360) % 360)}`
+                : `${other.id ?? 'it'}.left, .right, .top or .bottom`;
+            warnings.push(`In ${at}, the arrow ${nameOf(shape, i)} ends ${d.toFixed(1)} from the edge of ${nameOf(other, j)}: end it on the edge with a place on the shape (${hint}).`);
+          });
+        }
+      }
+      if (shape.kind === 'angle' && shape.label) {
+        const said = /(-?\d+(?:[.,]\d+)?)\s*°/.exec(shape.label);
+        if (said) {
+          const a = Math.atan2(shape.from[1] - shape.at[1], shape.from[0] - shape.at[0]);
+          const b = Math.atan2(shape.to[1] - shape.at[1], shape.to[0] - shape.at[0]);
+          let drawn = (Math.abs(a - b) * 180) / Math.PI;
+          if (drawn > 180) drawn = 360 - drawn;
+          const wanted = Number((said[1] ?? '').replace(',', '.'));
+          if (Math.abs(drawn - wanted) > ANGLE_SLACK) warnings.push(`In ${at}, the angle ${nameOf(shape, i)} says ${said[0]} but is drawn at ${Math.round(drawn)}°: move its "from" or "to" so the picture is true.`);
+        }
+      }
+      if ((shape.kind === 'circle' || shape.kind === 'box') && shape.label) {
+        const middle: [number, number] = shape.kind === 'circle' ? [shape.x, shape.y] : [shape.x + shape.w / 2, shape.y + shape.h / 2];
+        const over = block.shapes.findIndex((other, j) => j > i && other.appear <= shape.appear && covers(other, middle));
+        const other = block.shapes[over];
+        if (other) warnings.push(`In ${at}, ${nameOf(other, over)} covers the middle of ${nameOf(shape, i)} and hides its label "${shape.label}": move one of them.`);
+      }
+    });
+  }
+  return warnings;
 }

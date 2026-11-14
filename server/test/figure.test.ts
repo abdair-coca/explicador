@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl, type FigureBlock, type WithArc } from '../src/parser/index.ts';
-import { codeWarnings, formWarnings, subtitleWarnings } from '../src/rules.ts';
+import { codeWarnings, figureWarnings, formWarnings, subtitleWarnings } from '../src/rules.ts';
 
 const shapes = [
   '<circle id="drop" x="60" y="24" r="14" color="blue" label="Raindrop" />',
@@ -70,9 +70,9 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure('<box x="90" y="10" w="20" h="3" />')), /"w" 110 13 is outside the figure/);
     assert.match(errorsOf(figure('<circle x="ten" y="10" r="3" />')), /"x" must be a number/);
     assert.match(errorsOf(figure('<circle x="10" y="10" r="0" />')), /"r" must be a number of at least 0.5/);
-    assert.match(errorsOf(figure('<arrow points="10 10 20" />')), /"points" is a list of "x y" pairs/);
-    assert.match(errorsOf(figure('<arrow points="10 10" />')), /"points" needs 2–12 "x y" pairs/);
-    assert.match(errorsOf(figure('<zone points="1 1 5 5" />')), /"points" needs 3–16 "x y" pairs/);
+    assert.match(errorsOf(figure('<arrow points="10 10 20" />')), /"points" is a list of points, each "x y" or a place on a shape/);
+    assert.match(errorsOf(figure('<arrow points="10 10" />')), /"points" needs 2–12 points/);
+    assert.match(errorsOf(figure('<zone points="1 1 5 5" />')), /"points" needs 3–16 points/);
     assert.match(errorsOf(figure('<angle at="10 10" from="10 10" to="20 20" />')), /"from" and "to" away from its corner/);
     assert.match(errorsOf(figure('<circle x="10" y="10" r="3" color="pink" />')), /Unknown color "pink"; use ink, red/);
     assert.match(errorsOf(figure('<arrow points="1 1 9 9" head="left" />')), /Unknown head "left"/);
@@ -120,6 +120,63 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure(`${shapes}\n<show set="drop: pink">Pink.</show>`)), /Unknown set "pink"/);
     assert.match(errorsOf(figure(`${shapes}\n<show flow="drop">Dot.</show>`)), /"flow" sends a dot along an <arrow>; "drop" is a <circle>/);
     assert.match(errorsOf(figure(`${shapes}\n<show>Nothing.</show>`)), /A <show> needs something to show/);
+  });
+
+  it('places points on shapes declared before, and draws normals (F33)', () => {
+    const block = blockOf(
+      figure(
+        [
+          '<circle id="drop" x="60" y="24" r="10" />',
+          '<box id="wall" x="10" y="40" w="20" h="10" />',
+          '<arrow id="ray" points="5 24 drop.left" />',
+          '<arrow id="bounce" points="drop@0 drop@90 wall.top-right" />',
+          '<normal id="n" at="drop@180" length="10" />',
+          '<normal id="m" at="wall.top" />',
+          '<angle at="drop.center" from="ray.start" to="bounce.middle" />',
+          '<label x="50" y="5">Sky</label>',
+          '<show move="drop: wall.center">It falls.</show>',
+        ].join('\n'),
+      ),
+    );
+    const at = (i: number) => block.shapes[i];
+    const ray = at(2);
+    assert.ok(ray?.kind === 'arrow');
+    assert.deepEqual(ray.points, [[5, 24], [50, 24]]);
+    const bounce = at(3);
+    assert.ok(bounce?.kind === 'arrow');
+    assert.deepEqual(bounce.points.map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100]), [[70, 24], [60, 34], [30, 40]]);
+    const n = at(4);
+    assert.ok(n?.kind === 'normal');
+    assert.deepEqual([n.at, n.points, n.color], [[50, 24], [[55, 24], [45, 24]], 'gray']);
+    const m = at(5);
+    assert.ok(m?.kind === 'normal');
+    assert.deepEqual(m.points, [[20, 46], [20, 34]]);
+    const angle = at(6);
+    assert.ok(angle?.kind === 'angle');
+    assert.deepEqual([angle.at, angle.from], [[60, 24], [5, 24]]);
+    assert.deepEqual(block.states[1]?.[0]?.offset, [-40, 21]);
+  });
+
+  it('refuses places on unknown shapes, on later ones, and places a shape does not have', () => {
+    assert.match(errorsOf(figure('<arrow points="1 1 drop.left" />\n<circle id="drop" x="50" y="20" r="5" />')), /"points" names "drop", which is no shape declared before this one/);
+    assert.match(errorsOf(figure('<box id="b" x="1" y="1" w="5" h="5" />\n<arrow points="1 1 b@30" />')), /"b@30" is no place on <box> "b"; use b.center, b.left/);
+    assert.match(errorsOf(figure('<circle id="c" x="10" y="10" r="5" />\n<arrow points="1 1 c.start" />')), /use c.center, c.left, c.right, c.top, c.bottom, or c@degrees/);
+    assert.match(errorsOf(figure('<arrow points="1 1 here" />')), /"here" is neither a number nor a place on a shape/);
+    assert.match(errorsOf(figure('<circle id="c" x="10" y="10" r="5" />\n<normal at="c.center" />')), /<normal at> is a point on the edge of a circle/);
+    assert.match(errorsOf(figure('<circle id="c" x="98" y="10" r="5" />\n<arrow points="1 1 c@0" />')), /"points" 103 10 is outside the figure/);
+  });
+
+  it('warns when an arrow stops short, an angle is drawn at another angle, or a shape hides a label', () => {
+    const warn = (body: string): string => figureWarnings([blockOf(figure(body))]).join('\n');
+    const drop = '<circle id="drop" x="60" y="24" r="10" label="Drop" />';
+    assert.match(warn(`${drop}\n<arrow id="ray" points="5 24 48.5 24" />`), /the arrow "ray" ends 1.5 from the edge of "drop": end it on the edge with a place on the shape \(drop@180\)/);
+    assert.equal(warn(`${drop}\n<arrow id="ray" points="5 24 drop.left" />`), '');
+    assert.equal(warn(`${drop}\n<arrow id="ray" points="drop.center 95 24" />`), '', 'a line from the middle means it');
+    assert.equal(warn(`${drop}\n<arrow id="ray" points="5 5 20 5" />`), '', 'far away');
+    assert.match(warn(`${drop}\n<angle id="a" at="10 50" from="30 50" to="20 38" label="42°" />`), /the angle "a" says 42° but is drawn at 50°/);
+    assert.equal(warn(`${drop}\n<angle id="a" at="10 50" from="30 50" to="20 41" label="42°" />`), '');
+    assert.match(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />`), /"car" covers the middle of "drop" and hides its label "Drop"/);
+    assert.equal(warn(`${drop}\n<box id="car" x="55" y="20" w="10" h="8" />\n<show items="car">Later.</show>`), '', 'it arrives later');
   });
 
   it('keeps to its limits', () => {

@@ -30,20 +30,22 @@ Ese reparto de colores tiene nombre.
 
 <figure title="La gota separa la luz y la devuelve a tu ojo" arc="answer">
 <circle id="gota" x="60" y="24" r="14" color="blue" />
-<label x="75" y="44" color="blue">Gota de lluvia</label>
-<circle id="sol" x="6" y="9" r="4" color="yellow" label="Sol" />
-<arrow id="luz" points="4 18 47.4 18" color="ink" label="Luz blanca" />
-<arrow id="dentro" points="47.4 18 73.2 28.8" color="gray" label="Se separa" />
-<arrow id="rebote" points="73.2 28.8 52 35.5" color="gray" label="Rebota" />
-<arrow id="rojo" points="52 35.5 33 52.6" color="red" />
-<arrow id="violeta" points="53.4 36.4 42.7 45.4" color="violet" />
-<circle id="ojo" x="32" y="53.2" r="2" color="ink" label="Tu ojo" />
-<arrow id="linea" points="32 53.2 70 53.2" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
-<angle id="angulo" at="32 53.2" from="70 53.2" to="52 35.5" color="red" label="42°" />
+<label x="84" y="8" color="blue">Gota de lluvia</label>
+<circle id="sol" x="6" y="12" r="4" color="yellow" label="Sol" />
+<circle id="ojo" x="43.6" y="55.1" r="2" label="Tu ojo" />
+<arrow id="luz" points="sol.right gota@239.5" label="Luz blanca" />
+<normal id="normal" at="gota@239.5" label="Normal" />
+<arrow id="dentro" points="gota@239.5 gota@338.8" color="gray" label="Se desvía" />
+<arrow id="rebote" points="gota@338.8 gota@78.1" color="gray" label="Rebota" />
+<normal id="normal2" at="gota@78.1" />
+<arrow id="rojo" points="gota@78.1 ojo@318" color="red" />
+<arrow id="violeta" points="gota@80.5 53.2 45.6" color="violet" />
+<arrow id="linea" points="ojo.center 95 55.1" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
+<angle id="angulo" at="ojo.center" from="95 55.1" to="gota@78.1" color="red" label="42°" />
 <show items="sol luz">La luz blanca del Sol llega a la gota.</show>
-<show items="dentro">Al entrar, el agua desvía cada color un poco distinto.</show>
+<show items="normal dentro">Al entrar, el agua la desvía respecto a la normal, cada color un poco distinto.</show>
 <show items="rebote">El fondo de la gota la refleja hacia delante.</show>
-<show items="rojo violeta">Sale separada: el rojo más abierto, el violeta más cerrado.</show>
+<show items="normal2 rojo violeta">Al salir se desvía otra vez: el rojo más abierto, el violeta más cerrado.</show>
 <show items="ojo linea angulo">Tu ojo recibe el rojo de las gotas que están a 42° de la dirección de la luz.</show>
 </figure>
 

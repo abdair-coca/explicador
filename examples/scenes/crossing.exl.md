@@ -26,8 +26,8 @@ A las 23:00 el cruce está vacío. Las cifras son las del ejemplo, no las de un 
 <circle id="lateral" x="61" y="39" r="2.5" color="red" label="Su semáforo" />
 <circle id="avenida" x="38" y="20" r="2.5" color="green" label="Semáforo de la avenida" />
 <box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
-<arrow id="aviso" points="55 46 76 47" color="orange" dashed="yes" />
-<arrow id="orden" points="76 50 64 41" color="gray" dashed="yes" />
+<arrow id="aviso" points="espira.right controlador.left" color="orange" dashed="yes" />
+<arrow id="orden" points="controlador.top-left lateral@34" color="gray" dashed="yes" />
 <show move="coche: 47 41">Lucía para en la calle lateral, justo encima de la espira.</show>
 <show items="aviso" pulse="espira" flow="aviso">La espira nota el metal del coche y avisa al controlador.</show>
 <show set="avenida: yellow" ask="Nadie viene por la avenida. ¿Qué hace el controlador?">Nadie espera en la avenida: el controlador le pasa el amarillo.</show>

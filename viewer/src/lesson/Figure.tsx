@@ -43,6 +43,7 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
         />
       );
     case 'angle':
+    case 'normal':
       return <path className={className} d={path} />;
     case 'label':
       return null;
@@ -108,7 +109,7 @@ export function FigureView({ block, shown }: { block: FigureBlock; shown?: numbe
     const was = block.states[before] ?? [];
     // What appears: lines draw themselves, areas grow in, labels rise.
     const fresh = show.items.map(group).filter((g): g is SVGGElement => g !== null);
-    const lines = fresh.flatMap((g) => [...g.querySelectorAll('.fig-arrow, .fig-angle')]);
+    const lines = fresh.flatMap((g) => [...g.querySelectorAll('.fig-arrow, .fig-angle, .fig-normal')]);
     const solids = fresh.flatMap((g) => [...g.querySelectorAll('.fig-circle, .fig-box, .fig-zone')]);
     const labels = fresh.flatMap((g) => [...g.querySelectorAll('.fig-label')]);
     if (solids.length > 0) tweens.push(gsap.from(solids, { scale: 0.4, autoAlpha: 0, transformOrigin: '50% 50%', duration: dur.base, ease: ease.pop, stagger: 0.08 }));

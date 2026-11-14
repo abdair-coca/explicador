@@ -3,11 +3,11 @@
 // labels. Shapes without a <show> are there from the start; each <show> names shapes that appear together in a later
 // part, with its narration. No free paths and no styles: what a figure can say is what its shapes and labels say.
 import type { Element } from './reader.ts';
-import { anchorOf } from './figureAnchor.ts';
+import { ANCHOR, anchorOf, anchorSides, pointOn, surfaceNormal } from './figureAnchor.ts';
 import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, type Report } from './common.ts';
 import { arrowHeads, figureColors, type ArrowHead, type FigureBlock, type FigureColor, type FigureMove, type FigureSet, type FigureShape, type FigureShow, type FigureState, type Point } from './types.ts';
 
-export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'label'] as const;
+export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'normal', 'label'] as const;
 const spec = (name: string) => catalog[name] ?? { attrs: {} };
 const NUMBER = /^-?\d+(?:\.\d+)?$/;
 const offsetOf = (element: Element, attr: string): number => element.attrs.get(attr)?.offset ?? element.offset;
@@ -31,28 +31,62 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     }
     return Number(value);
   };
+  const shapes: FigureShape[] = [];
+  const ids = new Map<string, number>();
+  // A place on a shape declared before (F33): `drop.left`, `drop@200`, `ray.end`, resolved where the shape is declared.
+  const place = (token: string, attr: string, child: Element): { at: Point; shape: FigureShape; side?: string; degrees?: number } | undefined => {
+    const match = ANCHOR.exec(token);
+    if (!match) {
+      report(offsetOf(child, attr), `"${attr}": "${token}" is neither a number nor a place on a shape (like drop.left or drop@200)`);
+      return undefined;
+    }
+    const [, name = '', side, degrees] = match;
+    const index = ids.get(name);
+    const shape = index === undefined ? undefined : shapes[index];
+    if (!shape) {
+      report(offsetOf(child, attr), `"${attr}" names "${name}", which is no shape declared before this one: declare it first`);
+      return undefined;
+    }
+    const at = pointOn(shape, side, degrees === undefined ? undefined : Number(degrees));
+    if (!at) {
+      const sides = anchorSides[shape.kind].map((item) => `${name}.${item}`);
+      report(offsetOf(child, attr), `"${token}" is no place on <${shape.kind}> "${name}"; use ${sides.join(', ')}${shape.kind === 'circle' ? `, or ${name}@degrees (0 to the right, 90 down)` : ''}`);
+      return undefined;
+    }
+    return { at, shape, ...(side ? { side } : {}), ...(degrees !== undefined ? { degrees: Number(degrees) } : {}) };
+  };
   const point = (value: string | undefined, attr: string, child: Element): Point | undefined => {
     const list = points(value, attr, child, 1, 1);
     return list?.[0];
   };
+  /** Points as "x y" pairs of numbers, or places on shapes declared before, in any mix: "4 18 drop@200 drop@20". */
   const points = (value: string | undefined, attr: string, child: Element, min: number, max: number): Point[] | undefined => {
     if (value === undefined) return undefined;
-    const numbers = value.trim().split(/[\s,]+/).filter(Boolean);
-    if (numbers.length % 2 !== 0 || !numbers.every((n) => NUMBER.test(n))) {
-      report(offsetOf(child, attr), `"${attr}" is a list of "x y" pairs, like "10 20 40 20"`);
+    const tokens = value.trim().split(/[\s,]+/).filter(Boolean);
+    const list: Point[] = [];
+    for (let i = 0; i < tokens.length; i += 1) {
+      const token = tokens[i] ?? '';
+      if (NUMBER.test(token)) {
+        const next = tokens[i + 1];
+        if (next === undefined || !NUMBER.test(next)) {
+          report(offsetOf(child, attr), `"${attr}" is a list of points, each "x y" or a place on a shape, like "10 20 drop.left"`);
+          return undefined;
+        }
+        list.push([Number(token), Number(next)]);
+        i += 1;
+      } else {
+        const found = place(token, attr, child);
+        if (!found) return undefined;
+        list.push(found.at);
+      }
+    }
+    if (list.length < min || list.length > max) {
+      report(offsetOf(child, attr), min === max ? `"${attr}" is one point: "x y" or a place on a shape` : `"${attr}" needs ${min}–${max} points`);
       return undefined;
     }
-    const pairs: Point[] = [];
-    for (let i = 0; i < numbers.length; i += 2) pairs.push([Number(numbers[i]), Number(numbers[i + 1])]);
-    if (pairs.length < min || pairs.length > max) {
-      report(offsetOf(child, attr), min === max ? `"${attr}" is one "x y" pair` : `"${attr}" needs ${min}–${max} "x y" pairs`);
-      return undefined;
-    }
-    return pairs.every((p) => inside(p, attr, child)) ? pairs : undefined;
+    return list.every((p) => inside(p, attr, child)) ? list : undefined;
   };
 
-  const shapes: FigureShape[] = [];
-  const ids = new Map<string, number>();
   for (const child of children.filter((c) => (shapeTags as readonly string[]).includes(c.name))) {
     const s = readAttrs(child, spec(child.name), report);
     if (child.name !== 'label' && !child.selfClosing) report(child.offset, `<${child.name}> must be self-closing: <${child.name} … />`);
@@ -89,6 +123,17 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     } else if (child.name === 'zone') {
       const list = points(s.points, 'points', child, 3, limits.figureZonePoints);
       if (list) shape = { kind: 'zone', points: list, ...common };
+    } else if (child.name === 'normal') {
+      const token = s.at?.trim() ?? '';
+      const found = s.at === undefined ? undefined : place(token, 'at', child);
+      const length = s.length === undefined ? 12 : number(s.length, 'length', child, 2);
+      const direction = found ? surfaceNormal(found.shape, found.side, found.degrees) : undefined;
+      if (found && !direction) report(offsetOf(child, 'at'), '<normal at> is a point on the edge of a circle (drop@200, drop.left) or the side of a box (box.top)');
+      if (found && direction && length !== undefined) {
+        const [x, y] = found.at;
+        const end = (k: number): Point => [x + (direction[0] * length * k) / 2, y + (direction[1] * length * k) / 2];
+        shape = { kind: 'normal', at: found.at, points: [end(-1), end(1)], ...common, color: s.color === undefined ? 'gray' : color };
+      }
     } else if (child.name === 'label') {
       const x = number(s.x, 'x', child);
       const y = number(s.y, 'y', child);
@@ -204,7 +249,7 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     states.push(state);
   });
 
-  if (shapes.length === 0) report(element.offset, '<figure> needs at least one shape: <circle>, <box>, <arrow>, <angle>, <zone> or <label>');
+  if (shapes.length === 0) report(element.offset, '<figure> needs at least one shape: <circle>, <box>, <arrow>, <angle>, <zone>, <normal> or <label>');
   if (shapes.length > limits.figureShapes) report(element.offset, `<figure> has more than ${limits.figureShapes} shapes`);
   if (shows.length > limits.figureShows) report(element.offset, `<figure> has more than ${limits.figureShows} <show>s`);
   if (shapes.length > 0 && shapes.every((shape) => shape.appear > 0)) report(element.offset, 'Every shape waits for a <show>: leave the setting (what is there from the start) out of the <show>s');

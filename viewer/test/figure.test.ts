@@ -53,6 +53,16 @@ describe('figure geometry', () => {
     assert.ok(circle?.labelAt);
   });
 
+  it('draws a normal as a line and labels it beside it (F33)', () => {
+    const [normal] = placeFigure({
+      width: 100,
+      height: 60,
+      shapes: [{ kind: 'normal', at: [50, 30], points: [[50, 24], [50, 36]], label: 'Normal', color: 'gray', appear: 0 }],
+    });
+    assert.equal(normal?.path, 'M50 24 L50 36');
+    assert.ok(normal?.labelAt && Math.abs(normal.labelAt[0] - 50) > 3, 'beside the line, not on it');
+  });
+
   it('draws an angle the short way round, with its label along the bisector', () => {
     const arc = angleArc([0, 0], [10, 0], [0, 10]);
     assert.match(arc.path, /^M\d+(\.\d+)? 0 A[\d.]+ [\d.]+ 0 0 1 0 [\d.]+$/);

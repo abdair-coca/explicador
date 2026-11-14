@@ -297,24 +297,27 @@ A whole lesson opens with this map and repeats the middle chapter once per secti
 
 ## Template: a physical thing, drawn
 
-A `<figure>` places a few shapes on a grid 100 wide and 60 high (`size="W H"` changes it): `<circle x y r>`, `<box x y w h>` (from its top-left corner), `<arrow points="x y x y …">` (a ray, a path, a push; `head="none"` for a plain line, `dashed="yes"`), `<angle at from to>` (the angle at `at` between the directions to `from` and to `to`), `<zone points>` (a shaded area) and `<label x y>words</label>`. Each takes a short `label` (up to 60 characters; the viewer places it beside the shape, clear of other labels) and a `color` (`ink`, `red`, `orange`, `yellow`, `green`, `blue`, `violet`, `gray`). x grows to the right and y downwards. Shapes in no `<show>` are the setting, there from the start; each `<show items="ids">` adds its shapes in the next part, with a one-sentence narration that Present shows as the subtitle. Work the coordinates out so the picture is true: an angle drawn at 42° says 42°.
+A `<figure>` places a few shapes on a grid 100 wide and 60 high (`size="W H"` changes it): `<circle x y r>`, `<box x y w h>` (from its top-left corner), `<arrow points="x y x y …">` (a ray, a path, a push; `head="none"` for a plain line, `dashed="yes"`), `<angle at from to>` (the angle at `at` between the directions to `from` and to `to`), `<zone points>` (a shaded area) and `<label x y>words</label>`. Each takes a short `label` (up to 60 characters; the viewer places it beside the shape, clear of other labels) and a `color` (`ink`, `red`, `orange`, `yellow`, `green`, `blue`, `violet`, `gray`). x grows to the right and y downwards. Shapes in no `<show>` are the setting, there from the start; each `<show items="ids">` adds its shapes in the next part, with a one-sentence narration that Present shows as the subtitle. Place shapes against each other instead of computing numbers (F33): any point may be a place on a shape declared before it, `gota.left`, `.right`, `.top`, `.bottom`, `.center`, a box's corners `.top-left`…, an arrow's `.start`, `.middle`, `.end`, or a point of a circle's edge `gota@200` (degrees: 0 to the right, 90 down). A ray then touches the drop, and `<normal at="gota@239.5" />` draws the normal there, dashed, the line that optics measures every angle from. The picture must be true: the server warns when an arrow stops just short of a shape, when an angle labelled 42° is drawn at another angle, and when a shape hides another one's label.
 
 ```xml
 <figure title="La gota separa la luz y la devuelve a tu ojo" arc="answer">
 <circle id="gota" x="60" y="24" r="14" color="blue" />
-<label x="75" y="44" color="blue">Gota de lluvia</label>
-<circle id="sol" x="6" y="9" r="4" color="yellow" label="Sol" />
-<arrow id="luz" points="4 18 47.4 18" label="Luz blanca" />
-<arrow id="dentro" points="47.4 18 73.2 28.8" color="gray" label="Se separa" />
-<arrow id="rebote" points="73.2 28.8 52 35.5" color="gray" label="Rebota" />
-<arrow id="rojo" points="52 35.5 33 52.6" color="red" />
-<circle id="ojo" x="32" y="53.2" r="2" label="Tu ojo" />
-<arrow id="linea" points="32 53.2 70 53.2" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
-<angle id="angulo" at="32 53.2" from="70 53.2" to="52 35.5" color="red" label="42°" />
+<label x="84" y="8" color="blue">Gota de lluvia</label>
+<circle id="sol" x="6" y="12" r="4" color="yellow" label="Sol" />
+<circle id="ojo" x="43.6" y="55.1" r="2" label="Tu ojo" />
+<arrow id="luz" points="sol.right gota@239.5" label="Luz blanca" />
+<normal id="normal" at="gota@239.5" label="Normal" />
+<arrow id="dentro" points="gota@239.5 gota@338.8" color="gray" label="Se desvía" />
+<arrow id="rebote" points="gota@338.8 gota@78.1" color="gray" label="Rebota" />
+<normal id="normal2" at="gota@78.1" />
+<arrow id="rojo" points="gota@78.1 ojo@318" color="red" />
+<arrow id="violeta" points="gota@80.5 53.2 45.6" color="violet" />
+<arrow id="linea" points="ojo.center 95 55.1" head="none" dashed="yes" color="gray" label="Dirección de la luz" />
+<angle id="angulo" at="ojo.center" from="95 55.1" to="gota@78.1" color="red" label="42°" />
 <show items="sol luz">La luz blanca del Sol llega a la gota.</show>
-<show items="dentro">Al entrar, el agua desvía cada color un poco distinto.</show>
+<show items="normal dentro">Al entrar, el agua la desvía respecto a la normal, cada color un poco distinto.</show>
 <show items="rebote">El fondo de la gota la refleja hacia delante.</show>
-<show items="rojo">El rojo sale hacia abajo, hacia tu ojo.</show>
+<show items="normal2 rojo violeta">Al salir se desvía otra vez: el rojo más abierto, el violeta más cerrado.</show>
 <show items="ojo linea angulo">Tu ojo recibe el rojo de las gotas que están a 42° de la dirección de la luz.</show>
 </figure>
 ```
@@ -330,7 +333,7 @@ A show also changes what is already drawn, as it changes in reality: `move="car:
 <circle id="lateral" x="61" y="39" r="2.5" color="red" label="Su semáforo" />
 <circle id="avenida" x="38" y="20" r="2.5" color="green" label="Semáforo de la avenida" />
 <box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
-<arrow id="aviso" points="55 46 76 47" color="orange" dashed="yes" />
+<arrow id="aviso" points="espira.right controlador.left" color="orange" dashed="yes" />
 <show move="coche: 47 41">Lucía para en la calle lateral, justo encima de la espira.</show>
 <show items="aviso" pulse="espira" flow="aviso">La espira nota el metal del coche y avisa al controlador.</show>
 <show set="avenida: yellow" ask="Nadie viene por la avenida. ¿Qué hace el controlador?">Nadie espera en la avenida: el controlador le pasa el amarillo.</show>

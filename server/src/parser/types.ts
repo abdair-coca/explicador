@@ -708,6 +708,8 @@ export type FigureShape =
   /** The angle at `at` between the directions to `from` and to `to`. */
   | (ShapeBase & { kind: 'angle'; at: Point; from: Point; to: Point })
   | (ShapeBase & { kind: 'zone'; points: Point[] })
+  /** The normal of a surface at `at` (F33): a dashed line across it, through `points` (its two ends). */
+  | (ShapeBase & { kind: 'normal'; at: Point; points: [Point, Point] })
   | (Omit<ShapeBase, 'label'> & { kind: 'label'; x: number; y: number; text: string });
 
 /** A shape travelling along points (F32): its anchor (a circle's center, a box's corner…) goes through each, ending on the last. */

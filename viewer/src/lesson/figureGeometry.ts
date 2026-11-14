@@ -94,6 +94,7 @@ function candidates(shape: FigureShape, lines: string[], size: number): Point[] 
       const n = shape.points.length;
       return [[shape.points.reduce((sum, p) => sum + p[0], 0) / n, shape.points.reduce((sum, p) => sum + p[1], 0) / n]];
     }
+    case 'normal':
     case 'arrow': {
       // Beside its longest segments: the middle first, then nearer the ends, on the upper side first.
       const segments = shape.points.slice(1).map((q, i): [Point, Point] => [shape.points[i] ?? q, q]);
@@ -134,7 +135,13 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
   const order = block.shapes.map((_, i) => i).sort((a, b) => Number(block.shapes[b]?.kind === 'label') - Number(block.shapes[a]?.kind === 'label'));
   const placed: Placed[] = block.shapes.map((shape) => {
     const path =
-      shape.kind === 'zone' ? pathOf(shape.points, true) : shape.kind === 'arrow' ? pathOf(shape.points) : shape.kind === 'angle' ? angleArc(shape.at, shape.from, shape.to).path : undefined;
+      shape.kind === 'zone'
+        ? pathOf(shape.points, true)
+        : shape.kind === 'arrow' || shape.kind === 'normal'
+          ? pathOf(shape.points)
+          : shape.kind === 'angle'
+            ? angleArc(shape.at, shape.from, shape.to).path
+            : undefined;
     const text = shape.kind === 'label' ? shape.text : shape.label;
     const lines = text ? (shape.kind === 'label' ? [text] : wrapLabel(text)) : [];
     return { shape, lines, ...(path ? { path } : {}) };
