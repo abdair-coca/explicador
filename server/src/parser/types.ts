@@ -692,7 +692,8 @@ export interface SystemBlock {
 /** Colors a figure may use (F31): a closed list, so a figure looks like the rest of the viewer. */
 export const figureColors = ['ink', 'red', 'orange', 'yellow', 'green', 'blue', 'violet', 'gray'] as const;
 export type FigureColor = (typeof figureColors)[number];
-export const arrowHeads = ['end', 'none', 'both'] as const;
+/** Where an arrow or an arc has its head; `start` (F36) points it back to its first point, so an arc turns counter-clockwise. */
+export const arrowHeads = ['end', 'none', 'both', 'start'] as const;
 /** The pictograms a figure may use (F34): a closed set, drawn as line art in the viewer's style. */
 export const figureIcons = [
   'sun', 'eye', 'person', 'car', 'drop', 'house', 'tree', 'signal', 'battery', 'magnet',

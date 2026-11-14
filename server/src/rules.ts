@@ -762,6 +762,30 @@ export function figureWarnings(blocks: Block[]): string[] {
         if (other) warnings.push(`In ${at}, ${nameOf(other, over)} covers the middle of ${nameOf(shape, i)} and hides its label "${shape.label}": move one of them.`);
       }
     });
+    // A curved arrow says which way things turn (F36: a roundabout's arrow clockwise, its cars going the other way).
+    block.shapes.forEach((arc, a) => {
+      if (arc.kind !== 'arc' || (arc.head !== 'end' && arc.head !== 'start')) return;
+      // From `from` to `to` is clockwise on screen; a head at the start points the other way.
+      const turn = arc.head === 'end' ? 1 : -1;
+      for (const show of block.shows) {
+        for (const move of show.moves) {
+          let swept = 0;
+          move.path.slice(1).forEach((p, m) => {
+            const q = move.path[m] ?? p;
+            let d = Math.atan2(p[1] - arc.y, p[0] - arc.x) - Math.atan2(q[1] - arc.y, q[0] - arc.x);
+            if (d > Math.PI) d -= 2 * Math.PI;
+            if (d < -Math.PI) d += 2 * Math.PI;
+            swept += d;
+          });
+          const mover = block.shapes[move.shape];
+          if (mover && Math.abs(swept) > Math.PI / 4 && Math.sign(swept) !== turn) {
+            const way = turn === 1 ? ['counter-clockwise', 'clockwise', 'start'] : ['clockwise', 'counter-clockwise', 'end'];
+            warnings.push(`In ${at}, ${nameOf(mover, move.shape)} goes round ${way[0]} while the arc ${nameOf(arc, a)} points ${way[1]}: give it head="${way[2]}" so it points the way things turn.`);
+            return;
+          }
+        }
+      }
+    });
     // Where the shows take the shapes (F36): a move that parks a shape on a labelled one hides that label too.
     const reported = new Set<string>();
     block.states.forEach((state, k) => {
@@ -771,7 +795,8 @@ export function figureWarnings(blocks: Block[]): string[] {
         const [dx, dy] = state[i]?.offset ?? [0, 0];
         const middle: [number, number] = shape.kind === 'box' ? [shape.x + shape.w / 2 + dx, shape.y + shape.h / 2 + dy] : [shape.x + dx, shape.y + dy];
         block.shapes.forEach((other, j) => {
-          if (j === i || other.appear > k || state[j]?.hidden || reported.has(`${i} ${j}`)) return;
+          // Only a shape drawn above it (declared after it) can hide it.
+          if (j <= i || other.appear > k || state[j]?.hidden || reported.has(`${i} ${j}`)) return;
           const [ox, oy] = state[j]?.offset ?? [0, 0];
           if (ox === 0 && oy === 0 && dx === 0 && dy === 0) return;
           if (!covers(other, [middle[0] - ox, middle[1] - oy])) return;

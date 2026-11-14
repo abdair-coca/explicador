@@ -39,8 +39,8 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
         <path
           className={cn(className, shape.dashed && 'dashed')}
           d={path}
-          markerEnd={shape.head === 'none' ? undefined : `url(#${marker}-${color})`}
-          markerStart={shape.head === 'both' ? `url(#${marker}-${color})` : undefined}
+          markerEnd={shape.head === 'end' || shape.head === 'both' ? `url(#${marker}-${color})` : undefined}
+          markerStart={shape.head === 'both' || shape.head === 'start' ? `url(#${marker}-${color})` : undefined}
         />
       );
     case 'angle':
@@ -52,8 +52,8 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
         <path
           className={className}
           d={path}
-          markerEnd={shape.head === 'none' ? undefined : `url(#${marker}-${color})`}
-          markerStart={shape.head === 'both' ? `url(#${marker}-${color})` : undefined}
+          markerEnd={shape.head === 'end' || shape.head === 'both' ? `url(#${marker}-${color})` : undefined}
+          markerStart={shape.head === 'both' || shape.head === 'start' ? `url(#${marker}-${color})` : undefined}
         />
       );
     case 'icon': {
@@ -181,11 +181,14 @@ export function FigureView({ block, shown, picked, onPick }: { block: FigureBloc
       const path = g?.querySelector<SVGPathElement>('.fig-arrow, .fig-arc');
       const dot = g?.querySelector('.fig-dot');
       if (!path || !dot) continue;
+      const shape = block.shapes[index];
+      // A head at the start sends the dot back along the line, the way the arrow points (F36).
+      const back = (shape?.kind === 'arrow' || shape?.kind === 'arc') && shape.head === 'start';
       tweens.push(
         gsap.fromTo(
           dot,
           { autoAlpha: 1 },
-          { motionPath: { path, align: path, alignOrigin: [0.5, 0.5] }, duration: dur.slow * 2, ease: 'power1.inOut', repeat: 2, delay: show.items.includes(index) ? dur.slow : 0 },
+          { motionPath: { path, align: path, alignOrigin: [0.5, 0.5], ...(back ? { start: 1, end: 0 } : {}) }, duration: dur.slow * 2, ease: 'power1.inOut', repeat: 2, delay: show.items.includes(index) ? dur.slow : 0 },
         ),
       );
     }
