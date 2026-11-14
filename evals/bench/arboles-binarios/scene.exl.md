@@ -64,13 +64,18 @@ Para medir un árbol hacen falta cuatro medidas. En esta práctica se cuentan **
 <example>Un subárbol vacío mide −1 y una hoja mide 0.</example>
 </concept>
 
-<trace id="medir" title="Altura 2, LCI 4 y balanceado: así se mide este árbol" arc="answer" ref="source.md#Ejemplo guiado">
-<value kind="table" label="Nivel de cada nodo" note="8 en el nivel 0; 3 y 10 en el nivel 1; 6 en el nivel 2.">8=0|3=1|10=1|6=2</value>
-<value kind="number" label="Altura" note="La hoja más profunda, el 6, está en el nivel 2.">2</value>
-<value kind="bars" label="Longitud de camino interno" note="0 + 1 + 1 + 2 = 4, y la media es 4 / 4 = 1.0.">8=0|3=1|10=1|6=2</value>
-<value kind="number" label="LCI" note="La suma de los cuatro niveles.">4</value>
-<value kind="table" label="Factor de equilibrio" note="FE(8) = 1 − 0 = 1 y FE(3) = −1 − 0 = −1: todos cumplen |FE| ≤ 1.">8=1|3=−1|10=0|6=0</value>
-</trace>
+<structure id="medir" title="Altura 2, LCI 4 y balanceado: así se mide este árbol" arc="answer" ref="source.md#Ejemplo guiado">
+<member id="n8" label="8" desc="nivel 0 · FE 1 − 0 = 1" />
+<member id="n3" label="3" parent="n8" side="left" desc="nivel 1 · FE −1 − 0 = −1" />
+<member id="n10" label="10" parent="n8" side="right" desc="nivel 1 · FE 0" />
+<member id="n6" label="6" parent="n3" side="right" desc="nivel 2 · FE 0" />
+</structure>
+
+<stats id="medidas" title="Las medidas del árbol 8, 3, 10, 6" arc="apply">
+<stat value="2" label="altura: el nivel del 6, la hoja más profunda" ref="source.md#Ejemplo guiado" />
+<stat value="4" label="LCI: 0 + 1 + 1 + 2" ref="source.md#Ejemplo guiado" />
+<stat value="1.0" label="longitud de camino media: 4 / 4" ref="source.md#Ejemplo guiado" />
+</stats>
 
 La forma también tiene nombre, y un árbol puede cumplir varios tipos a la vez, o ninguno.
 

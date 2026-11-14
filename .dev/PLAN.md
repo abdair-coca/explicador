@@ -513,7 +513,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F27. Forms "annotated space" and "argument". Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F28. Sources beyond code. Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F29. Interactivity that teaches. Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F30. Measure the result (stop).
+- [x] F30. Measure the result (stop). Done 2026-11-14; report in `docs/results-f30.md`.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -632,4 +632,4 @@ Open points:
 | F27 | done (2026-11-14) |
 | F28 | done (2026-11-14) |
 | F29 | done (2026-11-14) |
-| F30 | planned (user, 2026-11-13); see `docs/plan.md` |
+| F30 | done (2026-11-14), stopped for the user's review; see `docs/results-f30.md` |

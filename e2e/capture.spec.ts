@@ -15,7 +15,7 @@ type Shot = number | { slide: number; part?: number; phone?: boolean };
 
 /** The slides to capture by scene name. */
 const wanted: Record<string, Shot[]> = {
-  'bench-arboles-binarios': [1, 5],
+  'bench-arboles-binarios': [{ slide: 1, part: 3 }, 1, 8, 9, { slide: 1, phone: true }],
   'bench-interes-compuesto': [1, 2],
   login: [1, 2],
   'search-tree': [{ slide: 1, part: 4 }, { slide: 1, part: 0 }, 1, { slide: 1, part: 0, phone: true }, { slide: 1, phone: true }, 6, { slide: 6, phone: true }],

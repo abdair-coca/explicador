@@ -423,3 +423,13 @@ The reader learns more by predicting before seeing (the principle behind the bri
 - Forms used: `<structure>` (trees), `<annotated>` and `<argument>` (lease, printing press), `<journey>` and `<timeline>` (photosynthesis, law, bread), charts and `<derive>` (funnel, interest).
 - Refs point at the sources' sections (`source.md#Error frecuente`).
 - Found while rebuilding: the acronym rule read the capitals of chemical formulas ("CO" in `CO_2`); formulas and derivation lines are now left out of it.
+
+### Outcome (2026-11-14)
+
+Done, stopped for the user's review. The report is [`results-f30.md`](results-f30.md).
+
+1. **What changed**: the eight older bench scenes rebuilt (their F22 versions kept as `scene-f22.exl.md`); the acronym rule leaves formulas out; `e2e/capture.spec.ts` captures the new trees scene; `docs/results-f30.md` and screenshots in `docs/images/f30/`.
+2. **How it was tested**: every bench scene renders with no warning; typecheck, lint, build, `npm test` (server 284, viewer 178, evals 50) and `npm run e2e` (82 in Chromium) pass; the comprehension eval ran once on Haiku with the user's go-ahead ($0.015).
+3. **Result**: with the scene, 5.0 of 5 in all ten topics (4.9 in F22; the lease scene's missing clause is now there); without it, 2.4 in both runs; gain +2.6 (+2.5). Every old scene breaks 1–2 of the new rules and every rebuilt one none.
+4. **Limit**: the model eval measures content and was already near its ceiling; the clarity this plan worked on needs the human protocol, not yet run. The scenes were rebuilt by the model that wrote the rules.
+5. **Pending, for the user**: run the human protocol; rewrite the questions of `imprenta`, `ley-aprobacion` and `login-tienda`; let the three models write the bench scenes with `npm run eval` (usage); decide on decoration (product decision 5: draw the theme only on the cover and chapter cards?), on the change to product decision 2 (the index outlines documents) and on `SKILL.md`'s frontmatter naming documents and data.
