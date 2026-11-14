@@ -29,6 +29,24 @@ test('a box opens its details with key code copied from the file, and the code w
   await expect(panel).toBeHidden();
 });
 
+test('a shape of a figure with a description opens it when clicked, and closes on a second click (F35)', async ({ page, serve }) => {
+  const crossing = examples.find((example) => example.name === 'crossing')!;
+  await page.setViewportSize(sizes[0].viewport);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(await serve(crossing));
+  const loop = page.getByRole('button', { name: /^Espira: Un cable en bucle/ });
+  // On the loop itself: the group also holds its label, away from it.
+  await loop.locator('rect.fig-box').click();
+  await expect(page.locator('.fig-desc')).toContainText('Un cable en bucle bajo el asfalto');
+  await expect(loop).toHaveAttribute('aria-pressed', 'true');
+  await loop.locator('rect.fig-box').click();
+  await expect(page.locator('.fig-desc')).toBeHidden();
+  // From the keyboard too.
+  await loop.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.fig-desc')).toBeVisible();
+});
+
 for (const example of examples) {
   test(`${example.name} exported to one file opens offline, without a single request`, async ({ page, browserName }) => {
     const dir = mkdtempSync(join(tmpdir(), 'explicador-export-'));

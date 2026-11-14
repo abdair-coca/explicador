@@ -5,7 +5,7 @@ import { parseExl } from '../../server/src/parser/index.ts';
 import type { Block, FigureBlock } from '../../server/src/scene.ts';
 import { iconPaths, litLamp } from '../src/lesson/figureIcons.ts';
 import { figureIcons } from '../../server/src/parser/types.ts';
-import { angleArc, arcPath, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { angleArc, arcPath, lengthInside, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
 import { stripOf } from '../src/lesson/traceShape.ts';
 import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
@@ -144,6 +144,60 @@ describe('figure changes (F32)', () => {
     assert.deepEqual(last?.[id('coche')]?.offset, [0, -50]);
     assert.equal(last?.[id('lateral')]?.color, 'green');
     assert.equal(last?.[id('avenida')]?.color, 'red');
+  });
+});
+
+describe('figure reading (F35)', () => {
+  const figuresOf = (name: string): FigureBlock[] => {
+    const parsed = parseExl(readFileSync(new URL(`../../examples/scenes/${name}.exl.md`, import.meta.url), 'utf8'));
+    assert.ok(parsed.ok);
+    return parsed.scene.blocks.filter((block): block is FigureBlock => block.type === 'figure');
+  };
+  /** The lines each shape draws, as segments, also where the shows move it. */
+  const segments = (block: FigureBlock, i: number): [[number, number], [number, number]][] => {
+    const shape = block.shapes[i];
+    if (!shape || !('points' in shape)) return [];
+    const offsets = block.states.map((state): [number, number] => state[i]?.offset ?? [0, 0]);
+    return offsets.flatMap(([ox, oy]) => shape.points.slice(1).map((b, j): [[number, number], [number, number]] => [[(shape.points[j]?.[0] ?? 0) + ox, (shape.points[j]?.[1] ?? 0) + oy], [b[0] + ox, b[1] + oy]]));
+  };
+
+  for (const name of ['rainbow', 'crossing']) {
+    for (const size of [LABEL_SIZE, labelSize(100, 340)]) {
+      it(`keeps every label of ${name} clear of the other labels and of the arrows (size ${size.toFixed(1)})`, () => {
+        for (const block of figuresOf(name)) {
+          const placed = placeFigure(block, size);
+          const boxes = placed.map((item) => (item.labelAt ? labelBox(item.labelAt, item.lines, size) : undefined));
+          boxes.forEach((a, i) => {
+            if (!a) return;
+            boxes.forEach((b, j) => {
+              if (!b || j <= i) return;
+              const across = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+              const down = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+              assert.ok(across <= 0.05 || down <= 0.05, `${block.title}: the labels of shapes ${i} and ${j} overlap`);
+            });
+            const crossed = block.shapes.flatMap((shape, k) => (shape.kind === 'arrow' ? segments(block, k) : [])).reduce((sum, [p, q]) => sum + lengthInside(p, q, a), 0);
+            assert.ok(crossed < 1, `${block.title}: the label of shape ${i} lies on an arrow for ${crossed.toFixed(2)}`);
+          });
+        }
+      });
+    }
+  }
+
+  it('joins a label that sits away from its shape with a leader ending on the shape', () => {
+    const placed = figuresOf('rainbow').flatMap((block) => placeFigure(block));
+    const led = placed.filter((item) => item.leader);
+    assert.ok(led.length > 0, 'the drop is crowded: some label needs a leader');
+    for (const item of led) {
+      const [, end] = item.leader ?? [[0, 0], [0, 0]];
+      assert.ok(item.labelAt && Math.hypot(end[0] - item.labelAt[0], end[1] - item.labelAt[1]) > LABEL_SIZE, 'the leader reaches away from the label');
+    }
+  });
+
+  it('measures how much of a segment crosses a box', () => {
+    const box = { x0: 0, y0: 0, x1: 10, y1: 10 };
+    assert.equal(lengthInside([-5, 5], [15, 5], box), 10);
+    assert.equal(lengthInside([20, 20], [30, 30], box), 0);
+    assert.ok(Math.abs(lengthInside([0, 0], [10, 10], box) - Math.hypot(10, 10)) < 1e-9);
   });
 });
 

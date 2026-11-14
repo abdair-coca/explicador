@@ -34,7 +34,7 @@ Ese reparto de colores tiene nombre.
 <icon id="sol" kind="sun" x="6" y="12" size="8" color="orange" label="Sol" />
 <icon id="ojo" kind="eye" x="43.6" y="55.1" size="5" label="Tu ojo" />
 <arrow id="luz" points="sol.right gota@239.5" label="Luz blanca" />
-<normal id="normal" at="gota@239.5" label="Normal" />
+<normal id="normal" at="gota@239.5" label="Normal" desc="La recta perpendicular a la superficie: desde ella se miden los ángulos" />
 <arrow id="dentro" points="gota@239.5 gota@338.8" color="gray" label="Se desvía" />
 <arrow id="rebote" points="gota@338.8 gota@78.1" color="gray" label="Rebota" />
 <normal id="normal2" at="gota@78.1" />
@@ -53,7 +53,7 @@ Ese reparto de colores tiene nombre.
 <zone points="0 40 100 40 100 60 0 60" color="green" />
 <label x="90" y="56" color="green">Suelo</label>
 <label x="20" y="5" color="orange">El Sol, a tu espalda</label>
-<circle id="sombra" x="50" y="52" r="1.2" label="Sombra de tu cabeza" />
+<circle id="sombra" x="50" y="52" r="1.2" label="Sombra de tu cabeza" desc="El punto opuesto al Sol: el arco es un círculo alrededor de él" />
 <arc id="rojo" x="50" y="52" r="42" from="197" to="343" color="red" />
 <arc id="naranja" x="50" y="52" r="41.6" from="197" to="343" color="orange" />
 <arc id="amarillo" x="50" y="52" r="41.2" from="197" to="343" color="yellow" />

@@ -345,7 +345,7 @@ A show also changes what is already drawn, as it changes in reality: `move="car:
 
 Draw recognizable things with an `<icon>` (F34) rather than a circle that stands for them: `sun`, `eye`, `person`, `car`, `drop`, `house`, `tree`, `signal` (it lights the lamp of its color), `battery`, `magnet`, `cloud`, `factory`, `phone`, `server`, `coin`, `heart`, `leaf`, `bulb`, `clock`, `lock`. Draw what is round as it is with an `<arc>` (a rainbow's bow is six arcs around the shadow of your head, red outside), and a length with a `<measure>` (`<measure from="a.right" to="b.left">80 m</measure>`).
 
-Keep a figure to what explains: 5–20 shapes, 2–6 `<show>`s, labels of one to four words. A scene about a physical thing usually has one figure as its `answer`, after the example and the concept it needs.
+Keep a figure to what explains: 5–20 shapes, 2–6 `<show>`s, labels of one to four words (the viewer places them clear of the drawing, with a leader when they must sit away), and a `desc` on each part a reader will click to ask what it is. Each part lights what it changes and dims the rest, so one show changes one thing. A scene about a physical thing usually has one figure as its `answer`, after the example and the concept it needs.
 
 ## LaTeX
 

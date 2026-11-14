@@ -32,9 +32,20 @@ Asked by the user on 2026-11-14: `<figure>` is to become the main component to e
 | What changes, changes on screen (a light turns green, a car crosses, a call travels) | nothing moves | nothing moves | **F32** movement and states (done: `examples/scenes/crossing.exl.md`) |
 | Geometry that is true (normals, rays that touch the drop, angles measured from the right line) | coordinates by hand, no normals | — | **F33** anchors and checks (done: the rainbow on true optics, with normals) |
 | Recognizable objects (Sun, eye, car, signal head) and the bow as an arc, a measured distance | circles | — | **F34** pictograms, arcs, measures (done: the Sun, the eye, the car, signal heads, the bow as arcs) |
-| Labels next to their parts, leaders when far, the step's parts lit and the rest dimmed | labels avoid each other only | — | **F35** clearer reading |
+| Labels next to their parts, leaders when far, the step's parts lit and the rest dimmed | labels avoid each other only | — | **F35** clearer reading (done: labels clear of lines and shapes, leaders, dimming, descriptions on a click) |
 | Several drops, each sending one color | one drop sends both | — | the rebuilt examples (F32–F35); F34 adds the bow with drops on its red and violet arcs |
 | The final frame complete, readable as a static diagram | yes | — | kept in every phase |
+
+## Our figures after F32–F35
+
+The two topics again, with the conventions of the real figures. The rainbow's single drop follows a ray on true optics (water 1.331 for red, the ray of least deviation) from the Sun behind the observer, with the normals at entry and exit, to the eye at 42.4° from the direction of the light; the second figure draws the bow as a circle around the shadow of the observer's head, red outside, with the drops at 42° sending red and those at 40° sending violet. The crossing is a plan view with the loop in the lane, the controller's cabinet and the signal heads; the car stops on the loop, its call travels to the controller, the reader predicts, and the lights change.
+
+| | |
+|---|---|
+| ![The ray through the drop, with normals and the 42° at the eye](images/f35/rainbow-slide-4.png) | ![The bow as arcs around the shadow of your head](images/f35/rainbow-slide-5.png) |
+| ![The crossing while the avenue's light turns yellow](images/f35/crossing-slide-3-part-5.png) | ![The crossing at the end: Lucía's light green, the car across](images/f35/crossing-slide-3.png) |
+
+What is still missing against the real figures: the time diagram of the signal's phases (green extended by each car), which is a chart rather than a drawing; drawings in perspective; and pictograms seen from above for plan views.
 
 ## Sources
 

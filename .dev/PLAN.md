@@ -518,7 +518,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F32. `<figure>`: movement and states (stop). Done 2026-11-14; outcome in `docs/plan.md`, study in `docs/figures-research.md`.
 - [x] F33. `<figure>`: anchors instead of numbers, and geometry checks (stop). Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F34. `<figure>`: pictograms, arcs and measures (stop). Done 2026-11-14; outcome in `docs/plan.md`.
-- [ ] F35. `<figure>`: clearer reading (stop).
+- [x] F35. `<figure>`: clearer reading (stop). Done 2026-11-14; outcome in `docs/plan.md`, the comparison in `docs/figures-research.md`.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -642,4 +642,4 @@ Open points:
 | F32 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
 | F33 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
 | F34 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
-| F35 | planned (user, 2026-11-14) |
+| F35 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |

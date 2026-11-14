@@ -86,15 +86,15 @@ EXL is what the agent writes to show a scene: Markdown plus a closed catalog of 
 | `<push>` | `factor`, `change` (required), `ask` | narration (required), only in `<system>` |
 | `<effect>` | `from`, `to` (required), `ask` | narration (required), only in `<system>` |
 | `<figure>` | `title` (required), `id`, `size`, `ref` | 1–40 shapes (`<circle>`, `<box>`, `<arrow>`, `<angle>`, `<zone>`, `<normal>`, `<icon>`, `<arc>`, `<measure>`, `<label>`), then up to 12 `<show>` |
-| `<circle>` | `x`, `y`, `r` (required), `id`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<box>` | `x`, `y`, `w`, `h` (required), `id`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<arrow>` | `points` (required), `id`, `label`, `color`, `head`, `dashed` | none (self-closing), only in `<figure>` |
-| `<angle>` | `at`, `from`, `to` (required), `id`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<zone>` | `points` (required), `id`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<normal>` | `at` (required), `id`, `length`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<icon>` | `kind`, `x`, `y` (required), `id`, `size`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<arc>` | `x`, `y`, `r`, `from`, `to` (required), `id`, `head`, `label`, `color` | none (self-closing), only in `<figure>` |
-| `<measure>` | `from`, `to` (required), `id`, `offset`, `color` | the length it measures (required, up to 60 characters), only in `<figure>` |
+| `<circle>` | `x`, `y`, `r` (required), `id`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<box>` | `x`, `y`, `w`, `h` (required), `id`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<arrow>` | `points` (required), `id`, `label`, `color`, `head`, `dashed`, `desc` | none (self-closing), only in `<figure>` |
+| `<angle>` | `at`, `from`, `to` (required), `id`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<zone>` | `points` (required), `id`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<normal>` | `at` (required), `id`, `length`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<icon>` | `kind`, `x`, `y` (required), `id`, `size`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<arc>` | `x`, `y`, `r`, `from`, `to` (required), `id`, `head`, `label`, `color`, `desc` | none (self-closing), only in `<figure>` |
+| `<measure>` | `from`, `to` (required), `id`, `offset`, `color`, `desc` | the length it measures (required, up to 60 characters), only in `<figure>` |
 | `<label>` | `x`, `y` (required), `id`, `color` | its words (required, up to 60 characters), only in `<figure>` |
 | `<show>` | `items`, `move`, `set`, `hide`, `pulse`, `flow`, `ask` (at least one change) | narration (required), only in `<figure>` |
 | `<annotated>` | `title` (required), `id`, `ref` | one `<passage>`, 1–12 `<note>` |
@@ -260,6 +260,7 @@ Lesson tags explain notebooks and data or ML code with their real values. They w
   - `<icon kind x y size?>` (F34) draws a pictogram from a closed set, centered on x y and `size` wide (8 by default): `sun`, `eye`, `person`, `car`, `drop`, `house`, `tree`, `signal`, `battery`, `magnet`, `cloud`, `factory`, `phone`, `server`, `coin`, `heart`, `leaf`, `bulb`, `clock`, `lock`, as line art in its `color`. A `signal` keeps its housing dark and lights the lamp of its color (red, yellow or orange, green), so `set="light: green"` changes the light. Its places are a box's.
   - `<arc x y r from to head?>` (F34) draws part of a circle around x y, clockwise on screen from `from` to `to` degrees (0 to the right, 90 down; equal values draw the whole circle): a rainbow's bow, an orbit, a swing. `head` as on an arrow (`none` by default). Places: `id.center`, `id.start`, `id.middle`, `id.end`, and `id@degrees`. A `flow` may run along it.
   - `<measure from to offset?>length</measure>` (F34) draws a dimension line between two points with a tick at each end and its length in the middle (`80 m`, `42°`); `offset` moves it aside, to the left of the way it runs. Places: `id.start`, `id.middle`, `id.end`.
+  - Reading (F35): the viewer places each label next to its shape where it covers no other label, line or shape (also where the shows move them); a label that must sit away gets a straight leader ending in a dot on its shape. In a part that changes something, the shapes it does not touch are dimmed, except in the last part, which shows the whole figure. A shape's `desc` (one line, up to 80 characters) opens under the figure when the reader clicks the shape on the page (or presses Enter on it).
   - Each shape takes `id` (to be shown later), `label` (up to 60 characters; the viewer places it beside its shape, clear of the labels placed before it and inside the figure) and `color`, one of `ink` (default), `red`, `orange`, `yellow`, `green`, `blue`, `violet`, `gray`. There are no free paths or styles.
   - `<show items="id id">narration</show>` adds its shapes in the next part; a shape appears in at most one show, and shapes in none are the setting, there from the start (a figure whose every shape waits for a show is refused). In Present mode the setting is the first part, then each show draws its arrows and angles, grows its circles, boxes and zones and lifts its labels; the shapes just shown are thicker, and the narration is the subtitle.
   - A show also changes shapes already on screen (F32), so what changes in reality changes on the slide: `move="car: 47 30 47 2"` (the shape travels through the points and stays at the last one; its anchor is a circle's center, the corner of a box, the point of a label, the first point of an arrow or zone, the corner of an angle; several moves are separated by `;`), `set="light: green"` (a new color, from the same list; several by `;`), `hide="ids"` (it fades away), `pulse="ids"` (it swells a few times: a sensor firing) and `flow="arrow ids"` (a dot travels along the arrow: a call, a ray, a current). `items` is then optional, but a show must do something. A change to a shape not drawn yet, or hidden by an earlier show, a move out of the grid and an unknown id are errors. The parser keeps every shape's state after each show; going back restores it.

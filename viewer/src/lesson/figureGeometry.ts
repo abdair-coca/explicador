@@ -22,6 +22,8 @@ export interface Placed {
   labelAt?: Point;
   /** Lines of the label, wrapped to fit. */
   lines: string[];
+  /** A straight leader from the label to its shape (F35), when the label had to sit away from it: from, then the dot. */
+  leader?: [Point, Point];
 }
 
 const length = (x: number, y: number): number => Math.hypot(x, y);
@@ -158,9 +160,133 @@ export function measurePath([a, b]: [Point, Point]): string {
   return `${pathOf([a, b])} ${across(a)} ${across(b)}`;
 }
 
-/** Each shape with its path and its label's place: inside the figure, and clear of the labels placed before it. */
-/** `size` is the labels' text size in grid units: larger when the figure is drawn small (a phone), so they stay readable. */
-export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'height'>, size = LABEL_SIZE): Placed[] {
+// Label placement (F35) ----------------------------------------------------------------------------------------------
+
+/** What a label should not cover: the lines of the figure, its solid shapes, and its zones' edges, each with its owner. */
+interface Obstacles {
+  lines: { a: Point; b: Point; owner: number; weight: number }[];
+  solids: { shape: FigureShape; offset: Point; owner: number }[];
+}
+
+/** The lines a shape draws, as polylines (arcs sampled every 10°). */
+function polylines(shape: FigureShape): Point[][] {
+  switch (shape.kind) {
+    case 'arrow':
+    case 'normal':
+    case 'measure':
+      return [shape.points];
+    case 'zone':
+      return [[...shape.points, shape.points[0] ?? [0, 0]]];
+    case 'arc': {
+      const span = arcSpan(shape.from, shape.to);
+      const steps = Math.max(2, Math.ceil(span / 10));
+      return [Array.from({ length: steps + 1 }, (_, i) => pointOn(shape, undefined, shape.from + (span * i) / steps) ?? [shape.x, shape.y])];
+    }
+    case 'angle': {
+      const { radius } = angleArc(shape.at, shape.from, shape.to);
+      const a = Math.atan2(shape.from[1] - shape.at[1], shape.from[0] - shape.at[0]);
+      let b = Math.atan2(shape.to[1] - shape.at[1], shape.to[0] - shape.at[0]);
+      if (b - a > Math.PI) b -= 2 * Math.PI;
+      if (a - b > Math.PI) b += 2 * Math.PI;
+      return [Array.from({ length: 7 }, (_, i): Point => [shape.at[0] + radius * Math.cos(a + ((b - a) * i) / 6), shape.at[1] + radius * Math.sin(a + ((b - a) * i) / 6)])];
+    }
+    default:
+      return [];
+  }
+}
+
+/** How much of the segment a–b lies inside a box (Liang–Barsky clipping). */
+export function lengthInside(a: Point, b: Point, box: Box): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  let t0 = 0;
+  let t1 = 1;
+  for (const [p, q] of [
+    [-dx, a[0] - box.x0],
+    [dx, box.x1 - a[0]],
+    [-dy, a[1] - box.y0],
+    [dy, box.y1 - a[1]],
+  ] as const) {
+    if (p === 0) {
+      if (q < 0) return 0;
+    } else {
+      const r = q / p;
+      if (p < 0) t0 = Math.max(t0, r);
+      else t1 = Math.min(t1, r);
+    }
+  }
+  return t1 > t0 ? (t1 - t0) * Math.hypot(dx, dy) : 0;
+}
+
+/** How much of a box a solid shape covers, moved by `offset`. */
+function solidOverlap(shape: FigureShape, [ox, oy]: Point, box: Box): number {
+  if (shape.kind === 'box' || shape.kind === 'icon') {
+    const r = shape.kind === 'box' ? { x0: shape.x, y0: shape.y, x1: shape.x + shape.w, y1: shape.y + shape.h } : { x0: shape.x - shape.size / 2, y0: shape.y - shape.size / 2, x1: shape.x + shape.size / 2, y1: shape.y + shape.size / 2 };
+    return overlap(box, { x0: r.x0 + ox, y0: r.y0 + oy, x1: r.x1 + ox, y1: r.y1 + oy });
+  }
+  if (shape.kind !== 'circle') return 0;
+  // Sampled: the share of a 6 × 4 grid of points of the box that falls inside the circle.
+  let inside = 0;
+  for (let i = 0; i < 6; i += 1) {
+    for (let j = 0; j < 4; j += 1) {
+      const x = box.x0 + ((i + 0.5) * (box.x1 - box.x0)) / 6;
+      const y = box.y0 + ((j + 0.5) * (box.y1 - box.y0)) / 4;
+      if (Math.hypot(x - shape.x - ox, y - shape.y - oy) < shape.r) inside += 1;
+    }
+  }
+  return (inside / 24) * (box.x1 - box.x0) * (box.y1 - box.y0);
+}
+
+/** The point of a shape nearest to `at`: where a leader from a label at `at` ends. */
+export function nearestOn(shape: FigureShape, at: Point): Point {
+  const [x, y] = at;
+  switch (shape.kind) {
+    case 'circle': {
+      const [dx, dy] = unit(x - shape.x, y - shape.y);
+      return [shape.x + dx * shape.r, shape.y + dy * shape.r];
+    }
+    case 'box':
+      return [Math.min(shape.x + shape.w, Math.max(shape.x, x)), Math.min(shape.y + shape.h, Math.max(shape.y, y))];
+    case 'icon': {
+      const h = shape.size / 2;
+      return [Math.min(shape.x + h, Math.max(shape.x - h, x)), Math.min(shape.y + h, Math.max(shape.y - h, y))];
+    }
+    case 'zone': {
+      const n = shape.points.length || 1;
+      return [shape.points.reduce((sum, p) => sum + p[0], 0) / n, shape.points.reduce((sum, p) => sum + p[1], 0) / n];
+    }
+    case 'label':
+      return [shape.x, shape.y];
+    default: {
+      let best: Point = at;
+      let least = Infinity;
+      for (const line of polylines(shape)) {
+        line.slice(1).forEach((b, i) => {
+          const a = line[i] ?? b;
+          const l2 = (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2;
+          const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * (b[0] - a[0]) + (y - a[1]) * (b[1] - a[1])) / l2));
+          const p: Point = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+          const d = Math.hypot(p[0] - x, p[1] - y);
+          if (d < least) [best, least] = [p, d];
+        });
+      }
+      return best;
+    }
+  }
+}
+
+/** Distance from a box to a point (0 inside). */
+const boxDistance = (box: Box, [x, y]: Point): number => Math.hypot(Math.max(box.x0 - x, 0, x - box.x1), Math.max(box.y0 - y, 0, y - box.y1));
+
+/** The point of a box's edge nearest to `p`, where a leader starts. */
+const edgeToward = (box: Box, [x, y]: Point): Point => [Math.min(box.x1, Math.max(box.x0, x)), Math.min(box.y1, Math.max(box.y0, y))];
+
+/**
+ * Each shape with its path and its label's place: inside the figure, clear of the labels placed before it, of the
+ * figure's lines and of its shapes, also where the shows move them (F35). A label that had to sit away from its shape
+ * gets a leader to it. `size` is the labels' text size in grid units: larger when the figure is drawn small (a phone).
+ */
+export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'height'> & Partial<Pick<FigureBlock, 'states'>>, size = LABEL_SIZE): Placed[] {
   const { width, height } = block;
   const taken: Box[] = [];
   const fit = (at: Point, lines: string[]): Point => {
@@ -169,6 +295,25 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
     const dy = box.y0 < 0.5 ? 0.5 - box.y0 : box.y1 > height - 0.5 ? height - 0.5 - box.y1 : 0;
     return [at[0] + dx, at[1] + dy];
   };
+  // Every place each shape takes as the shows play: where it is declared, and where each move leaves it.
+  const offsets = block.shapes.map((_, i) => {
+    const seen = new Map<string, Point>([['0 0', [0, 0]]]);
+    for (const state of block.states ?? []) {
+      const offset = state[i]?.offset;
+      if (offset) seen.set(`${offset[0]} ${offset[1]}`, offset);
+    }
+    return [...seen.values()];
+  });
+  const obstacles: Obstacles = { lines: [], solids: [] };
+  block.shapes.forEach((shape, i) => {
+    for (const offset of offsets[i] ?? [[0, 0]]) {
+      const move = ([x, y]: Point): Point => [x + offset[0], y + offset[1]];
+      for (const line of polylines(shape)) {
+        line.slice(1).forEach((b, j) => obstacles.lines.push({ a: move(line[j] ?? b), b: move(b), owner: i, weight: shape.kind === 'zone' ? 0.6 : 4 }));
+      }
+      if (shape.kind === 'circle' || shape.kind === 'box' || shape.kind === 'icon') obstacles.solids.push({ shape, offset, owner: i });
+    }
+  });
   // Free labels are where the scene put them; they are placed first, so the others keep clear of them.
   const order = block.shapes.map((_, i) => i).sort((a, b) => Number(block.shapes[b]?.kind === 'label') - Number(block.shapes[a]?.kind === 'label'));
   const placed: Placed[] = block.shapes.map((shape) => {
@@ -191,18 +336,38 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
   for (const i of order) {
     const item = placed[i];
     if (!item || item.lines.length === 0) continue;
+    if (item.shape.kind === 'label') {
+      const at = fit([item.shape.x, item.shape.y], item.lines);
+      item.labelAt = at;
+      taken.push(labelBox(at, item.lines, size));
+      continue;
+    }
+    // The near places first, then the same directions farther out, where a leader will join label and shape.
+    const near = candidates(item.shape, item.lines, size);
+    const far = [1.9, 2.8].flatMap((k) =>
+      near.map((at): Point => {
+        const target = nearestOn(item.shape, at);
+        return [target[0] + (at[0] - target[0]) * k, target[1] + (at[1] - target[1]) * k];
+      }),
+    );
     let best: Point | undefined;
     let least = Infinity;
-    for (const candidate of candidates(item.shape, item.lines, size)) {
+    [...near, ...far].forEach((candidate, rank) => {
       const at = fit(candidate, item.lines);
       const box = labelBox(at, item.lines, size);
-      const covered = taken.reduce((sum, other) => sum + overlap(box, other), 0);
-      if (covered < least) [best, least] = [at, covered];
-      if (covered === 0) break;
-    }
+      const cost =
+        taken.reduce((sum, other) => sum + overlap(box, other), 0) * 10 +
+        obstacles.lines.reduce((sum, line) => sum + lengthInside(line.a, line.b, box) * line.weight, 0) +
+        obstacles.solids.reduce((sum, solid) => sum + (solid.owner === i ? 0 : solidOverlap(solid.shape, solid.offset, box) * 3), 0) +
+        rank * 0.25;
+      if (cost < least) [best, least] = [at, cost];
+    });
     if (!best) continue;
     item.labelAt = best;
-    taken.push(labelBox(best, item.lines, size));
+    const box = labelBox(best, item.lines, size);
+    taken.push(box);
+    const target = nearestOn(item.shape, best);
+    if (boxDistance(box, target) > size * 1.4) item.leader = [edgeToward(box, target), target];
   }
   return placed;
 }

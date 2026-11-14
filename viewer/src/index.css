@@ -1078,7 +1078,14 @@ body {
 .fig-item.now .fig-arc { stroke-width: 1.1; }
 .fig-shape { transition: stroke 0.5s, fill 0.5s, stroke-width 0.3s; }
 .fig-item { transition: opacity 0.5s; }
+.fig-item.rest { opacity: 0.45; }
 .fig-item.gone { opacity: 0; pointer-events: none; }
+.fig-item.pickable { cursor: pointer; outline: none; }
+.fig-item.pickable:hover .fig-shape, .fig-item.pickable:focus-visible .fig-shape, .fig-item.picked .fig-shape { filter: drop-shadow(0 0 0.6px var(--primary-dark)); stroke-width: 0.85; }
+.fig-item.pickable:focus-visible .fig-label, .fig-item.picked .fig-label { text-decoration: underline; text-decoration-color: var(--primary); text-decoration-thickness: 0.35px; }
+.fig-leader line { stroke: var(--muted-foreground); stroke-width: 0.2; }
+.fig-leader circle { fill: var(--muted-foreground); }
+.fig-desc { margin-top: 0.75rem; max-width: 48rem; border-left: 4px solid var(--primary); background: var(--subtle, var(--muted)); border-radius: 0.5rem; padding: 0.5rem 0.85rem; font-size: 1rem; font-weight: 600; line-height: 1.5; }
 .fig-item.now .fig-shape { stroke-width: 0.85; }
 .fig-item.now .fig-arrow { stroke-width: 0.95; }
 .fig-item.now .fig-label:not(.free) { text-decoration: underline; text-decoration-color: var(--primary); text-decoration-thickness: 0.35px; }

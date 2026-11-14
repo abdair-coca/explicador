@@ -21,11 +21,11 @@ A las 23:00 el cruce está vacío. Las cifras son las del ejemplo, no las de un 
 <figure title="La espira avisa al controlador y este le da el verde" arc="answer">
 <zone points="0 24 100 24 100 36 0 36" color="gray" label="Avenida" />
 <zone points="44 36 56 36 56 60 44 60" color="gray" />
-<box id="espira" x="45" y="43" w="10" h="5" color="orange" label="Espira" />
+<box id="espira" x="45" y="43" w="10" h="5" color="orange" label="Espira" desc="Un cable en bucle bajo el asfalto; el metal de un coche cambia su campo" />
 <icon id="coche" kind="car" x="50" y="54" size="8" color="blue" label="Lucía" />
-<icon id="lateral" kind="signal" x="63" y="40" size="7" color="red" label="Su semáforo" />
+<icon id="lateral" kind="signal" x="63" y="40" size="7" color="red" label="Su semáforo" desc="El semáforo de la calle lateral, la de Lucía" />
 <icon id="avenida" kind="signal" x="36" y="17" size="7" color="green" label="Semáforo de la avenida" />
-<box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" />
+<box id="controlador" x="76" y="44" w="18" h="9" color="gray" label="Controlador" desc="Un ordenador en un armario junto al cruce: decide qué luz va y cuánto dura" />
 <arrow id="aviso" points="espira.right controlador.left" color="orange" dashed="yes" />
 <arrow id="orden" points="controlador.top-left lateral.right" color="gray" dashed="yes" />
 <show move="coche: 50 45.5">Lucía para en la calle lateral, justo encima de la espira.</show>

@@ -77,9 +77,17 @@ function ShapeView({ placed, marker, color }: { placed: Placed; marker: string; 
 }
 
 function LabelView({ placed, size, color }: { placed: Placed; size: number; color: FigureShape['color'] }) {
-  const { shape, labelAt, lines } = placed;
+  const { shape, labelAt, lines, leader } = placed;
   if (!labelAt || lines.length === 0) return null;
   return (
+    <>
+    {leader && (
+      // A label that had to sit away from its shape (F35): a straight leader ending in a dot on the shape.
+      <g className="fig-leader" aria-hidden="true">
+        <line x1={leader[0][0]} y1={leader[0][1]} x2={leader[1][0]} y2={leader[1][1]} />
+        <circle cx={leader[1][0]} cy={leader[1][1]} r={0.5} />
+      </g>
+    )}
     <text
       className={cn('fig-label', shape.kind === 'label' && 'free', `fig-${color}`)}
       x={labelAt[0]}
@@ -94,10 +102,11 @@ function LabelView({ placed, size, color }: { placed: Placed; size: number; colo
         </tspan>
       ))}
     </text>
+    </>
   );
 }
 
-export function FigureView({ block, shown }: { block: FigureBlock; shown?: number }) {
+export function FigureView({ block, shown, picked, onPick }: { block: FigureBlock; shown?: number; picked?: number | undefined; onPick?: (shape: number) => void }) {
   const svg = useRef<SVGSVGElement>(null);
   // How wide the figure is drawn, so labels on a phone grow to stay readable (rounded, so a resize does not churn).
   const [pixels, setPixels] = useState(0);
@@ -113,7 +122,10 @@ export function FigureView({ block, shown }: { block: FigureBlock; shown?: numbe
   const size = labelSize(block.width, pixels);
   const placed = useMemo(() => placeFigure(block, size), [block, size]);
   const parts = useMemo(() => figurePartsOf(block), [block]);
-  const part = parts[Math.max(0, Math.min(parts.length - 1, shown ?? parts.length - 1))] ?? { shown: 0 };
+  const index = Math.max(0, Math.min(parts.length - 1, shown ?? parts.length - 1));
+  const part = parts[index] ?? { shown: 0 };
+  // The last part is the whole figure, complete and readable as a static diagram: nothing is dimmed there.
+  const settled = index === parts.length - 1;
   const played = part.shown;
   const states = block.states[played] ?? block.states[0] ?? [];
   // The shapes this part touches stand out; a question shows the figure as it is before the show it asks about.
@@ -190,12 +202,29 @@ export function FigureView({ block, shown }: { block: FigureBlock; shown?: numbe
         const state = states[i];
         const color = state?.color ?? item.shape.color;
         const flowing = show?.flows.includes(i) && !reduced;
+        // On the page a shape with a description opens it when clicked (F35).
+        const pickable = onPick !== undefined && item.shape.desc !== undefined && !state?.hidden;
+        const name = item.shape.kind === 'label' ? item.shape.text : (item.shape.label ?? item.shape.id ?? '');
         return (
           <g
             key={i}
             data-shape={i}
             transform={translate(state?.offset ?? [0, 0])}
-            className={cn('fig-item', touched.has(i) && 'now', state?.hidden && 'gone')}
+            className={cn('fig-item', touched.has(i) && 'now', show !== undefined && !settled && !touched.has(i) && 'rest', state?.hidden && 'gone', pickable && 'pickable', picked === i && 'picked')}
+            {...(pickable
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-pressed': picked === i,
+                  'aria-label': `${name}: ${item.shape.desc ?? ''}`,
+                  onClick: () => onPick(i),
+                  onKeyDown: (event: React.KeyboardEvent) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    onPick(i);
+                  },
+                }
+              : {})}
           >
             <g className="fig-body">
               <ShapeView placed={item} marker={marker} color={color} />
@@ -243,11 +272,18 @@ export function FigureScene({ block }: { block: FigureBlock }) {
     if (steps && !reducedMotion && playback.index === 0 && !playback.playing) playback.toggle();
   });
   const said = subtitleOf(block, playback.index);
+  const [picked, setPicked] = useState<number>();
+  const shape = picked === undefined ? undefined : block.shapes[picked];
   return (
     <div ref={frame}>
       <SceneFrame kind="Figure" title={block.title} actions={steps ? <StepControls playback={playback} /> : undefined}>
         <div className="p-5">
-          <FigureView block={block} shown={playback.index} />
+          <FigureView block={block} shown={playback.index} picked={picked} onPick={(i) => setPicked((now) => (now === i ? undefined : i))} />
+          {shape?.desc && (
+            <p className="fig-desc animate-fade-up" role="status" onKeyDown={(event) => event.key === 'Escape' && setPicked(undefined)}>
+              <strong>{shape.kind === 'label' ? shape.text : (shape.label ?? shape.id)}</strong> {shape.desc}
+            </p>
+          )}
           {steps && (
             <p key={playback.index} className="animate-fade-up mt-3 min-h-[1.5em] max-w-3xl text-base font-semibold leading-relaxed" aria-live="polite">
               {said && <InlineMarkdown text={said} />}

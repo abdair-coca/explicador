@@ -700,6 +700,8 @@ export type Point = [number, number];
 interface ShapeBase {
   id?: string;
   label?: string;
+  /** What the shape is, in one line (F35): the page shows it when the shape is clicked. */
+  desc?: string;
   color: FigureColor;
   /** The part it appears in: 0 from the start, n with the figure's n-th <show>. */
   appear: number;

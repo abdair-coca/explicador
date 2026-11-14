@@ -4,7 +4,7 @@
 // part, with its narration. No free paths and no styles: what a figure can say is what its shapes and labels say.
 import type { Element } from './reader.ts';
 import { ANCHOR, anchorOf, anchorSides, pointOn, surfaceNormal } from './figureAnchor.ts';
-import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readEnum, readRef, type Report } from './common.ts';
+import { blockHead, catalog, checkId, checkMath, checkText, childElements, limits, narrationOf, optionalText, readAttrs, readDesc, readEnum, readRef, type Report } from './common.ts';
 import { arrowHeads, figureColors, figureIcons, type ArrowHead, type FigureIcon, type FigureBlock, type FigureColor, type FigureMove, type FigureSet, type FigureShape, type FigureShow, type FigureState, type Point } from './types.ts';
 
 export const shapeTags = ['circle', 'box', 'arrow', 'angle', 'zone', 'normal', 'icon', 'arc', 'measure', 'label'] as const;
@@ -92,7 +92,7 @@ export function buildFigure(element: Element, ordinal: number, report: Report): 
     if (child.name !== 'label' && child.name !== 'measure' && !child.selfClosing) report(child.offset, `<${child.name}> must be self-closing: <${child.name} … />`);
     const color = readEnum<FigureColor>(s.color, figureColors, 'ink', 'color', child, report);
     const label = s.label === undefined ? undefined : checkText(s.label, 'label', limits.figureLabelLength, child, report);
-    const common = { ...(label ? { label } : {}), color, appear: 0 };
+    const common = { ...(label ? { label } : {}), ...readDesc(s.desc, child, report), color, appear: 0 };
     let shape: FigureShape | undefined;
     if (child.name === 'circle') {
       const x = number(s.x, 'x', child);

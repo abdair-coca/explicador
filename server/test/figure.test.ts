@@ -213,6 +213,12 @@ describe('<figure>', () => {
     assert.match(errorsOf(figure('<icon id="i" kind="eye" x="10" y="10" />\n<arrow points="1 1 i@30" />')), /"i@30" is no place on <icon> "i"/);
   });
 
+  it('keeps a one-line description of a shape, for the page to show on a click (F35)', () => {
+    const block = blockOf(figure('<circle id="drop" x="50" y="20" r="5" label="Drop" desc="Water, round because of its surface tension" />'));
+    assert.equal(block.shapes[0]?.desc, 'Water, round because of its surface tension');
+    assert.match(errorsOf(figure(`<circle x="50" y="20" r="5" desc="${'a'.repeat(81)}" />`)), /"desc" is longer than 80 characters/);
+  });
+
   it('keeps to its limits', () => {
     const many = Array.from({ length: 41 }, (_, i) => `<circle x="${(i % 10) * 9 + 5}" y="${Math.floor(i / 10) * 10 + 5}" r="1" />`).join('\n');
     assert.match(errorsOf(figure(many)), /more than 40 shapes/);
