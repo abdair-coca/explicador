@@ -9,7 +9,7 @@
 <terms>salt, scrypt key, session</terms>
 </brief>
 
-<theme name="security" />
+<theme name="security web" />
 
 Ada types her email and her password, and the shop lets her in. What happens in between decides whether a stolen copy of the shop's data gives her password away.
 

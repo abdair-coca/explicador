@@ -245,7 +245,10 @@ export interface JourneyBlock {
 export type SceneBlock = ArchBlock | FlowBlock | DataBlock | StateBlock | JourneyBlock;
 
 /** What a scene is about, which picks its decoration: a background motif, an accent color and a glyph. */
-export const themeNames = ['plain', 'data', 'ml', 'math', 'text', 'web', 'network', 'database', 'security', 'code', 'hardware', 'business'] as const;
+export const themeNames = [
+  'plain', 'data', 'ml', 'math', 'text', 'web', 'network', 'database', 'security', 'code', 'hardware', 'business',
+  'nature', 'space', 'science', 'history', 'health', 'food', 'art', 'society',
+] as const;
 export type ThemeName = (typeof themeNames)[number];
 export const accentNames = ['blue', 'green', 'purple', 'red', 'orange', 'teal', 'pink'] as const;
 export type AccentName = (typeof accentNames)[number];
@@ -254,8 +257,11 @@ export type AccentName = (typeof accentNames)[number];
 export interface ThemeBlock {
   type: 'theme';
   id: string;
+  /** The first theme named. */
   name: ThemeName;
-  /** Replaces the theme's own accent color. */
+  /** Every theme named, when the scene names two or three: the viewer draws one of them at random (F36). */
+  choices?: ThemeName[];
+  /** Replaces the theme's own accent color; without it the viewer picks one at random. */
   accent?: AccentName;
 }
 

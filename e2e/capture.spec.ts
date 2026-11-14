@@ -5,7 +5,7 @@
 // motion, so it is the settled picture.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { bench, examples, expect, repo, sizes, test, type Example } from './fixtures.ts';
+import { bench, examples, expect, repo, sizes, test, written, type Example } from './fixtures.ts';
 
 const folder = process.env.EXPLICADOR_CAPTURE;
 const everything: Example[] = [...examples, ...bench];
@@ -27,7 +27,54 @@ const wanted: Record<string, Shot[]> = {
 
 test.skip(!folder, 'set EXPLICADOR_CAPTURE to a folder to capture slides');
 
-for (const [name, shots] of Object.entries(wanted)) {
+// The scenes a model wrote (EXPLICADOR_E2E_SCENES, F36): every slide at its last part, on a desktop and, with
+// EXPLICADOR_CAPTURE_PHONE=1, on a phone, to review a round of the random-topic eval.
+for (const example of written) {
+  for (const phone of process.env.EXPLICADOR_CAPTURE_PHONE ? [false, true] : [false]) {
+    test(`captures every slide of ${example.name}${phone ? ' on a phone' : ''}`, async ({ page, serve }) => {
+      test.setTimeout(300_000);
+      if (!folder) return;
+      mkdirSync(join(repo, folder), { recursive: true });
+      await page.setViewportSize(sizes[phone ? 1 : 0].viewport);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(await serve(example));
+      await page.getByRole('button', { name: /^(Present|Presentar)$/ }).click();
+      const dialog = page.getByRole('dialog', { name: /^(Presenting|Presentando) / });
+      await expect(dialog).toBeVisible();
+      const next = dialog.locator('footer').getByRole('button', { name: /^(Next|Siguiente)$/ });
+      const position = async (): Promise<string> => (await dialog.getAttribute('data-position')) ?? '0:0';
+      const shoot = async (at: string): Promise<void> => {
+        await page.waitForTimeout(400);
+        const slide = Number(at.split(':')[0]) + 1;
+        await dialog.screenshot({ path: join(repo, folder, `${example.name}-slide-${String(slide).padStart(2, '0')}${phone ? '-phone' : ''}.png`) });
+      };
+      for (let moves = 0; moves < 2000; moves += 1) {
+        const at = await position();
+        if (await next.isDisabled()) {
+          await shoot(at);
+          break;
+        }
+        await page.keyboard.press('ArrowRight');
+        try {
+          await expect(dialog).not.toHaveAttribute('data-position', at, { timeout: 1500 });
+        } catch {
+          continue;
+        }
+        const now = await position();
+        if (now.split(':')[0] !== at.split(':')[0]) {
+          // Moved to the next slide: go back to this one's last part and shoot it settled, then on.
+          await page.keyboard.press('ArrowLeft');
+          await expect(dialog).toHaveAttribute('data-position', at, { timeout: 5000 });
+          await shoot(at);
+          await page.keyboard.press('ArrowRight');
+          await expect(dialog).toHaveAttribute('data-position', now, { timeout: 5000 });
+        }
+      }
+    });
+  }
+}
+
+for (const [name, shots] of written.length > 0 ? [] : Object.entries(wanted)) {
   const example = everything.find((item) => item.name === name);
   for (const phone of [false, true]) {
     const slides = shots.flatMap((shot) => {

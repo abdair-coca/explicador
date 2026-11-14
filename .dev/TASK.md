@@ -1,3 +1,20 @@
 # Current Task
 
-No active task.
+F36 — Random topics on Sonnet, and a look of each presentation's own (scope in `docs/plan.md`).
+
+## Goal
+A loop until the user stops it: Sonnet writes a presentation on a random topic with a random visual theme; review, fix, add, commit.
+
+## Files
+- `evals/random.ts`, `evals/topics.json`, `evals/random-log.md`, `examples/blank/`, `package.json` (script), `e2e/capture.spec.ts`
+- `server/src/parser/{types,lesson,parse}.ts`, `server/src/rules.ts` (theme names list, warnings)
+- `viewer/src/theme/{themes,motifs}.ts` (eight themes, random pick)
+- `docs/EXL.md`, `skills/explicador/SKILL.md`, `skills/explicador/presenting.md`, `AGENTS.md`
+
+## Plan
+1. Themes and random pick, with tests.
+2. The random eval and capture.
+3. Rounds.
+
+## Validation
+- Round 1 (iva, compound-interest-en; Sonnet 1.00 both, $0.47): typecheck 0, lint 0, build OK, server 301, viewer 199, evals 50, e2e 97 in Chromium.

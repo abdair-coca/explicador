@@ -9,7 +9,7 @@
 <terms>hidratación, gluten, fermentación, reacción de Maillard</terms>
 </brief>
 
-<theme name="plain" />
+<theme name="food science" />
 
 Cuatro ingredientes y unas horas convierten una pasta pegajosa en una hogaza con corteza dorada. Sigamos una hogaza de **500 g de harina** desde el bol hasta que sale del horno.
 

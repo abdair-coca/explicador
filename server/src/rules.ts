@@ -29,6 +29,7 @@ export function sceneWarnings(root: string, scene: Scene, refs: readonly string[
     ...briefWarnings(scene),
     ...arcWarnings(scene),
     ...formWarnings(scene),
+    ...drawingWarnings(scene, refs),
     ...termWarnings(scene),
     ...acronymWarnings(scene),
     ...titleWarnings(blocks),
@@ -241,6 +242,19 @@ export function formWarnings(scene: Scene): string[] {
   const form = scene.brief?.form;
   if (!form || scene.blocks.some((block) => formTags[form].includes(block.type))) return [];
   return [`The brief's form is "${form}", but no component draws it: use ${formTags[form].map((tag) => `<${tag}>`).join(', ')} for the scene's main picture, or change the form.`];
+}
+
+/**
+ * A scene about something that is not in files (a volcano, a tax, a recipe) shows the thing itself (F36): a process
+ * or a structure of the world is a <figure> of its places, things and people, with the change as it happens. Boxes and
+ * value cards alone make every such scene look the same.
+ */
+export function drawingWarnings(scene: Scene, refs: readonly string[]): string[] {
+  const form = scene.brief?.form;
+  if (refs.length > 0 || (form !== 'process' && form !== 'structure') || scene.blocks.some((block) => block.type === 'figure' || block.type === 'chapter')) return [];
+  return [
+    `This scene points at no files and its brief's form is "${form}", but nothing draws the thing itself: add a <figure> of the brief's example (its places, things and people as <icon>s, circles and boxes; the change as <show move|set|flow|pulse>), so the presentation looks like its subject and not like every other one.`,
+  ];
 }
 
 /** What a block says in its own words: a passage quotes its source, so a term in it is the source's, not the scene's. */

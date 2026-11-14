@@ -9,7 +9,7 @@
 <terms>primary key, foreign key</terms>
 </brief>
 
-<theme name="database" />
+<theme name="database code" />
 
 Ada has an account, logs in and keeps a book in her cart. Each of those leaves a record, and the three records point at each other through one number: her id.
 

@@ -32,6 +32,9 @@ describe('chart helpers', () => {
     assert.equal(withUnit('84.6', '%'), '84.6%');
     assert.equal(withUnit('12', 'ms'), '12 ms');
     assert.equal(withUnit('3', undefined), '3');
+    assert.equal(withUnit('10.5', '€', 'es'), '10,5 €');
+    assert.equal(withUnit('84.6', '%', 'es'), '84,6 %');
+    assert.equal(withUnit('1000', undefined, 'es'), '1000');
   });
 
   it('dims by highlight: a series grays the others, a row dims the other rows', () => {

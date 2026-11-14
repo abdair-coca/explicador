@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { ChapterCells } from './ChapterCells';
 import { Practice } from './Practice';
 import { Backdrop, ThemeGlyph } from '../theme/Backdrop';
-import { themeAt, type Theme } from '../theme/themes';
+import { lookSeed, themeAt, type Theme } from '../theme/themes';
 import { stageMapOf, type StageMap } from './stageMap';
 import { StageMapView } from './StageMapView';
 import { chapterAnchor, type Chapter, type LessonPlan } from './chapters';
@@ -277,7 +277,7 @@ export function Lesson({ scene, plan }: { scene: ScenePayload; plan: LessonPlan 
           ))}
           <Pills plan={plan} progress={progress} active={active} practise={practise} />
           {plan.chapters.map((chapter, i) => (
-            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} theme={themeAt(scene.blocks, chapter.index)} seed={scene.key} map={stageMapOf(scene.blocks, chapter.block)} />
+            <ChapterSection key={chapter.block.id} chapter={chapter} total={plan.chapters.length} next={plan.chapters[i + 1]} progress={progress} version={scene.version} theme={themeAt(scene.blocks, chapter.index, lookSeed(scene))} seed={lookSeed(scene)} map={stageMapOf(scene.blocks, chapter.block)} />
           ))}
           <EndCard plan={plan} progress={progress} practise={practise} />
         </div>

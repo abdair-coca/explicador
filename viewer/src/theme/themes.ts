@@ -1,6 +1,7 @@
 // The closed catalog of themes: what each one is called, its accent color and its glyph, and which theme a scene or
 // one of its chapters uses.
 import type { AccentName, Block, ThemeName } from '../../../server/src/scene.ts';
+import { seeded } from './motifs.ts';
 
 export const accents: Record<AccentName, string> = {
   blue: '#2a78d6',
@@ -32,7 +33,18 @@ export const themes: Record<ThemeName, ThemeSpec> = {
   code: { label: 'Code', accent: 'purple', glyph: ['M8 7l-5 5 5 5', 'M16 7l5 5-5 5', 'M14 4l-4 16'] },
   hardware: { label: 'Hardware', accent: 'green', glyph: ['M7 7h10v10H7z', 'M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4'] },
   business: { label: 'Business', accent: 'orange', glyph: ['M3 17l6-6 4 4 8-8', 'M15 7h6v6'] },
+  nature: { label: 'Nature', accent: 'green', glyph: ['M5 21c0-9 6-15 15-16-1 9-7 15-15 16z', 'M5 21l8-8'] },
+  space: { label: 'Space', accent: 'purple', glyph: ['M12 12h.01', 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', 'M3 15c3-4 15-10 18-6'] },
+  science: { label: 'Science', accent: 'teal', glyph: ['M9 3h6', 'M10 3v6l-5 10c-.5 1 .2 2 1.3 2h11.4c1.1 0 1.8-1 1.3-2l-5-10V3', 'M7 15h10'] },
+  history: { label: 'History', accent: 'orange', glyph: ['M3 21h18', 'M4 8h16L12 3z', 'M6 8v13M10 8v13M14 8v13M18 8v13'] },
+  health: { label: 'Health', accent: 'red', glyph: ['M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z', 'M7 12h3l1-2 2 4 1-2h3'] },
+  food: { label: 'Food', accent: 'orange', glyph: ['M3 11h18', 'M4 11a8 8 0 0 0 16 0', 'M9 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4'] },
+  art: { label: 'Art', accent: 'pink', glyph: ['M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z', 'M7.5 11h.01M10 7h.01M15 7h.01'] },
+  society: { label: 'Society', accent: 'blue', glyph: ['M12 3v18', 'M5 7h14', 'M5 7l-3 7h6z', 'M19 7l-3 7h6z', 'M8 21h8'] },
 };
+
+/** The accents a scene may draw at random: every one. */
+const accentList = Object.keys(accents) as AccentName[];
 
 export interface Theme {
   name: ThemeName;
@@ -40,17 +52,29 @@ export interface Theme {
   accent: string;
 }
 
-/** The scene's theme: its <theme> tag, or the plain one. */
-export function sceneTheme(blocks: readonly Block[]): Theme {
+/** What a scene's look is drawn from: its key and when it was saved, so a reload keeps the look and a new render may change it. */
+export const lookSeed = (scene: { key: string; savedAt: string }): string => `${scene.key}:${scene.savedAt}`;
+
+/**
+ * The scene's theme: its <theme> tag, or the plain one. When the tag names two or three themes, one of them is drawn at
+ * random, and without `accent` so is the color (F36): `seed` (the scene's key and when it was saved) keeps the draw
+ * the same on a reload, while a new render of the scene may draw another.
+ */
+export function sceneTheme(blocks: readonly Block[], seed = ''): Theme {
   const block = blocks.find((item) => item.type === 'theme');
-  const name = block?.type === 'theme' ? block.name : 'plain';
-  const accent = block?.type === 'theme' && block.accent ? block.accent : themes[name].accent;
+  if (block?.type !== 'theme') return { name: 'plain', accent: accents[themes.plain.accent] };
+  const random = seeded(`${seed}:theme`);
+  const choices = block.choices ?? [block.name];
+  const name = choices[Math.floor(random() * choices.length)] ?? block.name;
+  const drawn = accentList[Math.floor(random() * accentList.length)] ?? themes[name].accent;
+  // A scene that names one theme keeps its own color, so a chosen look stays as it was.
+  const accent = block.accent ?? (block.choices ? drawn : themes[name].accent);
   return { name, accent: accents[accent] };
 }
 
 /** The theme of the chapter that holds the block at `index`: the chapter's own when it names one, else the scene's. */
-export function themeAt(blocks: readonly Block[], index: number): Theme {
-  const scene = sceneTheme(blocks);
+export function themeAt(blocks: readonly Block[], index: number, seed = ''): Theme {
+  const scene = sceneTheme(blocks, seed);
   for (let i = Math.min(index, blocks.length - 1); i >= 0; i--) {
     const block = blocks[i];
     if (block?.type !== 'chapter') continue;

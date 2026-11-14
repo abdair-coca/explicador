@@ -9,7 +9,7 @@
 <terms>embudo de ventas, tasa de conversión, cuello de botella, costo de adquisición de cliente</terms>
 </brief>
 
-<theme name="business" />
+<theme name="business data" />
 
 Una tienda de software vende una licencia de 500 €. En octubre, **10 000 personas** visitan su web y **60** compran. Entre una cifra y otra hay cuatro pasos (cifras de ejemplo).
 

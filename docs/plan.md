@@ -41,6 +41,7 @@ Goal: Explicador explains **any topic** well, technical or not: code, notebooks 
 | F33 | `<figure>`: anchors instead of numbers, and geometry checks | **yes** |
 | F34 | `<figure>`: pictograms, arcs and measures | **yes** |
 | F35 | `<figure>`: clearer reading (labels, leaders, cues, details) | **yes** |
+| F36 | Random topics on Sonnet, and a look of each presentation's own (loop) | until the user stops it |
 
 The status of each phase is also in `.dev/PLAN.md`.
 
@@ -519,3 +520,20 @@ The user wants `<figure>` to become the main component to explain a topic, with 
 2. **How it was tested**: 1 parser test (`desc`), 6 viewer tests (labels of both examples clear of each other and of every arrow, at the desktop and the phone size; leaders; segment clipping), 1 browser test (click, second click, Enter); typecheck, lint, build, `npm test` (server 298, viewer 198, evals 50) and `npm run e2e` (97 in Chromium) pass.
 3. **Limits**: labels avoid lines and shapes as drawn in the states a scene reaches, not in the middle of a move; a label can still lie on a zone when nothing better is free; pictograms are side views.
 4. **Pending, for the user**: review F31–F35; decide whether to run Sonnet and Opus again on the two topics to see whether they now draw figures (usage, about $0.70 at list price); the signal's phase diagram, perspective drawings and top-view pictograms remain outside `<figure>`.
+
+## F36 — Random topics on Sonnet, and a look of each presentation's own (user, 2026-11-14)
+
+The user asked for a loop that runs until they stop it: let Sonnet (the model with the best results so far) write a presentation on a topic chosen at random, find what fails, fix it and add what is missing, so the improvements do not fit two topics only (the rainbow and the crossing) and every presentation has a touch of its own; `<figure>` and the other components get better on the way. Every generated presentation must take a theme at random. Asked with a multiple choice, the user chose **both** readings of "a random theme": a random *subject* for every round, and a random *visual theme* (among those that fit, never `plain`) for every presentation. Evals on **Sonnet only** for this phase (user, 2026-11-14), about $0.25 per round at list price.
+
+### Scope
+
+1. **`npm run eval:random`** (`evals/random.ts`): picks topics at random from a pool (`evals/topics.json`: subjects of science, nature, history, health, cooking, money, law, sport, art, technology and everyday life, in Spanish and English, with a random number of slides), skipping the ones already played (`evals/random-log.md`, committed: one line per round with the score, the theme drawn, the components used and what was fixed after it). It writes a temporary case per topic over an empty project (`examples/blank`), runs it on Sonnet with `claude plugin eval`, keeps the scenes and the traces in `evals/results/<stamp>/runs/` and removes the temporary cases. `EXPLICADOR_CAPTURE=<folder> EXPLICADOR_E2E_SCENES=<runs> npm run e2e -- e2e/capture.spec.ts` captures every slide of those scenes to review them.
+2. **Themes for every subject**: eight new themes with three line drawings each, for subjects that are not software: `nature`, `space`, `science`, `history`, `health`, `food`, `art`, `society`.
+3. **A theme at random**: `<theme name>` takes one to three themes that fit (`name="space science"`); the viewer picks one at random for each presentation (seeded by the scene's key and the time it was saved, so a reload keeps it and a new render may change it), and its accent color too unless `accent` says. A warning asks for two or three fitting themes when a scene names one, and for a theme that draws when it names `plain`.
+4. **The loop**: each round plays one or more random topics on Sonnet, reviews every slide, fixes the parser, the viewer, the skill or the guide where the scene fails or looks like the others, records the round in `evals/random-log.md`, runs the checks and commits. It repeats until the user stops it.
+
+### Acceptance criteria (per round)
+
+- typecheck, lint, build, `npm test` pass, and `npm run e2e` when the viewer changed.
+- The round's scenes render with no warnings, or the warning they hit is fixed in the skill or the server.
+- The log names what was found and what was changed.

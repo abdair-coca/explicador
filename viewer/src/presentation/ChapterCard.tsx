@@ -23,7 +23,7 @@ export function ChapterCard({ block, number, of, theme, map }: { block: ChapterB
           {theme.name !== 'plain' && (
             <span className="ml-3 inline-flex items-center gap-1.5 text-primary">
               <ThemeGlyph theme={theme} size={16} />
-              {themes[theme.name].label}
+              {t(themes[theme.name].label)}
             </span>
           )}
         </span>

@@ -9,7 +9,7 @@
 <terms>interés simple, interés compuesto, regla del 72</terms>
 </brief>
 
-<theme name="business" />
+<theme name="business math" />
 
 Una persona pide prestados **1 000 €** a una tasa del **12 % anual** y no paga nada durante tres años. La tasa de interés dice cuánto cuesta el dinero en cada periodo, como porcentaje de lo que se debe.
 

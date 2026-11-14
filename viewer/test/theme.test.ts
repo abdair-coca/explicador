@@ -125,6 +125,18 @@ describe('themes', () => {
     assert.deepEqual(sceneTheme([{ type: 'markdown', text: 'x' }]), { name: 'plain', accent: accents.blue });
   });
 
+  it('draws one of the themes named, and an accent, at random per presentation, the same on a reload', () => {
+    const named: Block[] = [{ type: 'theme', id: 'theme', name: 'space', choices: ['space', 'science', 'nature'] }];
+    const seeds = Array.from({ length: 40 }, (_, i) => `scene:2026-11-14T10:00:${String(i).padStart(2, '0')}Z`);
+    const drawn = seeds.map((seed) => sceneTheme(named, seed));
+    assert.deepEqual(new Set(drawn.map((theme) => theme.name)), new Set(['space', 'science', 'nature']));
+    assert.ok(new Set(drawn.map((theme) => theme.accent)).size >= 4, 'the accent changes too');
+    assert.deepEqual(sceneTheme(named, seeds[0]), drawn[0]);
+    const pinned: Block[] = [{ type: 'theme', id: 'theme', name: 'space', choices: ['space', 'art'], accent: 'teal' }];
+    assert.ok(seeds.every((seed) => sceneTheme(pinned, seed).accent === accents.teal), 'an accent written stays');
+    assert.ok(seeds.every((seed) => sceneTheme([{ type: 'theme', id: 'theme', name: 'art' }], seed).accent === accents[themes.art.accent]), 'one theme keeps its color');
+  });
+
   it('lets a chapter take its own theme and gives the others the scene theme', () => {
     assert.equal(themeAt(blocks, 2).name, 'ml');
     assert.equal(themeAt(blocks, 4).name, 'ml');

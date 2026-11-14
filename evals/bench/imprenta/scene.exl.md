@@ -9,7 +9,7 @@
 <terms>pergamino, tipos móviles, xilografía</terms>
 </brief>
 
-<theme name="plain" />
+<theme name="history art" />
 
 Hacia 1455, en Maguncia, salen de un taller unos **180 ejemplares** de la misma Biblia, la Biblia de 42 líneas. Hasta entonces, cada copia de una Biblia costaba a un escriba un año de trabajo o más.
 

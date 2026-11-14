@@ -28,7 +28,7 @@ First decide what is asked, because each answer has its own tool:
    - **missing**: continue below.
 3. **Call `ensure_index`** and read its file tree and import graph before opening any code. Use it to choose the few files that matter.
 4. **Read only what you need** (the entry point and the files on the path you explain). Check line numbers for every `ref` you will write.
-5. **Write the brief, then the EXL in the order of the arc, and call `render_scene`**. Every scene opens with a `<brief>` right after its `#` title: for whom, which question, which one example, which misconception and which check, decided before any slide ([presenting.md](presenting.md), step 1); `render_scene` refuses a scene without one. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (the brief and the arc, terms and acronyms defined before use, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
+5. **Write the brief, then the EXL in the order of the arc, and call `render_scene`**. Every scene opens with a `<brief>` right after its `#` title: for whom, which question, which one example, which misconception and which check, decided before any slide ([presenting.md](presenting.md), step 1); `render_scene` refuses a scene without one. If it returns errors, fix exactly those lines and call it again; nothing is saved until it passes. Then fix every `Warning:` line and render again until it answers "No warnings". Warnings are the server checking this skill's rules (the brief and the arc, terms and acronyms defined before use, a cover and two or three themes, a `<figure>` of the subject itself when the scene is about the world and not about files, a component per chapter, short titles and subtitles, a `desc` on every box, key code, a `<trace>` beside a `<flow>`, checks and a review in lessons, numbers the notebook printed), and each says how to fix it.
 6. **Reply in the chat** with a short explanation (3–6 sentences, no list of the scene's steps, no code) and the viewer URL. The scene carries the detail.
 7. **Clicks from the viewer**: a message that starts with `Explicador viewer: the user clicked` means the user wants to go deeper into that node. Do what it says: `show_scene` with the given topic, then build the scene if needed, and reply briefly. The new scene becomes the deeper level in the viewer, with breadcrumbs back.
 8. **Questions from the viewer**: a message that starts with `Explicador viewer: the user asks about` carries a question the user typed in a box's panel. Read only the code you need (the box's ref, the scene's EXL from `show_scene` if you lost it) and call `answer_question` with the topic and question id from the message:
@@ -96,7 +96,7 @@ Full reference: `docs/EXL.md` in the plugin. Tags must start at the beginning of
 <terms>scrypt key</terms>
 </brief>
 
-<theme name="security" />
+<theme name="security web" />
 
 One short paragraph of context.
 
@@ -172,7 +172,7 @@ One short paragraph of context.
 - `ref`: `path`, `path:line`, `path:start-end` or, for a document's section, `path#Heading`, relative to the project root, forward slashes. Every ref must exist: the cache hashes these files to know when the scene goes stale, so put a ref on every node that maps to code.
 - Write `&lt;` for a literal `<` in narration.
 - Lesson tags (attribute lists separated by `|`, numbers as the notebook prints them):
-  - `<theme name="ml" accent? />` once, right after the brief (see "Theme" below).
+  - `<theme name="ml data" accent? />` once, right after the brief: two or three themes that fit (see "Theme" below).
   - `<chapter id? title goal? ref="nb.ipynb:5-9" theme? stage? />` self-closing; runs until the next chapter. `stage` = the id of a `<journey>` stage: the chapter opens with the journey as a map, that stage lit.
   - `<stats title?>` with 1–6 `<stat value="0.833" label="test accuracy" ref? />`.
   - `<journey title>` with `<stage id label value? kind? op? ref?>narration</stage>` (2–12; `kind` = `file`, `table`, `text`, `matrix`, `split`, `model`, `metric`).
@@ -208,7 +208,7 @@ For embeddings, vector stores, indexes and similarity search (RAG, recommendatio
 
 ## Theme
 
-Give every scene a `<theme name="…" />` right after its brief, before any other tag: it decorates the page and the slides so each explanation has its own look. Pick it from what the code is about: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, embedded, GPUs), `business` (billing, orders, domain rules). Use `plain` only when nothing fits. In a lesson, add `theme` to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
+Give every scene a `<theme name="…" />` right after its brief, before any other tag: it decorates the page and the slides so each explanation has its own look. Name **two or three** themes that fit the subject, separated by spaces (`<theme name="nature science" />`): the viewer draws one of them at random for each presentation, and a random accent color with it, so no two presentations look alike. For technical subjects: `data` (tables, pipelines, analysis), `ml` (models, training), `math` (formulas, numeric methods), `text` (NLP, parsing, strings, language), `web` (pages, HTTP, front end), `network` (services talking, queues, protocols), `database` (schemas, queries, storage), `security` (auth, permissions, crypto), `code` (compilers, tooling, a library's internals), `hardware` (devices, machines, electronics), `business` (money, billing, orders, markets). For everyday subjects: `nature` (plants, animals, weather, landscapes), `space` (planets, stars, orbits), `science` (physics, chemistry, light, experiments), `history` (the past, eras, inventions, events), `health` (the body, medicine, sport, food for health), `food` (cooking, recipes, drinks), `art` (painting, music, design, literature), `society` (law, politics, cities, people, rules). Never `plain`: it draws nothing. In a lesson, add `theme` (one name) to a `<chapter>` only when that chapter's subject is different (a chapter on the database inside a web lesson). Leave `accent` out unless the user asks for a color.
 
 ## Good scenes
 

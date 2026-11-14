@@ -9,7 +9,7 @@
 <terms>cloroplasto, clorofila, fase luminosa, ciclo de Calvin, ATP y NADPH</terms>
 </brief>
 
-<theme name="plain" />
+<theme name="nature science" />
 
 Una hoja de roble de **20 cm²**, en un día soleado, fabrica unos **6 mg de glucosa por hora**. Esa glucosa es su alimento: la planta no lo come, lo fabrica.
 

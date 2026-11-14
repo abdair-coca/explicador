@@ -4,7 +4,7 @@ import { sceneLanguage, setLanguage, t } from './i18n';
 import { staggerIn } from './animation/reveal';
 import { boxWithin, zoomIn, zoomOut, type Box } from './animation/zoom';
 import { Backdrop } from './theme/Backdrop';
-import { sceneTheme } from './theme/themes';
+import { lookSeed, sceneTheme } from './theme/themes';
 import { exportUrl, post, staticScene, useScene, type AskReply, type ClickReply, type Connection, type ExplainReply } from './api';
 import { CodeDock } from './code/CodeDock';
 import { readPref, useMedia, usePresence, writePref } from './code/hooks';
@@ -349,7 +349,7 @@ export function App() {
         >
           <div className="min-w-0">
             <main ref={main} className="relative isolate space-y-7">
-              {scene && <Backdrop theme={sceneTheme(scene.blocks)} seed={scene.key} variant="page" className="absolute right-0 top-0 -z-10 hidden w-[min(40%,520px)] lg:block" />}
+              {scene && <Backdrop theme={sceneTheme(scene.blocks, lookSeed(scene))} seed={lookSeed(scene)} variant="page" className="absolute right-0 top-0 -z-10 hidden w-[min(40%,520px)] lg:block" />}
               {scene ? <Scene scene={scene} /> : <Empty />}
             </main>
           </div>

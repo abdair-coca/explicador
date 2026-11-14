@@ -46,11 +46,20 @@ For vectors (embeddings, stores, indexes, similarity search) the pictures are: t
 2. **The question.** The `#` title is the brief's question in at most 12 words ("What happens when you log in?"); then `<brief>`, then `<theme>`. Done when the title has at most 12 words.
 3. **The ideas, in the order of the arc.** List for yourself 3 to 7 ideas, each one sentence, and give each its part of the arc (below): first the brief's example, then the idea it motivates, the misconception set against the fact, the answer to the question, and the check. Done when each one could be a slide and the first one is the example.
 4. **A component per idea.** Pick it from the table below and write its part as `arc="…"`. Done when every idea, and every chapter, has its component, and every component its `arc`.
-5. **One example through everything.** Take the brief's example and follow it with a `<trace>` through the whole process, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
+5. **One example through everything.** Take the brief's example and follow it through the whole process: with a `<figure>` whose `<show>`s play it when it is a thing, a place or people that move and change (a car, a coin, a drop, a patient), or with a `<trace>` when it is a value that changes form, changing form at each step: the raw input as `text`, then `list`, `table`, `bars`, `number`. Done when its first value is the real input, its last one the real output, and every value comes from the code or its outputs. In `table` and `bars`, each item's name is what the slide shows and what glides from step to step, so keep the same names along the trace; a `number` is one value, so show a sum as `bars` of its parts, then its total as a `number`. The `label` and `code` of a value show on the slide, and its `note` as the subtitle of its step.
 6. **Titles that say the point.** Each component's `title` is the takeaway as a claim of at most 12 words: "Only *bad* pulls towards negative", not "Weights". Done when a slide says its point with the title alone.
 7. **The page and the subtitles.** Around each component, write for a reader alone: 1–3 short paragraphs. Give every step, stage, event, mark and value its narration or `note`: one sentence of about 20 words (the server warns above 25), with the real number when there is one, that says what this part shows. Done when the page makes sense without a speaker, and Present makes sense with the subtitles alone.
 8. **Render.** Call `render_scene`. Fix every `EXL errors` line; then every `Warning:` line, and render again. Done when it answers "No warnings". The warnings are the server checking this guide's rules: a misconception the scene takes up and a `<quiz>` that asks the check, the arc in order, terms and acronyms defined before use, titles that are claims, a cover and a theme, a component per chapter, short titles and subtitles, a `desc` on every box, key `<code>` in code diagrams, a `<trace>` beside every `<flow>`, a `<journey>` map, a check per chapter and a final review in lessons, one `<trace>` and a `<concept>` in a lesson, chapters instead of `##` sections, whys that do not open with a verdict, and numbers the notebook printed. Each tag's exact attributes and nesting (`<field>` inside `<entity>`, `<concept>` takes only `term`, `id` and `ref`) are in "EXL in short" in `SKILL.md`; when `render_scene` says `Unknown attribute`, it lists the allowed ones.
 9. **Check** against the checklist at the end. Done when every line is true.
+
+### Its own touch
+
+No two subjects look alike, so no two presentations should (principle: every idea has its form). Before writing, ask what the reader would *see* if they stood in front of the brief's example, and draw that:
+
+- **Draw the subject itself.** A volcano, a tax passing hands, a heart beating, a recipe on the stove: a `<figure>` with the subject's own places, things and people (`<icon>`s, circles, boxes, arcs), and its change as it happens (`move`, `set`, `flow`, `pulse`). Outside software, a `process` or `structure` scene without files has at least one; `render_scene` warns otherwise.
+- **Do not reuse a skeleton.** The arc fixes the order of the *ideas*, not the tags: open with a figure, a timeline, a structure, a system or a trace, whichever shows the example best; contrast with a `<compare>`, an `<argument>`, a `<calc>` or a figure before and after; check with a `<quiz>` or an `ask` on the step that carries the idea. Two scenes in a row with the same tags in the same order are a sign the subject was not looked at.
+- **One picture of its own.** Each scene has one slide nobody would mistake for another subject's: the drop and its rays, the crossing and its lights, the furniture travelling from the factory to the shop with its tax.
+- **Real words and numbers of the subject**: its own names, quantities and units, never placeholders.
 
 ### The arc
 
@@ -169,7 +178,7 @@ A list of more than 3 bullets is almost always one of these: steps in order → 
 <terms>password hash</terms>
 </brief>
 
-<theme name="security" />
+<theme name="security web" />
 
 Ana types her email and her password, and the shop lets her in. What happens to her password in between?
 
@@ -236,7 +245,7 @@ With your project's code, every value of the trace comes from the code or a log,
 <terms>sigmoid</terms>
 </brief>
 
-<theme name="ml" />
+<theme name="ml data" />
 
 <journey title="A review becomes a verdict in three steps" arc="question">
 <stage id="review" label="Review" value="1 review" kind="text">The review, as its author wrote it.</stage>
@@ -397,7 +406,8 @@ Formulas are drawn by KaTeX and checked by `render_scene`. A formula never comes
 - Every component has its `arc`; the brief's example comes first, before any idea or answer, and the scene ends on a check or a recap.
 - Every term of the brief has its `<concept>` before any slide uses it, and every acronym is spelled out the first time.
 - Every idea and every chapter has a component; every component's `title` is its point, in at most 12 words.
-- One `<trace>` follows a real example through the whole process, from the real input to the real output.
+- One `<trace>` or one `<figure>` follows a real example through the whole process, from the real input to the real output.
+- The scene has a picture of its own subject: outside software, a `<figure>` of the example's places, things and people; and its tags are not the same skeleton as the last scene's.
 - Every technical term is introduced once by a `<concept>` with an analogy (or replaced by plain words for a non-technical audience).
 - Each formula has words before it and an example or real numbers after it.
 - The page reads well alone: prose and narration around every component.

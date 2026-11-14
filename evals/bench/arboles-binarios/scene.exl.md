@@ -9,7 +9,7 @@
 <terms>árbol binario de búsqueda (ABB), raíz, hoja, nivel, altura, longitud de camino interno (LCI), factor de equilibrio (FE), árbol lleno, árbol completo, árbol degenerado</terms>
 </brief>
 
-<theme name="code" />
+<theme name="code math" />
 
 Cuatro valores llegan uno a uno a un árbol vacío: **8, 3, 10 y 6**. En cada nodo que pasan, la pregunta es la misma: ¿menor o mayor?
 

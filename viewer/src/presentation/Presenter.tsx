@@ -42,7 +42,7 @@ import { useLessonProgress } from '../lesson/useProgress';
 import { StatsView } from '../lesson/Stats';
 import { TraceView } from '../lesson/Trace';
 import { Backdrop } from '../theme/Backdrop';
-import { themeAt, type Theme } from '../theme/themes';
+import { lookSeed, themeAt, type Theme } from '../theme/themes';
 import { ChapterCard } from './ChapterCard';
 import { runParts } from './choreo';
 import { planParts } from './partPlan';
@@ -176,7 +176,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
   const atEnd = at.slide >= slides.length - 1 && at.part >= (slide?.parts ?? 1) - 1;
   useFitToStage(stage, at.slide);
   const night = slide?.kind === 'chapter';
-  const theme = useMemo(() => themeAt(scene.blocks, slide?.block ?? 0), [scene.blocks, slide?.block]);
+  const theme = useMemo(() => themeAt(scene.blocks, slide?.block ?? 0, lookSeed(scene)), [scene, slide?.block]);
   const block = slide ? scene.blocks[slide.block] : undefined;
   // The band keeps its height for the whole slide when any part of it speaks, so the diagram does not jump.
   const speaks = useMemo(() => Array.from({ length: slide?.parts ?? 0 }, (_, i) => subtitleOf(block, i)).some(Boolean), [block, slide?.parts]);
@@ -289,7 +289,7 @@ export function Presenter({ scene, onExit }: { scene: ScenePayload; onExit: () =
       className="presenter fixed inset-0 z-50 flex flex-col overflow-hidden bg-background text-foreground outline-none"
     >
       {/* Outside the stage, so the decoration stays put while the slide moves; every slide has its own composition. */}
-      <Backdrop key={`${theme.name}-${at.slide}`} theme={theme} seed={scene.key} index={at.slide} variant={night ? 'night' : 'slide'} className="absolute inset-0 h-full w-full" />
+      <Backdrop key={`${theme.name}-${at.slide}`} theme={theme} seed={lookSeed(scene)} index={at.slide} variant={night ? 'night' : 'slide'} className="absolute inset-0 h-full w-full" avoid={stage} revision={at.part} />
       <header className="presenter-bar presenter-header relative z-10 flex items-center gap-3 border-b border-border-soft bg-card px-6 py-2.5 text-sm">
         <span className="min-w-0 truncate font-black">{scene.topic}</span>
         <span className="shrink-0 whitespace-nowrap font-bold tabular-nums text-muted-foreground" aria-live="polite">

@@ -519,6 +519,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F33. `<figure>`: anchors instead of numbers, and geometry checks (stop). Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F34. `<figure>`: pictograms, arcs and measures (stop). Done 2026-11-14; outcome in `docs/plan.md`.
 - [x] F35. `<figure>`: clearer reading (stop). Done 2026-11-14; outcome in `docs/plan.md`, the comparison in `docs/figures-research.md`.
+- [ ] F36. Random topics on Sonnet, and a look of each presentation's own: a loop until the user stops it (user, 2026-11-14). Scope in `docs/plan.md`; rounds in `evals/random-log.md`.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -643,3 +644,4 @@ Open points:
 | F33 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
 | F34 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
 | F35 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
+| F36 | in progress (2026-11-14): a loop of rounds until the user stops it; see `evals/random-log.md` |

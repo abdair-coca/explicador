@@ -5,7 +5,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { gsap, reducedMotion, staggerOf, tokens } from '../animation/motion';
 import { cn } from '@/lib/utils';
-import { compose, type Placement } from './compose';
+import { compose, type Corner, type Placement } from './compose';
 import { CANVAS, motif, type Shape } from './motifs';
 import type { Theme } from './themes';
 import { themes } from './themes';
@@ -27,7 +27,95 @@ function ShapeView({ shape }: { shape: Shape }) {
   }
 }
 
-export function Backdrop({ theme, seed, variant, index = 0, className }: { theme: Theme; seed: string; variant: Variant; index?: number; className?: string }) {
+const CORNERS: readonly Corner[] = ['tr', 'br', 'bl', 'tl'];
+/** How much of a drawing may lie on the slide's content before it moves or hides: a sliver at its edge. */
+const MAX_COVER = 0.03;
+
+/**
+ * Where the slide's content is: the tight boxes of its text, and the boxes of its cards, pictures and drawings. A
+ * paragraph's own box spans the column; its text may not, so text is measured by its line boxes.
+ */
+export function contentBoxes(root: HTMLElement): DOMRect[] {
+  const boxes: DOMRect[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.textContent?.trim() || node.parentElement?.closest('svg')) continue;
+    range.selectNodeContents(node);
+    boxes.push(...Array.from(range.getClientRects()));
+  }
+  for (const element of Array.from(root.querySelectorAll<HTMLElement | SVGElement>('svg, img, canvas, table, button, [class*="bg-"], [class*="border"]'))) {
+    if (element instanceof SVGElement && element.parentElement?.closest('svg')) continue;
+    if (element.closest('[aria-hidden="true"]') && !(element instanceof SVGSVGElement)) continue;
+    const style = getComputedStyle(element);
+    if (style.visibility === 'hidden' || style.display === 'none') continue;
+    const painted = element instanceof SVGSVGElement || element.tagName === 'IMG' || element.tagName === 'CANVAS' || element.tagName === 'TABLE' || !transparent(style.backgroundColor) || parseFloat(style.borderTopWidth) > 0 || parseFloat(style.borderLeftWidth) > 0;
+    if (painted) boxes.push(element.getBoundingClientRect());
+  }
+  return boxes.filter((box) => box.width > 0 && box.height > 0);
+}
+
+/** Whether a computed color paints nothing: `transparent`, or an alpha of 0 in any notation (rgba, oklch, color-mix). */
+const transparent = (color: string): boolean => color === 'transparent' || /(?:,|\/)\s*0(?:\.0*)?\s*\)$/.test(color);
+
+/** The share of `part` that the boxes cover (overlaps between boxes counted twice: an upper bound is enough here). */
+function covered(part: DOMRect, boxes: readonly DOMRect[]): number {
+  const area = part.width * part.height;
+  if (area === 0) return 0;
+  let sum = 0;
+  for (const box of boxes) {
+    const w = Math.min(part.right, box.right) - Math.max(part.left, box.left);
+    const h = Math.min(part.bottom, box.bottom) - Math.max(part.top, box.top);
+    if (w > 0 && h > 0) sum += w * h;
+  }
+  return sum / area;
+}
+
+/**
+ * Moves each drawing of a slide to a corner the content leaves free, the large one first and its own corner first,
+ * and hides a drawing that every free corner would put on the content (F36: decoration never competes with it).
+ */
+function clear(element: HTMLElement, content: HTMLElement): void {
+  const boxes = contentBoxes(content);
+  const used = new Set<Corner>();
+  for (const part of Array.from(element.querySelectorAll<SVGSVGElement>('.motif-part'))) {
+    const own = CORNERS.find((corner) => part.classList.contains(`motif-${corner}`)) ?? 'tr';
+    if (part.getBoundingClientRect().width === 0) continue;
+    const options = [own, ...CORNERS.filter((corner) => corner !== own)].filter((corner) => !used.has(corner));
+    let best: { corner: Corner; cover: number } | undefined;
+    for (const corner of options) {
+      for (const other of CORNERS) part.classList.toggle(`motif-${other}`, other === corner);
+      const cover = covered(part.getBoundingClientRect(), boxes);
+      if (!best || cover < best.cover - 0.005) best = { corner, cover };
+      if (cover <= MAX_COVER) break;
+    }
+    const corner = best?.corner ?? own;
+    for (const other of CORNERS) part.classList.toggle(`motif-${other}`, other === corner);
+    const hidden = (best?.cover ?? 0) > MAX_COVER;
+    part.style.visibility = hidden ? 'hidden' : '';
+    if (!hidden) used.add(corner);
+  }
+}
+
+export function Backdrop({
+  theme,
+  seed,
+  variant,
+  index = 0,
+  className,
+  avoid,
+  revision,
+}: {
+  theme: Theme;
+  seed: string;
+  variant: Variant;
+  index?: number;
+  className?: string;
+  /** The slide's content, which the drawings keep clear of (slides only). */
+  avoid?: React.RefObject<HTMLElement | null>;
+  /** Changes when the content may have grown, as a new part arrives. */
+  revision?: unknown;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const placements = useMemo(
     (): Placement[] => (variant === 'slide' || variant === 'night' ? compose(seed, index, variant === 'night') : [{ corner: 'tr', size: 'lg', variant: index, seed: `${seed}:${index}` }]),
@@ -46,6 +134,21 @@ export function Backdrop({ theme, seed, variant, index = 0, className }: { theme
       timeline.kill();
     };
   }, [drawings]);
+  useLayoutEffect(() => {
+    const element = root.current;
+    const content = avoid?.current;
+    if (!element || !content || (variant !== 'slide' && variant !== 'night')) return;
+    const run = (): void => clear(element, content);
+    run();
+    // Entrances and fonts settle a moment later; a resize moves everything.
+    const later = window.setTimeout(run, 450);
+    const observer = new ResizeObserver(() => requestAnimationFrame(run));
+    observer.observe(content);
+    return () => {
+      window.clearTimeout(later);
+      observer.disconnect();
+    };
+  }, [avoid, drawings, revision, variant]);
   if (theme.name === 'plain') return null;
   return (
     <div ref={root} aria-hidden="true" className={cn('motif pointer-events-none', `motif-${variant}`, className)} style={{ '--accent': theme.accent } as React.CSSProperties}>

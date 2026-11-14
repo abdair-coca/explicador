@@ -44,7 +44,7 @@ const sceneOf = (source: string): Scene => {
 
 describe('<brief>', () => {
   it('parses a valid brief after the title, outside the blocks', () => {
-    const scene = sceneOf(`# Where does each value go?\n\n${brief()}\n\n<theme name="code" />\n\n${tree}`);
+    const scene = sceneOf(`# Where does each value go?\n\n${brief()}\n\n<theme name="code math" />\n\n${tree}`);
     assert.deepEqual(scene.brief, { form: 'structure', ...fields, terms: ['node', 'child', 'height (in levels)', 'full tree', 'degenerate tree'] });
     assert.deepEqual(
       scene.blocks.map((block) => block.type),

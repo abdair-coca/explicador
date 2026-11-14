@@ -107,10 +107,15 @@ export function buildChapter(element: Element, ordinal: number, report: Report):
 
 export function buildTheme(element: Element, _ordinal: number, report: Report): ThemeBlock {
   const a = readAttrs(element, spec('theme'), report);
-  requireSelfClosing(element, '<theme name="ml" />', report);
-  const name = readEnum<ThemeName>(a.name, themeNames, 'plain', 'name', element, report);
+  requireSelfClosing(element, '<theme name="ml data" />', report);
+  // One to three themes that fit; the viewer draws one of them at random for each presentation (F36).
+  const named = [...new Set((a.name ?? '').split(/\s+/).filter(Boolean))];
+  if (named.length > 3) report(element.attrs.get('name')?.offset ?? element.offset, `<theme> names at most three themes; it names ${named.length}`);
+  const names = named.slice(0, 3).map((value) => readEnum<ThemeName>(value, themeNames, 'plain', 'name', element, report));
+  const name = names[0] ?? 'plain';
+  const choices = [...new Set(names)];
   const accent = a.accent === undefined ? undefined : readEnum(a.accent, accentNames, 'blue', 'accent', element, report);
-  return { type: 'theme', id: 'theme', name, ...(accent ? { accent } : {}) };
+  return { type: 'theme', id: 'theme', name, ...(choices.length > 1 ? { choices } : {}), ...(accent ? { accent } : {}) };
 }
 
 export function buildStats(element: Element, ordinal: number, report: Report): StatsBlock {

@@ -47,6 +47,15 @@ export function slideWarnings(blocks: Block[]): string[] {
   if (!blocks.some((block) => block.type === 'theme')) {
     warnings.push('No <theme>: add `<theme name="…" />` right after the title so every slide gets its drawings.');
   }
+  const theme = blocks.find((block) => block.type === 'theme');
+  if (theme?.type === 'theme') {
+    const named = theme.choices ?? [theme.name];
+    if (named.includes('plain')) {
+      warnings.push('<theme> names "plain", which draws nothing: name two or three themes that fit the subject instead (nature, space, science, history, health, food, art, society for everyday subjects; data, ml, math, text, web, network, database, security, code, hardware, business for technical ones).');
+    } else if (named.length === 1) {
+      warnings.push(`<theme> names one theme: name two or three that fit the subject, e.g. \`<theme name="${theme.name} ${theme.name === 'science' ? 'nature' : 'science'}" />\`; the viewer draws one of them at random for each presentation, so no two look alike.`);
+    }
+  }
   const firstProse = blocks.find((block) => block.type === 'markdown' || block.type === 'chapter');
   if (firstProse?.type !== 'markdown' || coverTitle(firstProse.text) === undefined) {
     warnings.push('No "# " title at the top: Present opens with that title as its cover; start the scene with "# " and the question it answers.');

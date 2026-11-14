@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { formatErrors, parseExl } from '../src/parser/index.ts';
-import { boxWarnings, codeWarnings, exampleWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
+import { boxWarnings, codeWarnings, drawingWarnings, exampleWarnings, lessonWarnings, numberWarnings, quizWarnings, sceneWarnings, sectionWarnings, subtitleWarnings, tokens } from '../src/rules.ts';
 import type { Block, Scene } from '../src/scene.ts';
 import { tempProject } from './helpers.ts';
 
@@ -188,6 +188,18 @@ describe('exampleWarnings', () => {
   });
 });
 
+describe('drawingWarnings', () => {
+  const brief = (form: string): string => `<brief form="${form}">\n<audience>Adults</audience>\n<question>Why?</question>\n<example>A 200 € sofa sold to Ana</example>\n<misconception>A wrong idea</misconception>\n<check>Predict it</check>\n<terms>term</terms>\n</brief>`;
+  const trace = '<trace title="It changes" arc="example">\n<value label="A" note="First.">one</value>\n<value label="B" note="Then.">two</value>\n</trace>';
+  const figure = '<figure title="The thing" arc="example">\n<circle id="a" x="5" y="5" r="2" label="A" />\n<circle id="b" x="9" y="5" r="1" label="B" />\n<show items="b">It arrives.</show>\n</figure>';
+  it('asks a scene about the world for a figure of the thing itself', () => {
+    assert.match(drawingWarnings(sceneOf(`# Why?\n\n${brief('process')}\n\n${trace}`), [])[0] ?? '', /points at no files.*add a <figure> of the brief's example/);
+    assert.deepEqual(drawingWarnings(sceneOf(`# Why?\n\n${brief('process')}\n\n${figure}`), []), []);
+    assert.deepEqual(drawingWarnings(sceneOf(`# Why?\n\n${brief('process')}\n\n${trace}`), ['src/a.ts']), [], 'a scene over files');
+    assert.deepEqual(drawingWarnings(sceneOf(`# Why?\n\n${brief('quantity')}\n\n${trace}`), []), [], 'a quantity');
+  });
+});
+
 describe('the scenes the skill shows', () => {
   it('break no rule: every example over its project', () => {
     const projects = { login: 'shop', 'data-model': 'shop', 'session-states': 'shop', 'notebook-lesson': 'notebook', rag: 'rag', 'search-tree': 'trees', 'cache-storm': 'cache', lease: 'lease' };
@@ -201,7 +213,7 @@ describe('the scenes the skill shows', () => {
     for (const file of ['skills/explicador/presenting.md', 'skills/explicador/SKILL.md']) {
       const text = readFileSync(join(repo, file), 'utf8').replace(/\r\n/g, '\n');
       for (const [, template = ''] of text.matchAll(/^```exl\n([\s\S]*?)^```/gm)) {
-        assert.deepEqual(sceneWarnings(tempProject(), sceneOf(template), []), [], `${file}: ${template.slice(0, 40)}`);
+        assert.deepEqual(sceneWarnings(tempProject(), sceneOf(template), refsOf(template)), [], `${file}: ${template.slice(0, 40)}`);
       }
     }
   });

@@ -508,6 +508,310 @@ const businessBoard: Motif = (random) => {
   ]);
 };
 
+// ── everyday subjects (F36) ─────────────────────────────────────────────────────────────────────────────────────────
+type Command = [string, ...number[]];
+/** A path from commands in grid units; an `A` keeps its rotation and flags as they are. */
+const path = (commands: Command[], look: Look = {}): Shape => ({
+  kind: 'path',
+  d: commands
+    .map(([op, ...n]) => `${op}${(op === 'A' ? [g(n[0] ?? 0), g(n[1] ?? 0), n[2], n[3], n[4], g(n[5] ?? 0), g(n[6] ?? 0)] : n.map(g)).join(' ')}`)
+    .join(' '),
+  ...look,
+});
+/** A whole ellipse around a grid point, its long axis turned by `turn` degrees. */
+const ellipse = (c: number, r: number, rx: number, ry: number, turn: number, look: Look = {}): Shape => {
+  const cos = Math.cos((turn * Math.PI) / 180);
+  const sin = Math.sin((turn * Math.PI) / 180);
+  return path([['M', c - rx * cos, r - rx * sin], ['A', rx, ry, turn, 1, 0, c + rx * cos, r + rx * sin], ['A', rx, ry, turn, 1, 0, c - rx * cos, r - rx * sin]], look);
+};
+/** The point at `angle` degrees on that ellipse. */
+const onEllipse = (c: number, r: number, rx: number, ry: number, turn: number, angle: number): Cell => {
+  const t = (angle * Math.PI) / 180;
+  const a = (turn * Math.PI) / 180;
+  const x = rx * Math.cos(t);
+  const y = ry * Math.sin(t);
+  return [c + x * Math.cos(a) - y * Math.sin(a), r + x * Math.sin(a) + y * Math.cos(a)];
+};
+/** A wisp of steam rising from a grid point. */
+const steam = (c: number, r: number, look: Look = {}): Shape => path([['M', c, r], ['Q', c - 0.4, r - 0.5, c, r - 1], ['Q', c + 0.4, r - 1.5, c, r - 2]], look);
+
+// ── nature ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+const natureLandscape: Motif = (random) => {
+  const left = 2.5 + random();
+  const right = 2 + random();
+  const sun = int(random, 8, 10);
+  return [
+    dot(sun, 1.8, 0.9, { ...B, ...SOFT }),
+    line([[0.5, 7], [3.5, left], [6, 5], [8.5, right], [11.5, 7]], SOFT, true),
+    line([[0.5, 7], [11.5, 7]]),
+    line([[10.5, 7], [10.5, 6.2]]),
+    dot(10.5, 5.7, 0.55, SOFT),
+    ...range(int(random, 1, 2)).map((i) => line([[5 + i * 1.2, 1.5 + i * 0.4], [5.3 + i * 1.2, 1.8 + i * 0.4], [5.6 + i * 1.2, 1.5 + i * 0.4]])),
+  ];
+};
+const natureLeaf: Motif = (random) => {
+  const veins = int(random, 3, 5);
+  return [
+    path([['M', 2, 6.5], ['Q', 2, 1.5, 10.5, 1.2], ['Q', 10, 6.5, 2, 6.5], ['Z']], SOFT),
+    line([[2, 6.5], [10.5, 1.2]]),
+    line([[2, 6.5], [1, 7.5]]),
+    ...range(veins).map((i) => {
+      const t = (i + 1) / (veins + 1);
+      const c = 2 + 8.5 * t;
+      const r = 6.5 - 5.3 * t;
+      return i % 2 === 0 ? line([[c, r], [c - 0.6, r - 1.3]]) : line([[c, r], [c + 1.2, r + 0.6]]);
+    }),
+    dot(4 + random() * 4, 4.6 - random(), 0.35, { ...B, ...SOFT }),
+  ];
+};
+const natureForest: Motif = (random) => {
+  const count = int(random, 4, 5);
+  const chosen = int(random, 0, count - 1);
+  return [
+    line([[0.5, 7], [11.5, 7]]),
+    ...range(count).flatMap((i): Shape[] => {
+      const c = 1.5 + i * (9 / (count - 1));
+      const top = 1.5 + random() * 2;
+      const look = i === chosen ? { ...B, ...SOFT } : SOFT;
+      return [line([[c, 7], [c, 5.5]]), i % 2 === 0 ? line([[c - 1, 5.5], [c, top], [c + 1, 5.5]], look, true) : dot(c, 4.5 - random(), 1, look)];
+    }),
+  ];
+};
+
+// ── space ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+const spaceOrbits: Motif = (random) => {
+  const chosen = int(random, 0, 2);
+  return [
+    dot(6, 4, 0.8, SOLID),
+    ...[2, 3.5, 5].flatMap((rx, i): Shape[] => {
+      const [c, r] = onEllipse(6, 4, rx, rx * 0.6, -12, int(random, 0, 359));
+      return [ellipse(6, 4, rx, rx * 0.6, -12), dot(c, r, 0.35, i === chosen ? { ...B, ...SOFT } : SOLID)];
+    }),
+  ];
+};
+const spaceRinged: Motif = (random) => [
+  dot(5.5, 4, 1.8, SOFT),
+  ellipse(5.5, 4, 3.4, 0.9, -15),
+  dot(9.8, 1.6, 0.6, { ...B, ...SOFT }),
+  ...range(int(random, 5, 7)).map(() => {
+    const [c, r] = pick(random, [[1, 1], [2.5, 0.8], [1, 6.5], [3, 7.2], [9, 6.5], [11, 4.5], [10.8, 7], [8, 0.8], [11.2, 2.8]] as Cell[]);
+    return dot(c + random() * 0.5, r, 0.12, SOLID);
+  }),
+];
+const spaceConstellation: Motif = (random) => {
+  const places: Cell[] = [[1.5, 5], [3.5, 3], [5.5, 4], [7.5, 2], [9, 4.5], [10.5, 6.5]];
+  const stars = places.map(([c, r]): Cell => [c + random() - 0.5, r + random() - 0.5]);
+  const bright = int(random, 0, stars.length - 1);
+  return [
+    line(stars),
+    ...stars.map(([c, r], i) => dot(c, r, i === bright ? 0.35 : 0.2, i === bright ? { ...B, ...SOLID } : SOLID)),
+    path([['M', 10.5, 0.7], ['A', 0.9, 0.9, 0, 1, 0, 10.5, 2.5], ['A', 0.7, 0.7, 0, 1, 1, 10.5, 0.7], ['Z']], SOFT),
+  ];
+};
+
+// ── science ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+const scienceAtom: Motif = (random) => {
+  const turn = int(random, 0, 59);
+  return [
+    ...[0, 60, 120].flatMap((angle): Shape[] => {
+      const [c, r] = onEllipse(6, 4, 3.6, 1.2, turn + angle, int(random, 0, 359));
+      return [ellipse(6, 4, 3.6, 1.2, turn + angle), dot(c, r, 0.25, SOLID)];
+    }),
+    dot(6, 4, 0.6, { ...B, ...SOFT }),
+  ];
+};
+const scienceFlask: Motif = (random) => {
+  const level = 5 + random();
+  const width = ((level - 3.5) / 3.5) * 2.5;
+  return [
+    line([[5, 1], [5, 3.5], [2.5, 7], [9.5, 7], [7, 3.5], [7, 1]]),
+    line([[4.5, 1], [7.5, 1]]),
+    line([[5 - width, level], [7 + width, level], [9.5, 7], [2.5, 7]], SOFT, true),
+    ...range(int(random, 2, 4)).map((i) => dot(4.5 + i * 1.1 + random() * 0.3, level + 0.5 + random() * 0.7, 0.18, SOLID)),
+    dot(6, 2.6 - random() * 0.8, 0.3, { ...B, ...SOFT }),
+  ];
+};
+const sciencePrism: Motif = (random) => {
+  const rays = int(random, 3, 4);
+  const chosen = int(random, 0, rays - 1);
+  return [
+    line([[0.5, 3 + random()], [5, 4.5]]),
+    line([[4, 6.5], [6, 2.5], [8, 6.5]], SOFT, true),
+    line([[5, 4.5], [7, 4.8]]),
+    ...range(rays).map((i) => line([[7, 4.8], [11.5, 3 + i * (3.5 / (rays - 1))]], i === chosen ? B : {})),
+  ];
+};
+
+// ── history ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+const historyTemple: Motif = (random) => {
+  const count = int(random, 4, 6);
+  const chosen = int(random, 0, count - 1);
+  return [
+    line([[1.5, 2.5], [6, 0.8], [10.5, 2.5]], SOFT, true),
+    box(1.5, 2.5, 9, 0.6, {}, 0.1),
+    ...range(count).map((i) => box(2 + i * (7.5 / (count - 1)), 3.1, 0.5, 3.5, i === chosen ? { ...B, ...SOFT } : SOFT, 0.1)),
+    box(1, 6.6, 10, 0.4, {}, 0.1),
+    box(0.5, 7, 11, 0.5, SOLID, 0.1),
+  ];
+};
+const historyScroll: Motif = (random) => [
+  box(2.5, 1.5, 7, 5, SOFT, 0),
+  box(1.8, 1, 8.4, 0.8, SOLID, 0.4),
+  box(1.8, 6.2, 8.4, 0.8, SOLID, 0.4),
+  ...range(int(random, 3, 5)).map((i) => line([[3.2, 2.5 + i * 0.75], [3.2 + 3 + random() * 2.5, 2.5 + i * 0.75]])),
+  dot(8.3, 5.4, 0.45, { ...B, ...SOFT }),
+];
+const historyTimeline: Motif = (random) => {
+  const chosen = int(random, 0, 4);
+  return [
+    line([[0.5, 4], [11.5, 4]]),
+    ...range(5).flatMap((i): Shape[] => {
+      const c = 1.5 + i * 2.2 + random() * 0.4;
+      const up = i % 2 === 0;
+      const look = i === chosen ? { ...B, ...SOFT } : SOFT;
+      return [dot(c, 4, 0.25, SOLID), line([[c, 4], [c, up ? 2.6 : 5.4]]), box(c - 0.8, up ? 1.4 : 5.4, 1.6, 1.2, look, 0.2)];
+    }),
+  ];
+};
+
+// ── health ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+const healthPulse: Motif = (random) => {
+  const beat = 3.5 + random() * 2.5;
+  return [
+    box(1, 0.8, 10, 6, {}, 0.4),
+    line([[1.5, 4.5], [beat - 1, 4.5], [beat - 0.5, 3.9], [beat, 5.1], [beat + 0.4, 1.8], [beat + 0.8, 5.5], [beat + 1.2, 4.5], [beat + 2.2, 4.5], [beat + 2.6, 3.9], [beat + 3, 4.5], [10.5, 4.5]]),
+    path([['M', 9.3, 2.7], ['Q', 8.4, 2, 8.6, 1.6], ['Q', 8.9, 1.2, 9.3, 1.7], ['Q', 9.7, 1.2, 10, 1.6], ['Q', 10.2, 2, 9.3, 2.7], ['Z']], { ...B, ...SOFT }),
+    box(5, 6.8, 2, 0.4, SOLID, 0.1),
+    line([[4, 7.5], [8, 7.5]]),
+  ];
+};
+const healthKit: Motif = (random) => [
+  dot(3.8, 4, 2.6, SOFT),
+  box(3.15, 2.3, 1.3, 3.4, SOLID, 0.15),
+  box(2.1, 3.35, 3.4, 1.3, SOLID, 0.15),
+  box(7.2, 3.4, 4, 1.2, {}, 0.6),
+  box(9.2, 3.4, 2, 1.2, { ...B, ...SOLID }, 0.6),
+  ...range(int(random, 2, 3)).map((i) => dot(7.5 + i * 1.3, 6.3 + random() * 0.6, 0.15, SOLID)),
+];
+const healthCell: Motif = (random) => [
+  dot(6, 4, 3.4, SOFT),
+  dot(6 + random() - 0.5, 4 + random() - 0.5, 1.1, { ...B, ...SOFT }),
+  ...range(int(random, 3, 5)).map((i) => {
+    const [c, r] = onEllipse(6, 4, 2.4, 2.4, 0, i * 80 + int(random, 0, 40));
+    return i % 2 === 0 ? dot(c, r, 0.25, SOLID) : ellipse(c, r, 0.6, 0.25, int(random, 0, 179), SOLID);
+  }),
+];
+
+// ── food ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+const foodPot: Motif = (random) => {
+  const chosen = int(random, 0, 2);
+  return [
+    box(3, 3.5, 6, 3.2, SOFT, 0.4),
+    line([[2.6, 3.5], [9.4, 3.5]]),
+    dot(6, 3.1, 0.25, SOLID),
+    line([[2.2, 4.1], [3, 4.1]]),
+    line([[9, 4.1], [9.8, 4.1]]),
+    ...range(3).map((i) => steam(4.6 + i * 1.4, 2.5, i === chosen ? B : {})),
+    box(2.5, 7, 7, 0.4, SOLID, 0.1),
+  ];
+};
+const foodPlate: Motif = (random) => [
+  dot(6.5, 4, 3, SOFT),
+  dot(6.5, 4, 2),
+  line([[1.5, 1.5], [1.5, 6.8]]),
+  ...[1, 1.5, 2].map((c) => line([[c, 1.2], [c, 2.6]])),
+  line([[11, 1.2], [11, 6.8]]),
+  path([['M', 11, 1.2], ['Q', 10.2, 2.6, 11, 4]], SOLID),
+  dot(6.5 + random() - 0.5, 3.6, 0.8, { ...B, ...SOFT }),
+  ...range(int(random, 2, 3)).map((i) => dot(5.5 + i * 0.9, 4.9 + random() * 0.3, 0.3, SOLID)),
+];
+const foodCup: Motif = (random) => {
+  const chosen = int(random, 0, 1);
+  return [
+    line([[3.5, 3], [4, 6.5], [8, 6.5], [8.5, 3]], SOFT, true),
+    arc(8.5, 4.6, 0.9, -80, 80),
+    box(2.5, 6.8, 7, 0.4, SOLID, 0.2),
+    ...range(2).map((i) => steam(5.3 + i * 1.4 + random() * 0.3, 2.5, i === chosen ? B : {})),
+    dot(10.5, 6.4, 0.3, SOLID),
+  ];
+};
+
+// ── art ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+const artPalette: Motif = (random) => {
+  const chosen = int(random, 0, 4);
+  return [
+    ellipse(5.2, 4, 4, 3, -10, SOFT),
+    dot(3.8, 5.3, 0.5),
+    ...range(5).map((i) => {
+      const [c, r] = onEllipse(5.2, 4, 2.8, 1.9, -10, 160 + i * 45);
+      return dot(c, r, 0.45, i === chosen ? { ...B, ...SOLID } : SOLID);
+    }),
+    line([[9, 7], [11.3, 1.3 + random()]]),
+  ];
+};
+const artMusic: Motif = (random) => {
+  const notes = range(int(random, 4, 6)).map((i): Cell => [2 + i * 1.6, 2 + int(random, 0, 8) * 0.35]);
+  const chosen = int(random, 0, notes.length - 1);
+  return [
+    ...range(5).map((i) => line([[0.8, 2 + i * 0.7], [11.2, 2 + i * 0.7]])),
+    ...notes.flatMap(([c, r], i): Shape[] => [ellipse(c, r, 0.4, 0.28, -20, i === chosen ? { ...B, ...SOLID } : SOLID), line([[c + 0.38, r - 0.1], [c + 0.38, r - 1.9]])]),
+  ];
+};
+const artFrame: Motif = (random) => [
+  box(1.5, 0.6, 9, 6.4, {}, 0.1),
+  box(2.2, 1.3, 7.6, 5, SOFT, 0),
+  line([[2.2, 6.3], [4.5, 3.5 + random()], [6.2, 5], [7.8, 3 + random()], [9.8, 6.3]]),
+  dot(4 + random() * 4, 2.4, 0.5, { ...B, ...SOFT }),
+  line([[3, 7], [2.4, 7.7]]),
+  line([[9, 7], [9.6, 7.7]]),
+];
+
+// ── society ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+const societyScales: Motif = (random) => {
+  const tilt = (random() - 0.5) * 1.2;
+  const chosen = int(random, 0, 1);
+  return [
+    line([[6, 1.2], [6, 6.8]]),
+    box(4.5, 6.8, 3, 0.5, SOLID, 0.2),
+    dot(6, 1.2, 0.3, SOLID),
+    line([[2.5, 2 + tilt], [9.5, 2 - tilt]]),
+    ...[2.5, 9.5].flatMap((c, i): Shape[] => {
+      const r = 4.2 + (i === 0 ? tilt : -tilt);
+      return [line([[c - 1.2, r], [c, 2 + (i === 0 ? tilt : -tilt)], [c + 1.2, r]]), arc(c, r, 1.2, 0, 180, i === chosen ? { ...B, ...SOFT } : SOFT)];
+    }),
+  ];
+};
+const societyCity: Motif = (random) => {
+  const count = int(random, 5, 6);
+  const chosen = int(random, 0, count - 1);
+  const width = 10 / count;
+  return [
+    line([[0.5, 7.2], [11.5, 7.2]]),
+    ...range(count).flatMap((i): Shape[] => {
+      const height = 2 + random() * 4;
+      const c = 1 + i * width;
+      return [
+        box(c, 7.2 - height, width - 0.3, height, i === chosen ? { ...B, ...SOFT } : SOFT, 0.1),
+        ...range(Math.floor(height / 1.2)).map((w) => box(c + 0.3, 7.2 - height + 0.4 + w * 1.2, width - 0.9, 0.4, SOLID, 0.05)),
+      ];
+    }),
+  ];
+};
+const societyPeople: Motif = (random) => {
+  const count = int(random, 4, 5);
+  const chosen = int(random, 0, count - 1);
+  return [
+    ...range(count).flatMap((i): Shape[] => {
+      const c = 1.6 + i * (8.8 / (count - 1));
+      const r = 4 + (i % 2 === 0 ? 0 : 0.5);
+      const look = i === chosen ? { ...B, ...SOFT } : SOFT;
+      return [dot(c, r, 0.5, look), arc(c, r + 2.3, 1, 180, 360, look)];
+    }),
+    box(4.5, 0.6, 3, 1.4, {}, 0.4),
+    line([[5.6, 2], [5.4, 2.6], [6.1, 2]]),
+  ];
+};
+
 const motifs: Record<ThemeName, readonly Motif[]> = {
   plain: [],
   data: [dataBars, dataTable, dataArea],
@@ -521,6 +825,14 @@ const motifs: Record<ThemeName, readonly Motif[]> = {
   code: [codeLines, codeBranches, codeTerminal],
   hardware: [hardwareChip, hardwareSignals, hardwareBoard],
   business: [businessGrowth, businessFunnel, businessBoard],
+  nature: [natureLandscape, natureLeaf, natureForest],
+  space: [spaceOrbits, spaceRinged, spaceConstellation],
+  science: [scienceAtom, scienceFlask, sciencePrism],
+  history: [historyTemple, historyScroll, historyTimeline],
+  health: [healthPulse, healthKit, healthCell],
+  food: [foodPot, foodPlate, foodCup],
+  art: [artPalette, artMusic, artFrame],
+  society: [societyScales, societyCity, societyPeople],
 };
 
 /** One of the theme's drawings (`variant` wraps around), with its details set by `seed`. The plain theme draws nothing. */

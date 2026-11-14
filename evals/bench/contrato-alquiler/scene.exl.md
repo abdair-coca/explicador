@@ -9,7 +9,7 @@
 <terms>garantía, desgaste normal, mora, subarriendo</terms>
 </brief>
 
-<theme name="business" />
+<theme name="society business" />
 
 Pablo Reyes va a alquilar el apartamento 3B del edificio Los Álamos, calle Cedro 45, en Valle Claro, a Marta Quiroga. El contrato es ficticio y tiene diez cláusulas; estas son las que deciden cuánto paga y qué puede hacer.
 

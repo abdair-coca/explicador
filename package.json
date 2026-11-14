@@ -18,7 +18,8 @@
     "e2e": "playwright test --project chromium --trace off",
     "e2e:all": "playwright test --trace off",
     "eval": "node evals/run.ts",
-    "eval:comprension": "node evals/comprehension.ts"
+    "eval:comprension": "node evals/comprehension.ts",
+    "eval:random": "node evals/random.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

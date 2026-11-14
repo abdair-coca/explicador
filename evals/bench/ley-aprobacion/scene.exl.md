@@ -9,7 +9,7 @@
 <terms>quórum, mayoría simple, cámara de origen, cámara revisora, veto</terms>
 </brief>
 
-<theme name="plain" />
+<theme name="society history" />
 
 Un grupo de diputados quiere que cada escuela tenga una biblioteca. El sistema tiene dos cámaras y un presidente (una descripción general, sin referirse a ningún país): la cámara baja, con **100 diputados**, la cámara alta, con **40 senadores**, y el presidente, que firma o devuelve las leyes.
 

@@ -9,7 +9,7 @@
 <terms>time to live</terms>
 </brief>
 
-<theme name="security" />
+<theme name="security web" />
 
 Follow Ada through one visit to the shop: six things happen, and each one changes what the server knows about her.
 

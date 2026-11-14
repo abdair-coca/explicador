@@ -9,7 +9,7 @@
 <terms>labelled dataset, stop word, train/test split, bag of words, logistic regression, confusion matrix, precision and recall, sigmoid</terms>
 </brief>
 
-<theme name="ml" />
+<theme name="ml data" />
 
 This notebook teaches a computer to read a short movie review and say whether it is **positive** or **negative**. It never understands the words: it counts them, and learns how much each one pushes towards "positive". How far does that get with 24 reviews?
 

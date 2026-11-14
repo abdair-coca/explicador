@@ -1,6 +1,7 @@
 // Geometry of the lesson charts in real pixels: the SVG is drawn at the container's width (no viewBox scaling),
 // so text stays crisp. Pure, so it is tested without a browser; Chart.tsx only draws what this returns.
 import type { ChartBlock } from '../../../server/src/scene.ts';
+import { language, type Language } from '../i18n.ts';
 import { barTicks, formatTick, lineTicks, linear, type Ticks } from './scale.ts';
 
 /** Approximate width of one character of the 12 px chart text. */
@@ -79,10 +80,14 @@ export function numbersOf(block: ChartBlock): number[][] {
   return block.rows.map((row) => row.values.map(Number));
 }
 
-/** A value as written, with the unit ("84.6 %" stays "84.6%" for a symbol, "12 ms" for a word). */
-export function withUnit(text: string, unit: string | undefined): string {
-  if (!unit) return text;
-  return /^[\p{L}]/u.test(unit) ? `${text} ${unit}` : `${text}${unit}`;
+/**
+ * A value as written, with the unit ("84.6 %" stays "84.6%" for a symbol, "12 ms" for a word). A Spanish scene writes
+ * its numbers the Spanish way (F36): a decimal comma and a space before every unit ("10,5 €", "84,6 %").
+ */
+export function withUnit(text: string, unit: string | undefined, lang: Language = language()): string {
+  const shown = lang === 'es' ? text.replace(/(\d)\.(\d)/g, '$1,$2') : text;
+  if (!unit) return shown;
+  return lang === 'es' || /^[\p{L}]/u.test(unit) ? `${shown} ${unit}` : `${shown}${unit}`;
 }
 
 /** A highlighted series grays the others; a highlighted row dims the other rows. */

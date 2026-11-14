@@ -494,7 +494,7 @@ body {
 .trace-card.past .trace-table { min-width: 0; width: 100%; }
 .trace-card.past .trace-cell { white-space: nowrap; overflow-wrap: normal; }
 .trace-card.past .trace-name, .trace-card.past .trace-bar-value, .trace-large .trace-card.past .trace-name, .trace-large .trace-card.past .trace-bar-value { font-size: 0.8rem; }
-.trace-card.past .trace-number, .trace-large .trace-card.past .trace-number { font-size: 2.2rem; }
+.trace-card.past .trace-number, .trace-large .trace-card.past .trace-number { font-size: calc(2.2rem * var(--fit, 1)); }
 .trace-card.past .trace-cell, .trace-card.past .trace-bar { animation: none; }
 .trace-folded { align-self: center; font-weight: 900; font-size: 1.1rem; color: var(--muted-foreground); border: 2px dashed var(--border); border-radius: 999px; padding: 0.35rem 0.7rem; }
 @media (max-width: 720px) {
@@ -537,7 +537,7 @@ body {
 /* On a phone the track gives up width before the names and values do. */
 @media (max-width: 640px) { .trace-bars { grid-template-columns: max-content minmax(2.5rem, 1fr) max-content; gap: 0.4rem 0.6rem; } }
 @keyframes trace-bar-grow { from { transform: scaleX(0); } to { transform: none; } }
-.trace-number { font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+.trace-number { font-size: calc(clamp(3rem, 8vw, 5.5rem) * var(--fit, 1)); font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
 /* In Present the example is the slide: everything a size up. */
 .trace-large .trace-label { font-size: 1.6rem; }
 .trace-large .trace-text { font-size: 1.45rem; line-height: 2.2; padding: 1rem 1.4rem; }
@@ -547,7 +547,7 @@ body {
 /* On a phone a long value (an email, a hash) wraps inside its cell instead of pushing the table off the slide. */
 @media (max-width: 640px) { .trace-large .trace-table th, .trace-large .trace-table td { font-size: 1.05rem; padding: 0.5rem 0.8rem; } }
 .trace-large .trace-track { height: 1.6rem; }
-.trace-large .trace-number { font-size: clamp(4rem, 11vw, 8rem); }
+.trace-large .trace-number { font-size: calc(clamp(4rem, 11vw, 8rem) * var(--fit, 1)); }
 
 /* Charts: thin bars that grow from the baseline, lines that draw, hairline grid. */
 .chart-grid { stroke: var(--grid); stroke-width: 1; }

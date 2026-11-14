@@ -9,7 +9,7 @@
 <terms>control adaptativo</terms>
 </brief>
 
-<theme name="hardware" />
+<theme name="society hardware" />
 
 A las 23:00 el cruce está vacío. Las cifras son las del ejemplo, no las de un cruce real.
 

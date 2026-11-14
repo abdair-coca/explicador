@@ -9,7 +9,7 @@
 <terms>deposit, normal wear</terms>
 </brief>
 
-<theme name="business" />
+<theme name="society business" />
 
 Leo Park is about to rent the flat at 12 Rose Street. Six clauses fit on one page; four of them decide what he pays, and when.
 

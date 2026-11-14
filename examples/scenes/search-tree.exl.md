@@ -9,7 +9,7 @@
 <terms>root, leaf, height</terms>
 </brief>
 
-<theme name="code" />
+<theme name="code math" />
 
 Five values arrive one by one: 50, 30, 70, 20 and 40. At every node it passes, `insert()` asks one question, "smaller or not?", and goes down the left or the right.
 

@@ -9,7 +9,7 @@
 <terms>dispersión</terms>
 </brief>
 
-<theme name="plain" />
+<theme name="science nature" />
 
 Después de la lluvia, con el Sol a tu espalda, aparece un arco de colores. Todo empieza con un rayo de luz y una gota.
 

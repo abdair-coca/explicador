@@ -9,7 +9,7 @@
 <terms>reinforcing loop, balancing loop</terms>
 </brief>
 
-<theme name="database" />
+<theme name="database network" />
 
 At 9:00 a sale starts. The shop usually reads 100 keys a second, mostly from its cache; now 500 arrive, and the cache was just restarted.
 

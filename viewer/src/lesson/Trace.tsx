@@ -204,9 +204,12 @@ function VectorBody({ value }: { value: TraceValue }) {
   );
 }
 
+/** A long number shrinks so it stays inside its card: "1157.63" or "1 157,63 €" is wider than "42" (F36). */
+export const numberFit = (text: string): number => Math.min(1, 6 / Math.max(1, [...text].length));
+
 function NumberBody({ value }: { value: TraceValue }) {
   return (
-    <p className="trace-number tabular-nums">
+    <p className="trace-number tabular-nums" style={{ '--fit': numberFit(value.text) } as React.CSSProperties}>
       <CountUp text={value.text} />
     </p>
   );
@@ -221,7 +224,11 @@ function ValueBody({ value }: { value: TraceValue }) {
   if (kind === 'list') return <ListBody items={value.items ?? []} />;
   if (kind === 'table') return <TableBody items={value.items ?? []} />;
   if (kind === 'bars') return <BarsBody items={value.items ?? []} />;
-  if (kind === 'number') return <p className="trace-number tabular-nums">{value.text}</p>;
+  if (kind === 'number') return (
+    <p className="trace-number tabular-nums" style={{ '--fit': numberFit(value.text) } as React.CSSProperties}>
+      {value.text}
+    </p>
+  );
   if (kind === 'vector') return <VectorBody value={value} />;
   return <p className="trace-text rounded-xl border-2 border-border bg-card px-3 py-2">{value.text}</p>;
 }

@@ -9,7 +9,7 @@
 <terms>embedding, vector store, index, cluster, cosine similarity</terms>
 </brief>
 
-<theme name="database" />
+<theme name="ml text database" />
 
 The help center answers questions by **retrieval**: it turns every paragraph into numbers once, keeps them in a table, groups them, and when a question arrives it turns the question into numbers too and looks for the paragraphs that point the same way. The real run of `npm run demo` in this project prints every number below.
 
