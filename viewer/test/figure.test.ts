@@ -5,7 +5,7 @@ import { parseExl } from '../../server/src/parser/index.ts';
 import type { Block, FigureBlock } from '../../server/src/scene.ts';
 import { iconPaths, litLamp } from '../src/lesson/figureIcons.ts';
 import { figureIcons } from '../../server/src/parser/types.ts';
-import { angleArc, arcPath, lengthInside, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
+import { angleArc, arcPath, frameOf, lengthInside, measurePath, figureParts, figurePartsOf, LABEL_SIZE, labelBox, labelSize, placeFigure, touchedBy, wrapLabel } from '../src/lesson/figureGeometry.ts';
 import { stripOf } from '../src/lesson/traceShape.ts';
 import { es, sceneLanguage, setLanguage, t } from '../src/i18n.ts';
 import { buildSlides } from '../src/presentation/slides.ts';
@@ -38,6 +38,14 @@ describe('figure geometry', () => {
         assert.ok(across <= 0 || down <= 0, `labels ${i} and another overlap`);
       }),
     );
+  });
+
+  it('frames a drawing that keeps to part of its grid, and leaves a full one whole (F36)', () => {
+    const low = { width: 100, height: 60, shapes: [{ kind: 'box' as const, x: 15, y: 42, w: 70, h: 5, label: 'Pan', color: 'gray' as const, appear: 0 }] };
+    const frame = frameOf(low, placeFigure(low));
+    assert.ok(frame.y > 30 && frame.y + frame.h <= 60, JSON.stringify(frame));
+    const block = figureOf(rainbow());
+    assert.deepEqual(frameOf(block, placeFigure(block)), { x: 0, y: 0, w: block.width, h: block.height });
   });
 
   it('keeps a label off its own pictogram at the edge of the figure', () => {

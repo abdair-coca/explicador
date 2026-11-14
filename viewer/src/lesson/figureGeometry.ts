@@ -373,6 +373,68 @@ export function placeFigure(block: Pick<FigureBlock, 'shapes' | 'width' | 'heigh
   return placed;
 }
 
+/** The part of a figure's grid it draws on: x, y, width and height. */
+export interface Frame {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The part of the grid a figure really uses, in every state its shows reach, with its labels and leaders and a margin
+ * (F36): a drawing that keeps to the bottom half of its grid is shown without the empty half, so it shows larger. The
+ * whole grid when cropping would save little.
+ */
+export function frameOf(block: Pick<FigureBlock, 'width' | 'height'> & Partial<Pick<FigureBlock, 'states'>>, placed: Placed[], size = LABEL_SIZE): Frame {
+  const whole = { x: 0, y: 0, w: block.width, h: block.height };
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  const take = (x: number, y: number): void => {
+    x0 = Math.min(x0, x);
+    y0 = Math.min(y0, y);
+    x1 = Math.max(x1, x);
+    y1 = Math.max(y1, y);
+  };
+  placed.forEach((item, i) => {
+    const offsets: Point[] = [[0, 0], ...(block.states ?? []).flatMap((state) => (state[i]?.offset ? [state[i].offset] : []))];
+    const { shape } = item;
+    for (const [ox, oy] of offsets) {
+      for (const line of polylines(shape)) for (const [x, y] of line) take(x + ox, y + oy);
+      const half = shape.kind === 'circle' ? shape.r : shape.kind === 'icon' ? shape.size / 2 : undefined;
+      if ((shape.kind === 'circle' || shape.kind === 'icon') && half !== undefined) {
+        take(shape.x - half + ox, shape.y - half + oy);
+        take(shape.x + half + ox, shape.y + half + oy);
+      }
+      if (shape.kind === 'box') {
+        take(shape.x + ox, shape.y + oy);
+        take(shape.x + shape.w + ox, shape.y + shape.h + oy);
+      }
+      if (item.labelAt && item.lines.length > 0) {
+        const box = labelBox(item.labelAt, item.lines, size);
+        take(box.x0 + ox, box.y0 + oy);
+        take(box.x1 + ox, box.y1 + oy);
+      }
+      for (const [x, y] of item.leader ?? []) take(x + ox, y + oy);
+    }
+  });
+  if (!Number.isFinite(x0)) return whole;
+  const margin = Math.max(2, size * 0.6);
+  const frame = {
+    x: Math.max(0, x0 - margin),
+    y: Math.max(0, y0 - margin),
+    w: 0,
+    h: 0,
+  };
+  frame.w = Math.min(block.width, x1 + margin) - frame.x;
+  frame.h = Math.min(block.height, y1 + margin) - frame.y;
+  // Cropping less than a sixth of the grid on both axes is not worth a drawing that no longer sits where it was written.
+  if (frame.w > block.width * 0.84 && frame.h > block.height * 0.84) return whole;
+  return frame;
+}
+
 /** A part of a figure's slide: how many shows have played and, for a question, what it asks before the next one (F32). */
 export interface FigurePart {
   shown: number;

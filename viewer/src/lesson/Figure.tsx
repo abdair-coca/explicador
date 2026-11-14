@@ -16,7 +16,7 @@ import { subtitleOf } from '../presentation/subtitles';
 import { cn } from '@/lib/utils';
 import { useFirstVisible } from './hooks';
 import { ASK_MS, AskCard } from './AskCard';
-import { figurePartsOf, labelSize, placeFigure, touchedBy, type Placed } from './figureGeometry';
+import { figurePartsOf, frameOf, labelSize, placeFigure, touchedBy, type Placed } from './figureGeometry';
 import { iconPaths, litLamp, signalLamps } from './figureIcons';
 
 /** How much wider than its grid a figure may be drawn, in pixels per unit. */
@@ -121,6 +121,7 @@ export function FigureView({ block, shown, picked, onPick }: { block: FigureBloc
   }, []);
   const size = labelSize(block.width, pixels);
   const placed = useMemo(() => placeFigure(block, size), [block, size]);
+  const frame = useMemo(() => frameOf(block, placed, size), [block, placed, size]);
   const parts = useMemo(() => figurePartsOf(block), [block]);
   const index = Math.max(0, Math.min(parts.length - 1, shown ?? parts.length - 1));
   const part = parts[index] ?? { shown: 0 };
@@ -194,7 +195,7 @@ export function FigureView({ block, shown, picked, onPick }: { block: FigureBloc
   }, [played, show, block, reduced]);
 
   const visible = placed.map((item, i) => ({ item, i })).filter(({ item }) => item.shape.appear <= played);
-  const width = block.width * MAX_PX_PER_UNIT;
+  const width = frame.w * MAX_PX_PER_UNIT;
   const layer = (kinds: (kind: FigureShape['kind']) => boolean) =>
     visible
       .filter(({ item }) => kinds(item.shape.kind))
@@ -239,7 +240,7 @@ export function FigureView({ block, shown, picked, onPick }: { block: FigureBloc
       {part.ask && <AskCard key={`ask-${played}`} question={part.ask} />}
       <svg
         ref={svg}
-        viewBox={`0 0 ${block.width} ${block.height}`}
+        viewBox={`${frame.x} ${frame.y} ${frame.w} ${frame.h}`}
         className="figure mx-auto block h-auto"
         style={fit ? { width: '100%', maxWidth: width, maxHeight: 'var(--fit-h, none)' } : { width: '100%', maxWidth: width }}
         role="group"

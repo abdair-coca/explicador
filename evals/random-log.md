@@ -22,3 +22,6 @@ One row per topic played by `npm run eval:random`: the score of the deterministi
 | 2026-11-14 | music-scale | en | 7 | 1.00 | art science | figure, concept, concept, compare, derive, matrix, quiz | — |
 | 2026-11-14 | vacunas | es | 5 | 1.00 | health science | figure, concept, compare, timeline, quiz | — |
 | 2026-11-14 | separacion-poderes | es | 7 | 1.00 | society history | figure, concept, arch, compare, timeline, argument, quiz | the temple lay under the verdict and the scroll on the comparison (3 % was too lenient): decoration now keeps 10 px clear of the content and of the subtitle |
+| 2026-11-14 | lupa | es | 5 | 1.00 | science nature | figure, concept, compare, derive, quiz | — (the eye sits off the rays: geometry the checks do not see) |
+| 2026-11-14 | maillard | es | 4 | 1.00 | food science | figure, concept, compare, quiz | the drawing kept to the lower half of its grid: a figure is now framed to what it draws in every state, so it shows larger |
+| 2026-11-14 | batteries | en | 5 | 1.00 | science hardware | figure, concept, compare, stats, quiz | — |
