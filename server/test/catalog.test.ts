@@ -119,6 +119,15 @@ describe('the skill (SKILL.md)', () => {
     assert.match(step, /nobody can answer/);
     assert.ok(skill.indexOf('**Then ask the user') < skill.indexOf('4. **Read only what you need**'), 'the questions come before reading code');
   });
+
+  it('shows the plan of a new scene after reading and waits for the user before writing (F38)', () => {
+    const plan = skill.indexOf('**Then show the user your plan and wait for their OK**');
+    assert.ok(plan > skill.indexOf('4. **Read only what you need**') && plan < skill.indexOf('\n5. '), 'the plan sits in step 4');
+    const step = skill.slice(plan, skill.indexOf('\n5. '));
+    assert.match(step, /the slides you plan, one line each/);
+    assert.match(step, /write nothing until they answer/);
+    assert.match(step, /When nobody can answer, skip it/);
+  });
 });
 
 describe('the presenting guide (presenting.md)', () => {

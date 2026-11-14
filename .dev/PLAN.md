@@ -521,6 +521,7 @@ Standing rules from the user: stop and wait for review at the end of **F22, F25 
 - [x] F35. `<figure>`: clearer reading (stop). Done 2026-11-14; outcome in `docs/plan.md`, the comparison in `docs/figures-research.md`.
 - [x] F36. Random topics on Sonnet, and a look of each presentation's own: a loop, stopped by the user after 15 rounds (2026-11-14). Outcome in `docs/plan.md`; rounds in `evals/random-log.md`.
 - [x] **F37. Ask the user how they want a new scene** (user, 2026-11-14). Done 2026-11-14. For a new scene asked in the chat, step 3 of `SKILL.md` asks with AskUserQuestion, before reading code, for the audience and level, the length (short, medium, deep dive) and the focus and example, which feed the brief; never for stale scenes, viewer messages or code tours, and with no one to answer (evals, non-interactive runs) the model decides alone as before. The server instructions and the `show_scene` "missing" result point at the step. Typecheck 0, lint 0, build OK, server 303/303, viewer 204/204, evals 50/50; no viewer change, so no e2e; no model eval run.
+- [x] **F38. Show the plan of a new scene and wait for the user's OK** (user, 2026-11-14). Done 2026-11-14. In the same cases as F37, at the end of step 4 of `SKILL.md` (after reading, before any EXL) the model writes 2–3 sentences (audience, question, example) and the planned slides, one line each, then asks with AskUserQuestion whether to go ahead and writes nothing until the user answers; skipped when nobody can answer. The server instructions and the `show_scene` "missing" result name the step. Typecheck 0, lint 0, build OK, server 304/304, viewer 204/204, evals 50/50; no e2e (no viewer change); no model eval run.
 
 ### Unattended mode (user, 2026-11-10)
 
@@ -647,3 +648,4 @@ Open points:
 | F35 | done (2026-11-14), stopped for the user's review; outcome in `docs/plan.md` |
 | F36 | done (2026-11-14), stopped by the user after 15 rounds; outcome in `docs/plan.md`, rounds in `evals/random-log.md` |
 | F37 | done (2026-11-14), user review pending |
+| F38 | done (2026-11-14), user review pending |
